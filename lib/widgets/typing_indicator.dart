@@ -86,7 +86,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
               final inference = Get.find<InferenceService>();
               if (inference.tokenCount.value > 0) {
                 return Text(
-                  '${inference.tokenCount.value} tokens',
+                  '@count tokens'
+                      .trParams({'count': '${inference.tokenCount.value}'}),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: Theme.of(context).hintColor,
@@ -95,7 +96,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                 );
               }
               return Text(
-                'thinking…',
+                'thinking…'.tr,
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: Theme.of(context).hintColor,

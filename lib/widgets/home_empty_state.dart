@@ -178,10 +178,10 @@ class _Greeting extends StatelessWidget {
 
   String get _salutation {
     final h = DateTime.now().hour;
-    if (h < 5) return 'Up late?';
-    if (h < 12) return 'Good morning,';
-    if (h < 17) return 'Good afternoon,';
-    return 'Good evening,';
+    if (h < 5) return 'Up late?'.tr;
+    if (h < 12) return 'Good morning,'.tr;
+    if (h < 17) return 'Good afternoon,'.tr;
+    return 'Good evening,'.tr;
   }
 
   @override
@@ -192,7 +192,8 @@ class _Greeting extends StatelessWidget {
         const SizedBox(height: 18),
       ],
       Text(
-        "$_salutation\nwhat's on your mind?",
+        "@salutation\nwhat's on your mind?"
+            .trParams({'salutation': _salutation}),
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
           fontSize: compact ? 24 : 28,
@@ -226,9 +227,9 @@ String providerLabel(SettingsController s) {
       return 'Kimi';
     case 'custom':
       final n = s.customCloudName.value.trim();
-      return n.isEmpty ? 'a custom endpoint' : n;
+      return n.isEmpty ? 'a custom endpoint'.tr : n;
     default:
-      return 'the cloud';
+      return 'the cloud'.tr;
   }
 }
 
@@ -281,16 +282,17 @@ class _ModelCard extends StatelessWidget {
         case _ModelState.cloud:
           final m = settings.selectedCloudModelName;
           icon = Icons.cloud_outlined;
-          title = m.isEmpty ? 'No model selected' : m;
+          title = m.isEmpty ? 'No model selected'.tr : m;
           meta = providerLabel(settings);
           dot = t.accent;
-          action = _ActionChip(t: t, label: 'Change', onTap: _openModels);
+          action = _ActionChip(t: t, label: 'Change'.tr, onTap: _openModels);
         case _ModelState.loading:
           icon = Icons.memory_rounded;
           title = _prettyModel(inf.loadedModelName.value.isNotEmpty
               ? inf.loadedModelName.value
               : models.lastLoadedModelName);
-          meta = 'Loading · ${(inf.modelLoadProgress.value * 100).round()}%';
+          meta = 'Loading · @percent%'.trParams(
+              {'percent': '${(inf.modelLoadProgress.value * 100).round()}'});
           dot = t.orange;
         case _ModelState.readyText:
           final runtime =
@@ -298,7 +300,7 @@ class _ModelCard extends StatelessWidget {
           icon = Icons.memory_rounded;
           title = _prettyModel(inf.loadedModelName.value);
           meta = [
-            'Ready',
+            'Ready'.tr,
             Get.isRegistered<ClusterService>()
               ? Get.find<ClusterService>().splitSummary ??
                   (inf.isGpuAccelerated.value ? 'GPU' : 'CPU')
@@ -306,37 +308,41 @@ class _ModelCard extends StatelessWidget {
             runtime,
           ].join(' · ');
           dot = t.green;
-          action = _ActionChip(t: t, label: 'Switch', onTap: _openModels);
+          action = _ActionChip(t: t, label: 'Switch'.tr, onTap: _openModels);
         case _ModelState.readyImage:
           final backend = img.currentBackend.value;
           icon = Icons.image_outlined;
           title = _prettyModel(img.loadedModelName.value);
-          meta =
-              'Ready · Image generation · ${backend == Backend.cpu ? 'CPU' : backend.displayName.split(' ').first}';
+          meta = 'Ready · Image generation · @backend'.trParams({
+            'backend': backend == Backend.cpu
+                ? 'CPU'
+                : backend.displayName.split(' ').first
+          });
           dot = t.green;
-          action = _ActionChip(t: t, label: 'Switch', onTap: _openModels);
+          action = _ActionChip(t: t, label: 'Switch'.tr, onTap: _openModels);
         case _ModelState.noModels:
           icon = Icons.download_rounded;
-          title = 'No model on this device';
-          meta = 'Download one to chat offline';
+          title = 'No model on this device'.tr;
+          meta = 'Download one to chat offline'.tr;
           dot = t.orange;
           action = _ActionChip(
-              t: t, label: 'Browse', primary: true, onTap: _openModels);
+              t: t, label: 'Browse'.tr, primary: true, onTap: _openModels);
         case _ModelState.idle:
           final last =
               models.canLoadLastModel ? models.lastLoadedModelName : '';
           icon = Icons.memory_rounded;
-          title = last.isEmpty ? 'No model loaded' : _prettyModel(last);
+          title = last.isEmpty ? 'No model loaded'.tr : _prettyModel(last);
           meta = last.isEmpty
-              ? '${models.downloadedCount} downloaded'
-              : 'Not loaded · last used';
+              ? '@count downloaded'
+                  .trParams({'count': '${models.downloadedCount}'})
+              : 'Not loaded · last used'.tr;
           dot = t.faint;
           action = last.isEmpty
               ? _ActionChip(
-                  t: t, label: 'Choose', primary: true, onTap: _openModels)
+                  t: t, label: 'Choose'.tr, primary: true, onTap: _openModels)
               : _ActionChip(
                   t: t,
-                  label: 'Load',
+                  label: 'Load'.tr,
                   primary: true,
                   onTap: () {
                     Haptics.lightImpact();
@@ -456,6 +462,8 @@ class _ActionChip extends StatelessWidget {
 
 // ── Starters ────────────────────────────────────────────────────────────
 
+/// A suggested first message. [label] and [prompt] are English and shown or
+/// sent translated.
 class _Starter {
   final IconData icon;
   final String label;
@@ -495,11 +503,12 @@ class _Starters extends StatelessWidget {
       return;
     }
     final chat = Get.find<ChatController>();
+    final prompt = s.prompt.tr;
     chat.textController.value = TextEditingValue(
-      text: s.prompt,
-      selection: TextSelection.collapsed(offset: s.prompt.length),
+      text: prompt,
+      selection: TextSelection.collapsed(offset: prompt.length),
     );
-    chat.inputText.value = s.prompt;
+    chat.inputText.value = prompt;
     chat.sendMessage();
   }
 
@@ -534,7 +543,7 @@ class _Starters extends StatelessWidget {
                     Icon(s.icon, size: 18, color: t.muted),
                     const SizedBox(width: 10),
                     Flexible(
-                      child: Text(s.label,
+                      child: Text(s.label.tr,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
@@ -566,7 +575,7 @@ class _GettingStarted extends StatelessWidget {
       ('Chat offline', 'Runs on this device. No account, no server.'),
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('How it works', style: t.sectionLabel),
+      Text('How it works'.tr, style: t.sectionLabel),
       const SizedBox(height: 14),
       for (var i = 0; i < steps.length; i++)
         Padding(
@@ -592,13 +601,13 @@ class _GettingStarted extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 2),
-                    Text(steps[i].$1,
+                    Text(steps[i].$1.tr,
                         style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: t.text)),
                     const SizedBox(height: 2),
-                    Text(steps[i].$2,
+                    Text(steps[i].$2.tr,
                         style: GoogleFonts.inter(
                             fontSize: 13.5, height: 1.35, color: t.muted)),
                   ]),

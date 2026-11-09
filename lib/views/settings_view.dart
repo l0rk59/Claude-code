@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
+import '../l10n/app_translations.dart';
 import '../widgets/home_empty_state.dart' show providerLabel;
 import '../services/inference_service.dart';
 import '../services/hive_service.dart';
@@ -26,7 +27,7 @@ class SettingsView extends GetView<SettingsController> {
     final t = AppTokens.of(context);
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: appScreenBar(context, title: 'Settings'),
+      appBar: appScreenBar(context, title: 'Settings'.tr),
       body: Obx(() {
         final device = Get.find<DeviceInfoService>();
         final showUpdates =
@@ -34,8 +35,8 @@ class SettingsView extends GetView<SettingsController> {
         return ListView(
           padding: kPagePadding,
           children: [
-            const SectionHeader('General',
-                padding: EdgeInsets.fromLTRB(4, 8, 4, 8)),
+            SectionHeader('General'.tr,
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8)),
             AppGroup(dividerIndent: 60, children: [
               _navRow(
                 context,
@@ -44,9 +45,16 @@ class SettingsView extends GetView<SettingsController> {
                 value: _themeLabel(),
                 builder: (ctx) => _buildAppearanceGroup(ctx),
               ),
+              _navRow(
+                context,
+                icon: Icons.translate_rounded,
+                title: 'Language',
+                value: _languageLabel(controller.language.value),
+                builder: (ctx) => _buildLanguageGroup(ctx),
+              ),
               AppRow(
                 icon: Icons.vibration_rounded,
-                title: 'Haptic feedback',
+                title: 'Haptic feedback'.tr,
                 trailing: Switch(
                   value: controller.hapticsEnabled.value,
                   onChanged: controller.setHapticsEnabled,
@@ -55,15 +63,15 @@ class SettingsView extends GetView<SettingsController> {
                     .setHapticsEnabled(!controller.hapticsEnabled.value),
               ),
             ]),
-            const SectionHeader('Chat'),
+            SectionHeader('Chat'.tr),
             AppGroup(dividerIndent: 60, children: [
               _navRow(
                 context,
                 icon: Icons.memory_rounded,
                 title: 'Inference mode',
                 value: controller.inferenceMode.value == 'local'
-                    ? 'Local'
-                    : 'Cloud',
+                    ? 'Local'.tr
+                    : 'Cloud'.tr,
                 builder: (ctx) => _buildInferenceGroup(ctx),
               ),
               _navRow(
@@ -71,8 +79,8 @@ class SettingsView extends GetView<SettingsController> {
                 icon: Icons.chat_bubble_outline_rounded,
                 title: 'System prompt',
                 value: controller.globalSystemPrompt.value.trim().isEmpty
-                    ? 'Default'
-                    : 'Custom',
+                    ? 'Default'.tr
+                    : 'Custom'.tr,
                 builder: (ctx) => _buildSystemPromptGroup(ctx),
                 reactive: false,
               ),
@@ -85,21 +93,21 @@ class SettingsView extends GetView<SettingsController> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildModelParametersGroup(ctx),
-                      const SectionHeader('Stop sequences'),
+                      SectionHeader('Stop sequences'.tr),
                       _buildStopSequencesGroup(ctx),
                     ]),
               ),
             ]),
-            const SectionHeader('Performance'),
+            SectionHeader('Performance'.tr),
             AppGroup(dividerIndent: 60, children: [
               _navRow(
                 context,
                 icon: Icons.speed_rounded,
                 title: 'GGUF & LiteRT',
                 value: switch (controller.liteRtPerformanceMode.value) {
-                  'gpu_fast' => 'GPU fast',
-                  'cpu_safe' => 'CPU safe',
-                  _ => 'Auto fast',
+                  'gpu_fast' => 'GPU fast'.tr,
+                  'cpu_safe' => 'CPU safe'.tr,
+                  _ => 'Auto fast'.tr,
                 },
                 builder: (ctx) => _buildLiteRtGroup(ctx),
               ),
@@ -115,32 +123,33 @@ class SettingsView extends GetView<SettingsController> {
               if (Get.isRegistered<ClusterService>())
                 AppRow(
                   icon: Icons.hub_outlined,
-                  title: 'Phone cluster',
+                  title: 'Phone cluster'.tr,
                   trailing: Text(
                       switch (Get.find<ClusterService>().role) {
-                        ClusterRole.master => 'Master',
-                        ClusterRole.worker => 'Worker',
-                        ClusterRole.off => 'Off',
+                        ClusterRole.master => 'Master'.tr,
+                        ClusterRole.worker => 'Worker'.tr,
+                        ClusterRole.off => 'Off'.tr,
                       },
                       style: AppTokens.of(context).caption.copyWith(fontSize: 14)),
                   chevron: true,
                   onTap: () => Get.to(() => const ClusterView()),
                 ),
             ]),
-            const SectionHeader('About'),
+            SectionHeader('About'.tr),
             AppGroup(dividerIndent: 60, children: [
               if (showUpdates) _buildUpdatesRow(context),
               _navRow(
                 context,
                 icon: Icons.smartphone_rounded,
                 title: 'Device',
-                value: '${device.totalRamGB.value.toStringAsFixed(1)} GB RAM',
+                value: '@ram GB RAM'.trParams(
+                    {'ram': device.totalRamGB.value.toStringAsFixed(1)}),
                 builder: (ctx) => AppGroup(children: [_buildDeviceCard(ctx)]),
                 reactive: false,
               ),
               AppRow(
                 icon: Icons.article_outlined,
-                title: 'Logs',
+                title: 'Logs'.tr,
                 chevron: true,
                 onTap: () => Get.to(() => const LogView()),
               ),
@@ -152,8 +161,9 @@ class SettingsView extends GetView<SettingsController> {
                 ),
                 title: 'PrivateLM',
                 subtitle: controller.appVersion.value.isEmpty
-                    ? 'by orailnoor & techjarves'
-                    : 'Version ${controller.appVersion.value} · by orailnoor & techjarves',
+                    ? 'by orailnoor & techjarves'.tr
+                    : 'Version @version · by orailnoor & techjarves'
+                        .trParams({'version': controller.appVersion.value}),
               ),
             ]),
           ],
@@ -163,7 +173,8 @@ class SettingsView extends GetView<SettingsController> {
   }
 
   /// Row on the main page: icon, title, current value and a chevron that
-  /// opens the section on its own page.
+  /// opens the section on its own page. [title] is the English text; the row
+  /// and the page translate it.
   Widget _navRow(
     BuildContext context, {
     required IconData icon,
@@ -175,7 +186,7 @@ class SettingsView extends GetView<SettingsController> {
     final t = AppTokens.of(context);
     return AppRow(
       icon: icon,
-      title: title,
+      title: title.tr,
       trailing: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 140),
         child: Text(value,
@@ -190,10 +201,34 @@ class SettingsView extends GetView<SettingsController> {
   }
 
   String _themeLabel() => switch (controller.themeMode.value) {
-        ThemeMode.light => 'Light',
-        ThemeMode.dark => 'Dark',
-        ThemeMode.system => 'System',
+        ThemeMode.light => 'Light'.tr,
+        ThemeMode.dark => 'Dark'.tr,
+        ThemeMode.system => 'System'.tr,
       };
+
+  /// Language names stay in their own language.
+  static String _languageLabel(String code) => switch (code) {
+        'en' => 'English',
+        'fr' => 'Français',
+        _ => 'System'.tr,
+      };
+
+  Widget _buildLanguageGroup(BuildContext context) {
+    return AppGroup(dividerIndent: 60, children: [
+      for (final code in AppTranslations.languageCodes)
+        AppRow(
+          icon: code == AppTranslations.system
+              ? Icons.smartphone_rounded
+              : Icons.translate_rounded,
+          title: _languageLabel(code),
+          subtitle: code == AppTranslations.system
+              ? 'Same language as the phone'.tr
+              : null,
+          selected: controller.language.value == code,
+          onTap: () => controller.setLanguage(code),
+        ),
+    ]);
+  }
 
   Widget _buildAppearanceGroup(BuildContext context) {
     final t = AppTokens.of(context);
@@ -201,13 +236,13 @@ class SettingsView extends GetView<SettingsController> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Theme', style: t.body),
+          Text('Theme'.tr, style: t.body),
           const SizedBox(height: 10),
           AppSegmented<ThemeMode>(
-            items: const [
-              (ThemeMode.light, 'Light'),
-              (ThemeMode.dark, 'Dark'),
-              (ThemeMode.system, 'System'),
+            items: [
+              (ThemeMode.light, 'Light'.tr),
+              (ThemeMode.dark, 'Dark'.tr),
+              (ThemeMode.system, 'System'.tr),
             ],
             selected: controller.themeMode.value,
             onChanged: (mode) {
@@ -226,14 +261,14 @@ class SettingsView extends GetView<SettingsController> {
     return AppGroup(dividerIndent: 60, children: [
       AppRow(
         icon: Icons.phone_iphone_rounded,
-        title: 'Local (on-device)',
+        title: 'Local (on-device)'.tr,
         subtitle: _localSubtitle(),
         selected: controller.inferenceMode.value == 'local',
         onTap: () => controller.setInferenceMode('local'),
       ),
       AppRow(
         icon: Icons.cloud_outlined,
-        title: 'Cloud API',
+        title: 'Cloud API'.tr,
         subtitle: providerLabel(controller),
         selected: controller.inferenceMode.value == 'cloud',
         onTap: () => controller.setInferenceMode('cloud'),
@@ -255,12 +290,12 @@ class SettingsView extends GetView<SettingsController> {
       ),
       _fieldFooter(
         context,
-        note: 'Applies to local and cloud models.',
+        note: 'Applies to local and cloud models.'.tr,
         onSave: () async {
           await controller.setGlobalSystemPrompt(
               controller.globalSystemPromptController.text);
           if (context.mounted) {
-            _confirmSaved(context, 'System prompt saved');
+            _confirmSaved(context, 'System prompt saved'.tr);
           }
         },
       ),
@@ -280,12 +315,13 @@ class SettingsView extends GetView<SettingsController> {
       _fieldFooter(
         context,
         note: 'Local models stop when they write one of these. '
-            'One per line; use \\n for a newline.',
+                'One per line; use \\n for a newline.'
+            .tr,
         onSave: () async {
           await controller
               .setStopSequences(controller.stopSequencesController.text);
           if (context.mounted) {
-            _confirmSaved(context, 'Stop sequences saved');
+            _confirmSaved(context, 'Stop sequences saved'.tr);
           }
         },
       ),
@@ -299,14 +335,14 @@ class SettingsView extends GetView<SettingsController> {
     final downloading = updates.state.value == UpdateState.downloading;
     return AppRow(
       icon: Icons.system_update_rounded,
-      title: 'App updates',
+      title: 'App updates'.tr,
       trailing: update != null
           ? AppTag(
               downloading
                   ? '${(updates.progress.value * 100).round()}%'
-                  : '${update.version} available',
+                  : '@version available'.trParams({'version': update.version}),
               color: t.accent)
-          : Text('Up to date', style: t.caption.copyWith(fontSize: 14)),
+          : Text('Up to date'.tr, style: t.caption.copyWith(fontSize: 14)),
       chevron: true,
       onTap: () => Get.to(() => _SettingsPage(
           title: 'App updates', builder: (ctx) => _buildUpdatesGroup(ctx))),
@@ -321,18 +357,19 @@ class SettingsView extends GetView<SettingsController> {
     final current = updates.currentVersion.value;
     final String status;
     if (update != null) {
-      status = 'You have $current · see what\'s new';
+      status = "You have @current · see what's new"
+          .trParams({'current': current});
     } else if (checked != null) {
-      status = 'Up to date · checked ${_ago(checked)}';
+      status = 'Up to date · checked @ago'.trParams({'ago': _ago(checked)});
     } else {
-      status = 'Not checked yet';
+      status = 'Not checked yet'.tr;
     }
     return AppGroup(dividerIndent: 60, children: [
       AppRow(
         icon: update != null ? Icons.download_rounded : Icons.refresh_rounded,
         title: update != null
-            ? 'Update to ${update.version}'
-            : 'Check for updates',
+            ? 'Update to @version'.trParams({'version': update.version})
+            : 'Check for updates'.tr,
         subtitle: status,
         trailing: checking
             ? const SizedBox(
@@ -356,8 +393,8 @@ class SettingsView extends GetView<SettingsController> {
       ),
       AppRow(
         icon: Icons.schedule_rounded,
-        title: 'Check automatically',
-        subtitle: 'Look for a new release once a day',
+        title: 'Check automatically'.tr,
+        subtitle: 'Look for a new release once a day'.tr,
         trailing: Switch(
           value: updates.autoCheck.value,
           onChanged: updates.setAutoCheck,
@@ -369,10 +406,12 @@ class SettingsView extends GetView<SettingsController> {
 
   static String _ago(DateTime time) {
     final d = DateTime.now().difference(time);
-    if (d.inMinutes < 1) return 'just now';
-    if (d.inHours < 1) return '${d.inMinutes}m ago';
-    if (d.inDays < 1) return '${d.inHours}h ago';
-    return '${d.inDays}d ago';
+    if (d.inMinutes < 1) return 'just now'.tr;
+    if (d.inHours < 1) {
+      return '@count min ago'.trParams({'count': '${d.inMinutes}'});
+    }
+    if (d.inDays < 1) return '@count h ago'.trParams({'count': '${d.inHours}'});
+    return '@count d ago'.trParams({'count': '${d.inDays}'});
   }
 
   // ── Building blocks ─────────────────────────────────────────────────────
@@ -391,14 +430,14 @@ class SettingsView extends GetView<SettingsController> {
           ),
         ),
         const SizedBox(width: 12),
-        PillButton(label: 'Save', primary: true, onPressed: onSave),
+        PillButton(label: 'Save'.tr, primary: true, onPressed: onSave),
       ]),
     );
   }
 
   void _confirmSaved(BuildContext context, String message) {
     FocusScope.of(context).unfocus();
-    showToast('Saved', message, tone: ToastTone.success);
+    showToast('Saved'.tr, message, tone: ToastTone.success);
   }
 
   /// Consistent slider row: label left, value right, slider below, then an
@@ -475,11 +514,12 @@ class SettingsView extends GetView<SettingsController> {
     final inf = Get.find<InferenceService>();
     final localImage = Get.find<LocalImageService>();
     if (inf.isModelLoaded.value) {
-      return 'Active: ${inf.loadedModelName.value}';
+      return 'Active: @name'.trParams({'name': inf.loadedModelName.value});
     } else if (localImage.isModelLoaded.value) {
-      return 'Active: ${localImage.loadedModelName.value}';
+      return 'Active: @name'
+          .trParams({'name': localImage.loadedModelName.value});
     }
-    return 'No model loaded';
+    return 'No model loaded'.tr;
   }
 
   Widget _buildFontSizeRow(BuildContext context) {
@@ -490,9 +530,9 @@ class SettingsView extends GetView<SettingsController> {
 
     String scaleLabel(double v) {
       if (v <= 0.85) return 'XS';
-      if (v <= 0.95) return 'Small';
-      if (v <= 1.05) return 'Recommended';
-      if (v <= 1.15) return 'Large';
+      if (v <= 0.95) return 'Small'.tr;
+      if (v <= 1.05) return 'Recommended'.tr;
+      if (v <= 1.15) return 'Large'.tr;
       if (v <= 1.25) return 'XL';
       return 'XXL';
     }
@@ -506,7 +546,7 @@ class SettingsView extends GetView<SettingsController> {
 
     return _sliderRow(
       context,
-      label: 'Text size',
+      label: 'Text size'.tr,
       valueLabel: scaleLabel(v),
       value: v,
       min: min,
@@ -516,8 +556,8 @@ class SettingsView extends GetView<SettingsController> {
       below: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           marker('XS'),
-          marker('Small (default)', on: isDefault),
-          marker('Large'),
+          marker('Small (default)'.tr, on: isDefault),
+          marker('Large'.tr),
         ]),
       ],
     );
@@ -530,10 +570,10 @@ class SettingsView extends GetView<SettingsController> {
       final ram = device.totalRamGB.value.toStringAsFixed(1);
       final (String tierName, String tierHint) =
           switch (device.deviceTier.value) {
-        'low' => ('Low RAM', 'Use small models only'),
-        'mid' => ('Mid-range', 'Good for 1–3B models'),
-        'high' => ('High-end', 'Can run 3–7B models'),
-        'ultra' => ('Ultra', 'Full performance mode'),
+        'low' => ('Low RAM'.tr, 'Use small models only'.tr),
+        'mid' => ('Mid-range'.tr, 'Good for 1–3B models'.tr),
+        'high' => ('High-end'.tr, 'Can run 3–7B models'.tr),
+        'ultra' => ('Ultra', 'Full performance mode'.tr),
         _ => ('', ''),
       };
       final isLow = device.deviceTier.value == 'low';
@@ -568,7 +608,7 @@ class SettingsView extends GetView<SettingsController> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$ram GB RAM',
+                    Text('@ram GB RAM'.trParams({'ram': ram}),
                         style: t.bodyStrong.copyWith(fontFeatures: _tabular)),
                     if (tierHint.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -585,13 +625,16 @@ class SettingsView extends GetView<SettingsController> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Container(height: 0.5, color: t.hairline),
           ),
-          kv('Available memory',
-              '${device.availableRamGB.value.toStringAsFixed(1)} GB'),
-          kv('Recommended context', '${device.recommendedContextSize}'),
-          kv('Recommended max tokens', '${device.recommendedMaxTokens}'),
+          kv(
+              'Available memory'.tr,
+              '@size GB'.trParams({
+                'size': device.availableRamGB.value.toStringAsFixed(1)
+              })),
+          kv('Recommended context'.tr, '${device.recommendedContextSize}'),
+          kv('Recommended max tokens'.tr, '${device.recommendedMaxTokens}'),
           if (soc != platform_info.SocFamily.unknown) ...[
-            kv('Chipset', soc.displayName),
-            kv('Recommended quant', soc.recommendedQuant,
+            kv('Chipset'.tr, soc.displayName),
+            kv('Recommended quant'.tr, soc.recommendedQuant,
                 color: quantWarning != null ? t.orange : null),
           ],
           if (quantWarning != null) ...[
@@ -608,21 +651,22 @@ class SettingsView extends GetView<SettingsController> {
     final modes = [
       (
         value: 'auto_fast',
-        title: 'Auto fast',
+        title: 'Auto fast'.tr,
         subtitle:
-            "Uses the GPU when supported, CPU if the GPU can't load the model",
+            "Uses the GPU when supported, CPU if the GPU can't load the model"
+                .tr,
         icon: Icons.auto_awesome_outlined
       ),
       (
         value: 'gpu_fast',
-        title: 'GPU fast',
-        subtitle: 'Always tries the GPU. Fastest, may crash on some devices',
+        title: 'GPU fast'.tr,
+        subtitle: 'Always tries the GPU. Fastest, may crash on some devices'.tr,
         icon: Icons.bolt_rounded
       ),
       (
         value: 'cpu_safe',
-        title: 'CPU safe',
-        subtitle: 'CPU only. Most stable, slower',
+        title: 'CPU safe'.tr,
+        subtitle: 'CPU only. Most stable, slower'.tr,
         icon: Icons.shield_outlined
       ),
     ];
@@ -640,7 +684,8 @@ class SettingsView extends GetView<SettingsController> {
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         child: Text(
             'Applies to both GGUF and LiteRT models. Takes effect the next '
-            'time a model is loaded.',
+                    'time a model is loaded.'
+                .tr,
             style: t.small),
       ),
     ]);
@@ -650,18 +695,18 @@ class SettingsView extends GetView<SettingsController> {
     return AppGroup(children: [
       _modelParameterSlider(
         context,
-        label: 'Temperature',
+        label: 'Temperature'.tr,
         value: controller.temperature.value,
         min: 0.0,
         max: 2.0,
         divisions: 20,
         safeMax: 1.0,
         onChanged: (v) => controller.setTemperature(v),
-        warning: 'High temperature = unpredictable output!',
+        warning: 'High temperature = unpredictable output!'.tr,
       ),
       _modelParameterSlider(
         context,
-        label: 'Max tokens',
+        label: 'Max tokens'.tr,
         value: controller.maxTokens.value.toDouble(),
         min: 64,
         max: 4096,
@@ -669,7 +714,7 @@ class SettingsView extends GetView<SettingsController> {
         safeMax: Get.find<DeviceInfoService>().maxSafeTokens.toDouble(),
         onChanged: (v) => controller.setMaxTokens(v.toInt()),
         displayValue: controller.maxTokens.value.toString(),
-        warning: 'Your phone may crash with this value!',
+        warning: 'Your phone may crash with this value!'.tr,
       ),
       (() {
         final inference = Get.find<InferenceService>();
@@ -693,7 +738,7 @@ class SettingsView extends GetView<SettingsController> {
 
         return _modelParameterSlider(
           context,
-          label: 'Context size',
+          label: 'Context size'.tr,
           value: currentValue,
           min: 512,
           max: maxContext,
@@ -703,7 +748,8 @@ class SettingsView extends GetView<SettingsController> {
           displayValue: currentValue.toInt().toString(),
           warning: isLiteRtActive
               ? 'Context capped at 4096 to prevent driver memory crash for LiteRT models.'
-              : 'Context this large will eat all your RAM!',
+                  .tr
+              : 'Context this large will eat all your RAM!'.tr,
         );
       })(),
     ]);
@@ -738,12 +784,16 @@ class SettingsView extends GetView<SettingsController> {
       divisions: divisions,
       color: warnColor,
       caption: safeMax < max
-          ? 'Recommended max: ${safeMax.toInt() > 0 ? safeMax.toInt().toString() : safeMax.toStringAsFixed(1)}'
+          ? 'Recommended max: @value'.trParams({
+              'value': safeMax.toInt() > 0
+                  ? safeMax.toInt().toString()
+                  : safeMax.toStringAsFixed(1)
+            })
           : null,
       onChanged: (v) {
         if (v > safeMax && value <= safeMax) {
           Haptics.heavyImpact();
-          showToast('Above recommended', warning, tone: ToastTone.warning);
+          showToast('Above recommended'.tr, warning, tone: ToastTone.warning);
         } else if (v > safeMax) {
           Haptics.mediumImpact();
         }
@@ -772,18 +822,18 @@ class SettingsView extends GetView<SettingsController> {
       // Steps
       _sliderRow(
         context,
-        label: 'Steps',
+        label: 'Steps'.tr,
         valueLabel: controller.imageSteps.value.toString(),
         value: stepsValue.clamp(1, 50),
         min: 1,
         max: 50,
         divisions: 49,
         color: isOver ? t.orange : null,
-        caption: 'Recommended: 15-20 steps',
+        caption: 'Recommended: 15-20 steps'.tr,
         onChanged: (v) => controller.setImageSteps(v.toInt()),
         below: [
           if (isOver)
-            AppNotice('More steps = better quality but MUCH slower!',
+            AppNotice('More steps = better quality but MUCH slower!'.tr,
                 icon: Icons.warning_amber_rounded, color: t.orange),
         ],
       ),
@@ -793,14 +843,14 @@ class SettingsView extends GetView<SettingsController> {
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text('Image size', style: t.body)),
-            Text(size == 0 ? 'Auto' : '${size}px',
+            Expanded(child: Text('Image size'.tr, style: t.body)),
+            Text(size == 0 ? 'Auto'.tr : '${size}px',
                 style: t.body.copyWith(color: t.muted, fontFeatures: _tabular)),
           ]),
           const SizedBox(height: 12),
           AppChips<int>(
-            items: const [
-              (0, 'Auto'),
+            items: [
+              (0, 'Auto'.tr),
               (256, '256'),
               (320, '320'),
               (384, '384'),
@@ -811,12 +861,14 @@ class SettingsView extends GetView<SettingsController> {
           ),
           const SizedBox(height: 10),
           Text(
-              'Auto recommended. Bigger size = better detail, but much slower and more memory use.',
+              'Auto recommended. Bigger size = better detail, but much slower and more memory use.'
+                  .tr,
               style: t.small),
           if (size >= 512) ...[
             const SizedBox(height: 10),
             AppNotice(
-                '512 gives more detail but can be MUCH slower, heat the phone, and may fail on some devices.',
+                '512 gives more detail but can be MUCH slower, heat the phone, and may fail on some devices.'
+                    .tr,
                 icon: Icons.warning_amber_rounded,
                 color: t.orange),
           ],
@@ -826,21 +878,24 @@ class SettingsView extends GetView<SettingsController> {
       // GPU safety
       _sliderRow(
         context,
-        label: 'GPU safety',
-        valueLabel: guard <= 0 ? 'Off' : '$guard MB',
+        label: 'GPU safety'.tr,
+        valueLabel: guard <= 0 ? 'Off'.tr : '@size MB'.trParams({'size': '$guard'}),
         value: guard.toDouble().clamp(0, 4096),
         min: 0,
         max: 4096,
         divisions: 16,
         caption:
-            'Models at or above this size use CPU. Smaller models can use GPU Experimental.',
+            'Models at or above this size use CPU. Smaller models can use GPU Experimental.'
+                .tr,
         onChanged: (v) => controller.setImageGenGpuGuardMb(v.toInt()),
         below: [
           if (guard <= 0 || guard >= 2048)
             AppNotice(
                 guard <= 0
                     ? 'GPU Safety is off. Large models may crash or freeze on GPU.'
-                    : 'High GPU Safety allows larger models on GPU and may crash, freeze, or overheat some phones.',
+                        .tr
+                    : 'High GPU Safety allows larger models on GPU and may crash, freeze, or overheat some phones.'
+                        .tr,
                 icon: Icons.warning_amber_rounded,
                 color: t.orange),
         ],
@@ -850,7 +905,7 @@ class SettingsView extends GetView<SettingsController> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Backend', style: t.body),
+          Text('Backend'.tr, style: t.body),
           const SizedBox(height: 2),
           Text(controller.imageGpuLabel(), style: t.caption),
           const SizedBox(height: 12),
@@ -865,7 +920,7 @@ class SettingsView extends GetView<SettingsController> {
           ),
           if (selectedBackend != Backend.cpu) ...[
             const SizedBox(height: 10),
-            Text('GPU is experimental and only used below GPU Safety size.',
+            Text('GPU is experimental and only used below GPU Safety size.'.tr,
                 style: t.small.copyWith(color: t.orange)),
           ],
         ]),
@@ -876,6 +931,8 @@ class SettingsView extends GetView<SettingsController> {
 
 /// A settings section on its own page. Rebuilds with the controller state.
 class _SettingsPage extends StatelessWidget {
+  /// English title, translated on each build so the page follows a language
+  /// change made on it.
   final String title;
   final WidgetBuilder builder;
 
@@ -890,7 +947,7 @@ class _SettingsPage extends StatelessWidget {
     final t = AppTokens.of(context);
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: appScreenBar(context, title: title, showBack: true),
+      appBar: appScreenBar(context, title: title.tr, showBack: true),
       body: reactive ? Obx(() => _list(context)) : _list(context),
     );
   }

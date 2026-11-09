@@ -13,7 +13,7 @@ class UpdateSheet extends StatelessWidget {
   const UpdateSheet({super.key});
 
   static String _mb(int bytes) =>
-      '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+      '@size MB'.trParams({'size': (bytes / (1024 * 1024)).toStringAsFixed(1)});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class UpdateSheet extends StatelessWidget {
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Update available',
+              Text('Update available'.tr,
                   style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -43,7 +43,7 @@ class UpdateSheet extends StatelessWidget {
               Text(
                   'PrivateLM ${release.version}'
                   '${release.apkSize > 0 ? ' · ${_mb(release.apkSize)}' : ''}'
-                  '${updates.currentVersion.value.isNotEmpty ? ' · you have ${updates.currentVersion.value}' : ''}',
+                  '${updates.currentVersion.value.isNotEmpty ? ' · ${'you have @version'.trParams({'version': updates.currentVersion.value})}' : ''}',
                   style: t.caption),
             ]),
           ),
@@ -81,9 +81,10 @@ class UpdateSheet extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         if (updates.needsInstallPermission.value) ...[
-          const AppNotice(
+          AppNotice(
             'Allow PrivateLM to install apps, then come back. '
-            'The installer opens automatically.',
+                    'The installer opens automatically.'
+                .tr,
             icon: Icons.lock_open_rounded,
           ),
           const SizedBox(height: 12),
@@ -96,7 +97,8 @@ class UpdateSheet extends StatelessWidget {
         ],
         if (release.apkUrl == null)
           AppNotice(
-              'No APK for this device in the release. Download it from GitHub: ${release.pageUrl}')
+              'No APK for this device in the release. Download it from GitHub: @url'
+                  .trParams({'url': release.pageUrl}))
         else if (downloading) ...[
           AppProgressBar(
               value:
@@ -106,15 +108,20 @@ class UpdateSheet extends StatelessWidget {
             Expanded(
               child: Text(
                   updates.totalBytes.value > 0
-                      ? '${_mb(updates.downloadedBytes.value)} of ${_mb(updates.totalBytes.value)}'
-                      : 'Starting download…',
+                      ? '@done of @total'.trParams({
+                          'done': _mb(updates.downloadedBytes.value),
+                          'total': _mb(updates.totalBytes.value)
+                        })
+                      : 'Starting download…'.tr,
                   style: t.caption),
             ),
-            PillButton(label: 'Cancel', onPressed: updates.cancelDownload),
+            PillButton(label: 'Cancel'.tr, onPressed: updates.cancelDownload),
           ]),
         ] else ...[
           PrimaryButton(
-            label: installing ? 'Opening installer…' : 'Download & install',
+            label: installing
+                ? 'Opening installer…'.tr
+                : 'Download & install'.tr,
             icon: Icons.download_rounded,
             busy: installing,
             onPressed: updates.downloadAndInstall,
@@ -122,7 +129,7 @@ class UpdateSheet extends StatelessWidget {
           const SizedBox(height: 10),
           Row(children: [
             Expanded(
-              child: TonalButton.neutral(context, label: 'Skip this version',
+              child: TonalButton.neutral(context, label: 'Skip this version'.tr,
                   onTap: () {
                 updates.skipVersion(release.version);
                 Navigator.pop(context);
@@ -131,7 +138,7 @@ class UpdateSheet extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: TonalButton.neutral(context,
-                  label: 'Later', onTap: () => Navigator.pop(context)),
+                  label: 'Later'.tr, onTap: () => Navigator.pop(context)),
             ),
           ]),
         ],

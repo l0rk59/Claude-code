@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AttachmentPreview extends StatelessWidget {
@@ -153,15 +154,16 @@ class AttachmentPreview extends StatelessWidget {
 
   static String formatFileSize(int bytes) {
     if (bytes >= 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+      return '@size GB'.trParams(
+          {'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)});
     }
     if (bytes >= 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).round()} MB';
+      return '@size MB'.trParams({'size': '${(bytes / (1024 * 1024)).round()}'});
     }
     if (bytes >= 1024) {
-      return '${(bytes / 1024).round()} KB';
+      return '@size KB'.trParams({'size': '${(bytes / 1024).round()}'});
     }
-    return '$bytes B';
+    return '@size B'.trParams({'size': '$bytes'});
   }
 
   String _typeFromName(String name) {
@@ -197,15 +199,15 @@ class AttachmentPreview extends StatelessWidget {
   String _labelForType(String type) {
     switch (type) {
       case 'image':
-        return 'Image';
+        return 'Image'.tr;
       case 'pdf':
         return 'PDF';
       case 'audio':
-        return 'Audio';
+        return 'Audio'.tr;
       case 'text':
-        return 'Text file';
+        return 'Text file'.tr;
       default:
-        return 'Attachment';
+        return 'Attachment'.tr;
     }
   }
 

@@ -4,8 +4,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 // import 'firebase_options.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/cloud_model_controller.dart';
@@ -14,6 +16,7 @@ import 'controllers/model_controller.dart';
 import 'core/theme.dart';
 //////
 import 'core/routes.dart';
+import 'l10n/app_translations.dart';
 import 'services/hive_service.dart';
 import 'services/inference_service.dart';
 import 'services/cluster_service.dart';
@@ -84,6 +87,11 @@ void main() {
 
     // Settings controller must be initialized before runApp for theme support
     final settingsController = Get.put(SettingsController());
+    // Set the language before the services start: some set status text
+    // as soon as they are created.
+    Get.addTranslations(AppTranslations().keys);
+    Get.locale = AppTranslations.localeFor(settingsController.language.value);
+    Intl.defaultLocale = Get.locale.toString();
     Get.put(CloudModelController());
 
     if (ClusterService.isSupported) Get.put(ClusterService(), permanent: true);
@@ -229,6 +237,15 @@ class PrivateLMApp extends StatelessWidget {
       return GetMaterialApp(
         title: 'PrivateLM',
         debugShowCheckedModeBanner: false,
+        translations: AppTranslations(),
+        locale: AppTranslations.localeFor(settings.language.value),
+        fallbackLocale: AppTranslations.english,
+        supportedLocales: AppTranslations.supportedLocales,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,

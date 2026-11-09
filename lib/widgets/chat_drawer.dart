@@ -95,19 +95,20 @@ class _ChatDrawerState extends State<ChatDrawer> {
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : Colors.black)),
               const SizedBox(height: 4),
-              Text('This conversation will be permanently deleted.',
+              Text('This conversation will be permanently deleted.'.tr,
                   style: GoogleFonts.inter(
                       fontSize: 13.5, color: Theme.of(ctx).hintColor)),
               const SizedBox(height: 22),
               Row(children: [
                 Expanded(
                   child: TonalButton.neutral(ctx,
-                      label: 'Cancel', onTap: () => Navigator.pop(ctx, false)),
+                      label: 'Cancel'.tr,
+                      onTap: () => Navigator.pop(ctx, false)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TonalButton.destructive(ctx,
-                      label: 'Delete', onTap: () => Navigator.pop(ctx, true)),
+                      label: 'Delete'.tr, onTap: () => Navigator.pop(ctx, true)),
                 ),
               ]),
             ],
@@ -125,11 +126,11 @@ class _ChatDrawerState extends State<ChatDrawer> {
     String bucket(DateTime d) {
       final day = DateTime(d.year, d.month, d.day);
       final diff = today.difference(day).inDays;
-      if (diff <= 0) return 'Today';
-      if (diff == 1) return 'Yesterday';
-      if (diff < 7) return 'Previous 7 days';
-      if (diff < 30) return 'Previous 30 days';
-      return 'Older';
+      if (diff <= 0) return 'Today'.tr;
+      if (diff == 1) return 'Yesterday'.tr;
+      if (diff < 7) return 'Previous 7 days'.tr;
+      if (diff < 30) return 'Previous 30 days'.tr;
+      return 'Older'.tr;
     }
 
     final out = <(String, List<ChatSession>)>[];
@@ -170,7 +171,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
             padding: const EdgeInsets.fromLTRB(20, 14, 8, 10),
             child: Row(children: [
               Expanded(
-                child: Text('Chats',
+                child: Text('Chats'.tr,
                     style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -178,7 +179,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
                         color: text)),
               ),
               IconButton(
-                tooltip: 'New chat',
+                tooltip: 'New chat'.tr,
                 onPressed: _newChat,
                 icon: Icon(Icons.edit_square, size: 21, color: accent),
               ),
@@ -199,7 +200,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
                 cursorColor: accent,
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Search',
+                  hintText: 'Search'.tr,
                   hintStyle: GoogleFonts.inter(fontSize: 15, color: muted),
                   prefixIcon:
                       Icon(Icons.search_rounded, size: 19, color: muted),
@@ -249,7 +250,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
                       size: 28,
                       color: muted.withValues(alpha: 0.6)),
                   const SizedBox(height: 12),
-                  Text(_query.isEmpty ? 'No conversations yet' : 'No matches',
+                  Text(_query.isEmpty ? 'No conversations yet'.tr : 'No matches'.tr,
                       style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -257,8 +258,8 @@ class _ChatDrawerState extends State<ChatDrawer> {
                   const SizedBox(height: 4),
                   Text(
                       _query.isEmpty
-                          ? 'Your chats will show up here.'
-                          : 'Try a different word.',
+                          ? 'Your chats will show up here.'.tr
+                          : 'Try a different word.'.tr,
                       style: GoogleFonts.inter(fontSize: 13, color: muted)),
                 ]),
               );
@@ -293,7 +294,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
           // Footer hint
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: Text('Long-press a chat to delete it',
+            child: Text('Long-press a chat to delete it'.tr,
                 style: GoogleFonts.inter(
                     fontSize: 12, color: muted.withValues(alpha: 0.8))),
           ),

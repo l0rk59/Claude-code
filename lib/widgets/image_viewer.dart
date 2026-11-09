@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -48,17 +49,20 @@ class _ImageViewerState extends State<ImageViewer> {
       }
       await Gal.putImageBytes(_bytes);
       if (mounted) {
-        showToast('Saved', 'Image saved to gallery',
+        showToast('Saved'.tr, 'Image saved to gallery'.tr,
             tone: ToastTone.success, duration: const Duration(seconds: 2));
       }
     } on GalException catch (e) {
       if (mounted) {
-        showToast('Not saved', 'Failed to save image: ${e.type.message}',
+        showToast('Not saved'.tr,
+            'Failed to save image: @error'.trParams({'error': e.type.message}),
             tone: ToastTone.error);
       }
     } catch (e) {
       if (mounted) {
-        showToast('Not saved', 'Error saving image: $e', tone: ToastTone.error);
+        showToast(
+            'Not saved'.tr, 'Error saving image: @error'.trParams({'error': '$e'}),
+            tone: ToastTone.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -74,11 +78,12 @@ class _ImageViewerState extends State<ImageViewer> {
       await file.writeAsBytes(_bytes);
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'Generated with PrivateLM',
+        text: 'Generated with PrivateLM'.tr,
       );
     } catch (e) {
       if (mounted) {
-        showToast('Not shared', 'Error sharing image: $e',
+        showToast('Not shared'.tr,
+            'Error sharing image: @error'.trParams({'error': '$e'}),
             tone: ToastTone.error);
       }
     } finally {
@@ -119,20 +124,20 @@ class _ImageViewerState extends State<ImageViewer> {
                   children: [
                     _ChromeButton(
                       icon: Icons.close_rounded,
-                      tooltip: 'Close',
+                      tooltip: 'Close'.tr,
                       onTap: () => Navigator.of(context).pop(),
                     ),
                     const Spacer(),
                     _ChromeButton(
                       icon: Icons.file_download_outlined,
-                      tooltip: 'Download',
+                      tooltip: 'Download'.tr,
                       isLoading: _isSaving,
                       onTap: _download,
                     ),
                     const SizedBox(width: 10),
                     _ChromeButton(
                       icon: Icons.ios_share_rounded,
-                      tooltip: 'Share',
+                      tooltip: 'Share'.tr,
                       isLoading: _isSharing,
                       onTap: _share,
                     ),

@@ -972,7 +972,7 @@ Future<bool> confirmSheet(
     builder: (ctx) => Row(children: [
       Expanded(
         child: TonalButton.neutral(ctx,
-            label: 'Cancel', onTap: () => Navigator.pop(ctx, false)),
+            label: 'Cancel'.tr, onTap: () => Navigator.pop(ctx, false)),
       ),
       const SizedBox(width: 10),
       Expanded(

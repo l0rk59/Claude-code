@@ -21,9 +21,9 @@ void main() {
     });
 
     test('masks bare provider keys', () {
-      final out = redactSecrets(
-          'keys sk-or-v1-0123456789abcdef nvapi-ABCDEFGHIJ12 '
-          'aichat_0123456789abcdef0123');
+      final out =
+          redactSecrets('keys sk-or-v1-0123456789abcdef nvapi-ABCDEFGHIJ12 '
+              'aichat_0123456789abcdef0123');
       expect(out, isNot(contains('0123456789abcdef')));
       expect(out, isNot(contains('ABCDEFGHIJ12')));
     });

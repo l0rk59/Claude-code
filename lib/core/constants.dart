@@ -73,6 +73,9 @@ class AppConstants {
   static const String keyImageGenSize = 'image_gen_size';
   static const String keyImageGenQuantization = 'image_gen_quantization';
   static const String keyFontScale = 'font_scale';
+
+  /// UI language: 'system' (follow the phone), 'en' or 'fr'.
+  static const String keyLanguage = 'language';
   static const String keyBatchModeWarningAccepted =
       'batch_mode_warning_accepted';
 

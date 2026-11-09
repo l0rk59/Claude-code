@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -196,8 +197,12 @@ class _ThoughtDisclosureState extends State<ThoughtDisclosure>
   String get _label {
     final seconds = widget.durationSeconds ?? _liveSeconds;
     if (widget.isThinking) {
-      return seconds > 0 ? 'Thinking for ${seconds}s…' : 'Thinking…';
+      return seconds > 0
+          ? 'Thinking for @seconds s…'.trParams({'seconds': '$seconds'})
+          : 'Thinking…'.tr;
     }
-    return seconds > 0 ? 'Thought for ${seconds}s' : 'Thought';
+    return seconds > 0
+        ? 'Thought for @seconds s'.trParams({'seconds': '$seconds'})
+        : 'Thought'.tr;
   }
 }

@@ -12,6 +12,7 @@ import '../core/haptics.dart';
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
+  // Labels are English; shown with .tr.
   static const _tabs = [
     _NavItem(
         icon: Icons.chat_bubble_outline_rounded,
@@ -101,7 +102,7 @@ class HomeView extends GetView<HomeController> {
                 child: Semantics(
                   selected: current == i,
                   button: true,
-                  label: _tabs[i].label,
+                  label: _tabs[i].label.tr,
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
@@ -121,7 +122,7 @@ class HomeView extends GetView<HomeController> {
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Text(_tabs[i].label,
+                        Text(_tabs[i].label.tr,
                             style: GoogleFonts.inter(
                                 fontSize: 10.5,
                                 letterSpacing: 0.1,
@@ -180,7 +181,7 @@ class HomeView extends GetView<HomeController> {
                             Icon(sel ? tab.activeIcon : tab.icon,
                                 color: sel ? accent : muted, size: 20),
                             const SizedBox(height: 3),
-                            Text(tab.label,
+                            Text(tab.label.tr,
                                 style: GoogleFonts.inter(
                                     fontSize: 10,
                                     fontWeight:

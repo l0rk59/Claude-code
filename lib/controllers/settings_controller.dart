@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../core/constants.dart';
 import '../core/haptics.dart';
 import '../core/ui.dart';
+import '../l10n/app_translations.dart';
 import '../services/hive_service.dart';
 import '../services/app_log_service.dart';
 import '../services/local_image_service.dart';
@@ -19,6 +20,9 @@ class SettingsController extends GetxController {
 
   // Observable settings
   final themeMode = ThemeMode.system.obs;
+
+  /// 'system', 'en' or 'fr' (see [AppTranslations.languageCodes]).
+  final language = AppTranslations.system.obs;
   final inferenceMode = 'local'.obs; // 'local' or 'cloud'
   final cloudProvider = 'openrouter'.obs;
   final openaiKey = ''.obs;
@@ -140,6 +144,10 @@ class SettingsController extends GetxController {
   void _loadSettings() {
     final savedTheme = _hive.getSetting<String>('theme_mode');
     themeMode.value = _themeModeFromString(savedTheme);
+    final savedLanguage = _hive.getSetting<String>(AppConstants.keyLanguage);
+    language.value = AppTranslations.languageCodes.contains(savedLanguage)
+        ? savedLanguage!
+        : AppTranslations.system;
     inferenceMode.value = _hive.getSetting(AppConstants.keyInferenceMode,
             defaultValue: 'local') ??
         'local';
@@ -796,6 +804,13 @@ class SettingsController extends GetxController {
     final clamped = value.clamp(0.8, 1.4);
     fontScale.value = clamped;
     await _hive.setSetting(AppConstants.keyFontScale, clamped);
+  }
+
+  Future<void> setLanguage(String code) async {
+    if (!AppTranslations.languageCodes.contains(code)) return;
+    language.value = code;
+    await _hive.setSetting(AppConstants.keyLanguage, code);
+    await AppTranslations.apply(code);
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

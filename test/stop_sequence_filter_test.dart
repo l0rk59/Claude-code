@@ -24,8 +24,8 @@ void main() {
 
   test('catches a stop sequence split across tokens', () {
     final emitted = <String>[];
-    final out = run(['<|end|>'], ['Done', '<|e', 'nd|>', 'junk'],
-        emitted: emitted);
+    final out =
+        run(['<|end|>'], ['Done', '<|e', 'nd|>', 'junk'], emitted: emitted);
     expect(out, 'Done');
     // No fragment of the stop sequence is ever emitted.
     expect(emitted.join(), isNot(contains('<|')));

@@ -28,8 +28,8 @@ void main() {
     Map<String, String> headers = const {},
     String? body,
   }) async {
-    final req = await client.openUrl(
-        method, Uri.parse('http://127.0.0.1:$port$path'));
+    final req =
+        await client.openUrl(method, Uri.parse('http://127.0.0.1:$port$path'));
     req.persistentConnection = false;
     headers.forEach(req.headers.set);
     if (body != null) req.write(body);
@@ -115,8 +115,7 @@ void main() {
       expect(fake.lastMaxTokens, 7);
     });
 
-    test('passes OpenAI stop (string or list) through to the model',
-        () async {
+    test('passes OpenAI stop (string or list) through to the model', () async {
       var res = await send('POST', '/v1/chat/completions',
           headers: json,
           body: jsonEncode({
@@ -147,8 +146,8 @@ void main() {
 
     test('reports 503 when the generation is interrupted', () async {
       fake.tokensToEmit = 50;
-      final pending = send('POST', '/v1/chat/completions',
-          headers: json, body: chatBody());
+      final pending =
+          send('POST', '/v1/chat/completions', headers: json, body: chatBody());
       await Future.delayed(const Duration(milliseconds: 100));
       await fake.stopGeneration(); // e.g. the user started a chat reply
       expect((await pending).statusCode, HttpStatus.serviceUnavailable);
