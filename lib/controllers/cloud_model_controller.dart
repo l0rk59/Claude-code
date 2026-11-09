@@ -198,6 +198,7 @@ class CloudModelController extends GetxController {
     return apiKeyFor(provider).isNotEmpty;
   }
 
+  /// English; the Models screen compares it and shows it with .tr.
   String statusLabel(String provider) {
     return isConfigured(provider) ? 'Connected' : 'Needs Key';
   }
@@ -230,14 +231,18 @@ class CloudModelController extends GetxController {
     final fetchedAt = fetchedAtByProvider[provider];
     if (fetchedAt == null &&
         (modelsByProvider[provider] ?? const <String>[]).isNotEmpty) {
-      return 'Built-in list';
+      return 'Built-in list'.tr;
     }
-    if (fetchedAt == null) return 'Not fetched yet';
+    if (fetchedAt == null) return 'Not fetched yet'.tr;
     final diff = DateTime.now().difference(fetchedAt);
-    if (diff.inMinutes < 1) return 'Updated just now';
-    if (diff.inHours < 1) return 'Updated ${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return 'Updated ${diff.inHours}h ago';
-    return 'Updated ${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return 'Updated just now'.tr;
+    if (diff.inHours < 1) {
+      return 'Updated @count min ago'.trParams({'count': '${diff.inMinutes}'});
+    }
+    if (diff.inDays < 1) {
+      return 'Updated @count h ago'.trParams({'count': '${diff.inHours}'});
+    }
+    return 'Updated @count d ago'.trParams({'count': '${diff.inDays}'});
   }
 
   List<String> modelTagsFor(String provider, String modelId) {
@@ -302,7 +307,7 @@ class CloudModelController extends GetxController {
     await _settings.setCloudModel(provider, normalized);
     await _settings.setInferenceMode('cloud');
     if (!showSnackbar) return;
-    showToast('Cloud Model Active', '$provider · $normalized',
+    showToast('Cloud Model Active'.tr, '$provider · $normalized',
         tone: ToastTone.success);
   }
 
@@ -353,16 +358,16 @@ class CloudModelController extends GetxController {
     final apiKey = customApiKeyController.text.trim();
     final model = customModelController.text.trim();
 
-    if (baseUrl.isEmpty) return 'Base URL is required.';
+    if (baseUrl.isEmpty) return 'Base URL is required.'.tr;
     final uri = Uri.tryParse(baseUrl);
     if (uri == null ||
         !uri.hasScheme ||
         (uri.scheme != 'https' && uri.scheme != 'http') ||
         uri.host.isEmpty) {
-      return 'Enter a valid OpenAI-compatible base URL.';
+      return 'Enter a valid OpenAI-compatible base URL.'.tr;
     }
-    if (apiKey.isEmpty) return 'API key is required.';
-    if (model.isEmpty) return 'Model ID is required.';
+    if (apiKey.isEmpty) return 'API key is required.'.tr;
+    if (model.isEmpty) return 'Model ID is required.'.tr;
     return null;
   }
 

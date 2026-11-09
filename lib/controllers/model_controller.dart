@@ -1472,11 +1472,11 @@ class ModelController extends GetxController {
 
   /// Phone cluster errors (from ClusterService or the native cluster setup)
   /// already say what to do; anything else gets the generic tips.
+  /// "cluster" also matches ClusterService's French messages.
   static bool _isClusterError(String rawError) {
     final lower = rawError.toLowerCase();
-    return lower.contains('phone cluster') ||
+    return lower.contains('cluster') ||
         lower.contains('worker') ||
-        lower.contains('cluster:') ||
         lower.contains('too big for these');
   }
 

@@ -21,7 +21,7 @@ class ServerController extends GetxController {
   final isRunning = false.obs;
   final isStarting = false.obs;
   final localUrl = RxnString();
-  final serverStatus = 'Server stopped'.obs;
+  final serverStatus = 'Server stopped'.tr.obs;
   final lastError = RxnString();
 
   final useApiKey = false.obs;
@@ -57,7 +57,7 @@ class ServerController extends GetxController {
   bool get hasLocalModel => inference.isModelLoaded.value;
 
   String get modelName => inference.loadedModelName.value.isEmpty
-      ? 'No model loaded'
+      ? 'No model loaded'.tr
       : inference.loadedModelName.value;
 
   Future<void> toggleServer(bool enabled) async {
@@ -72,14 +72,14 @@ class ServerController extends GetxController {
     if (isRunning.value || isStarting.value) return;
     lastError.value = null;
     if (!hasLocalModel) {
-      lastError.value = 'Load a local GGUF or LiteRT-LM model first.';
-      showToast('Server not started', lastError.value!,
+      lastError.value = 'Load a local GGUF or LiteRT-LM model first.'.tr;
+      showToast('Server not started'.tr, lastError.value!,
           tone: ToastTone.warning);
       return;
     }
 
     isStarting.value = true;
-    serverStatus.value = 'Starting server...';
+    serverStatus.value = 'Starting server...'.tr;
     await saveSettings();
 
     try {
@@ -91,15 +91,15 @@ class ServerController extends GetxController {
       );
       localUrl.value = _server.localUrl;
       isRunning.value = true;
-      serverStatus.value = 'Server running';
+      serverStatus.value = 'Server running'.tr;
       if (allowNetwork.value && Get.isRegistered<ClusterService>()) {
         Get.find<ClusterService>().serving.value = true;
       }
     } catch (e) {
       lastError.value = '$e';
-      serverStatus.value = 'Server failed';
+      serverStatus.value = 'Server failed'.tr;
       Get.find<AppLogService>().error('API server failed', details: e);
-      showToast('Server failed', '$e', tone: ToastTone.error);
+      showToast('Server failed'.tr, '$e', tone: ToastTone.error);
     } finally {
       isStarting.value = false;
     }
@@ -110,7 +110,7 @@ class ServerController extends GetxController {
     await _server.stop();
     isRunning.value = false;
     localUrl.value = null;
-    serverStatus.value = 'Server stopped';
+    serverStatus.value = 'Server stopped'.tr;
     if (Get.isRegistered<ClusterService>()) {
       Get.find<ClusterService>().serving.value = false;
     }
@@ -174,7 +174,8 @@ class ServerController extends GetxController {
 
   Future<void> copyText(String text, String label) async {
     await Clipboard.setData(ClipboardData(text: text));
-    showToast('Copied', '$label copied.', tone: ToastTone.success);
+    showToast('Copied'.tr, '@label copied.'.trParams({'label': label}),
+        tone: ToastTone.success);
   }
 
   String get baseUrl => localUrl.value ?? 'http://localhost:$port';

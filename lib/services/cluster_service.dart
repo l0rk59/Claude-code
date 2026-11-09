@@ -146,7 +146,8 @@ class ClusterService extends GetxService {
     if (next == role) return;
     if (next != ClusterRole.worker && role == ClusterRole.worker) {
       if (workerStopsWithApp) {
-        showToast('Still sharing', 'Close PrivateLM to stop sharing this device.');
+        showToast('Still sharing'.tr,
+            'Close PrivateLM to stop sharing this device.'.tr);
         return;
       }
       await stopWorker();
@@ -242,7 +243,7 @@ class ClusterService extends GetxService {
     final host = params['host'];
     final port = int.tryParse(params['port'] ?? '');
     if (uri == null || uri.scheme != _qrScheme || host == null || port == null) {
-      return 'That isn\'t a PrivateLM worker code';
+      return "That isn't a PrivateLM worker code".tr;
     }
     return _add(ClusterWorker(
       name: params['name'] ?? host,
@@ -259,12 +260,14 @@ class ClusterService extends GetxService {
   /// an error message, or null on success.
   Future<String?> addManual(String input) async {
     final text = input.trim();
-    if (text.isEmpty) return 'Enter the worker phone\'s IP address';
+    if (text.isEmpty) return "Enter the worker phone's IP address".tr;
     final host = text.contains(':') ? text.substring(0, text.lastIndexOf(':')) : text;
     final port = text.contains(':')
         ? int.tryParse(text.substring(text.lastIndexOf(':') + 1))
         : LlamaCluster.defaultPort;
-    if (host.isEmpty || port == null) return 'Use the form 192.168.1.20:50052';
+    if (host.isEmpty || port == null) {
+      return 'Use the form 192.168.1.20:50052'.tr;
+    }
     return _add(ClusterWorker(name: host, host: host, port: port));
   }
 
@@ -301,8 +304,9 @@ class ClusterService extends GetxService {
 
   Future<String?> _add(ClusterWorker worker) async {
     if (!await LlamaCluster.probe(worker.endpoint)) {
-      return 'Can\'t reach ${worker.endpoint}. Check that the phone is a worker '
-          'and on the same Wi-Fi.';
+      return "Can't reach @endpoint. Check that the phone is a worker "
+              'and on the same Wi-Fi.'
+          .trParams({'endpoint': worker.endpoint});
     }
     workers.removeWhere((w) => w.endpoint == worker.endpoint);
     workers.add(worker);
@@ -364,7 +368,8 @@ class ClusterService extends GetxService {
     final available = workers.where((w) => !offline.any((o) => o.endpoint == w.endpoint)).toList();
     if (offline.isNotEmpty) {
       final names = offline.map((w) => w.model ?? w.name).join(', ');
-      showToast('Phone cluster', 'Not reachable, loading without: $names');
+      showToast('Phone cluster'.tr,
+          'Not reachable, loading without: @names'.trParams({'names': names}));
     }
 
     final modelMb = await File(modelPath).length() / (1024 * 1024);
@@ -380,11 +385,22 @@ class ClusterService extends GetxService {
     ];
     final totalMb = phones.fold<double>(0, (a, p) => a + p.capacityMb);
     if (needMb > totalMb) {
-      throw Exception('This model (${_gb(modelMb)}) is too big for these '
-          '${phones.length} phones: together they have about ${_gb(totalMb)} '
-          'free.${offline.isEmpty ? '' : ' Not reachable: ${offline.map((w) => w.model ?? w.name).join(', ')}.'} '
-          'Add another worker, close apps on the phones, or pick a '
-          'smaller model.');
+      final params = {
+        'size': _gb(modelMb),
+        'count': '${phones.length}',
+        'free': _gb(totalMb),
+        'names': offline.map((w) => w.model ?? w.name).join(', '),
+      };
+      throw Exception(offline.isEmpty
+          ? 'This model (@size) is too big for these @count phones: together '
+                  'they have about @free free. Add another worker, close apps '
+                  'on the phones, or pick a smaller model.'
+              .trParams(params)
+          : 'This model (@size) is too big for these @count phones: together '
+                  'they have about @free free. Not reachable: @names. Add '
+                  'another worker, close apps on the phones, or pick a '
+                  'smaller model.'
+              .trParams(params));
     }
 
     if (available.isEmpty) {
@@ -416,8 +432,9 @@ class ClusterService extends GetxService {
       );
     } on PlatformException catch (e) {
       throw Exception(
-          '${e.message ?? 'A worker is unreachable'}. Turn on Worker on that '
-          'phone, or set this phone\'s Phone cluster to Off.');
+          "@error. Turn on Worker on that phone, or set this phone's Phone "
+                  'cluster to Off.'
+              .trParams({'error': e.message ?? 'A worker is unreachable'.tr}));
     }
     return used.length;
   }
@@ -466,20 +483,23 @@ class ClusterService extends GetxService {
     if (role != ClusterRole.master || workers.isEmpty || context == null) return true;
     final go = await showAppSheet<bool>(
       context,
-      title: 'This model can\'t use your workers',
-      subtitle: '${model.replaceAll(RegExp(r'\.(litertlm|task)$'), '')} is a LiteRT '
-          'model, and only GGUF models can be shared across phones. It will run '
-          'on this phone only. To use your workers, load a GGUF model instead.',
+      title: "This model can't use your workers".tr,
+      subtitle: '@name is a LiteRT model, and only GGUF models can be shared '
+              'across phones. It will run on this phone only. To use your '
+              'workers, load a GGUF model instead.'
+          .trParams(
+              {'name': model.replaceAll(RegExp(r'\.(litertlm|task)$'), '')}),
       builder: (ctx) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PrimaryButton(
-            label: 'Load on this phone only',
+            label: 'Load on this phone only'.tr,
             icon: Icons.smartphone_rounded,
             onPressed: () => Navigator.pop(ctx, true),
           ),
           const SizedBox(height: 10),
-          TonalButton.neutral(ctx, label: 'Cancel', onTap: () => Navigator.pop(ctx, false)),
+          TonalButton.neutral(ctx,
+              label: 'Cancel'.tr, onTap: () => Navigator.pop(ctx, false)),
         ],
       ),
     );
@@ -492,23 +512,29 @@ class ClusterService extends GetxService {
     if (context == null) return false;
     final share = await showAppSheet<bool>(
       context,
-      title: 'This model fits on this phone',
-      subtitle: '${model.replaceAll(RegExp(r'\.gguf$'), '')} needs about '
-          '${_gb(modelMb)}, and this phone has room for it. Running it here '
-          'is faster, because sharing sends every word over Wi-Fi. Share it '
-          'to free up memory on this phone.',
+      title: 'This model fits on this phone'.tr,
+      subtitle: '@name needs about @size, and this phone has room for it. '
+              'Running it here is faster, because sharing sends every word '
+              'over Wi-Fi. Share it to free up memory on this phone.'
+          .trParams({
+        'name': model.replaceAll(RegExp(r'\.gguf$'), ''),
+        'size': _gb(modelMb),
+      }),
       builder: (ctx) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PrimaryButton(
-            label: 'Load on this phone only',
+            label: 'Load on this phone only'.tr,
             icon: Icons.smartphone_rounded,
             onPressed: () => Navigator.pop(ctx, false),
           ),
           const SizedBox(height: 10),
           TonalButton.neutral(
             ctx,
-            label: 'Share with $workerCount worker${workerCount == 1 ? '' : 's'}',
+            label: workerCount == 1
+                ? 'Share with 1 worker'.tr
+                : 'Share with @count workers'
+                    .trParams({'count': '$workerCount'}),
             onTap: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -534,7 +560,7 @@ class ClusterService extends GetxService {
     final fileMb = await File(modelPath).length() / (1024 * 1024);
     final remoteMb = remote.values.fold<double>(0, (a, b) => a + b);
     split.assignAll([
-      ClusterShare(deviceName.isEmpty ? 'This phone' : deviceName,
+      ClusterShare(deviceName.isEmpty ? 'This phone'.tr : deviceName,
           math.max(0, fileMb - remoteMb), isThisPhone: true),
       for (final e in remote.entries) ClusterShare(e.key, e.value),
     ]);
@@ -542,5 +568,6 @@ class ClusterService extends GetxService {
 
   void clearSplit() => split.clear();
 
-  static String _gb(double mb) => '${(mb / 1024).toStringAsFixed(1)} GB';
+  static String _gb(double mb) =>
+      '@size GB'.trParams({'size': (mb / 1024).toStringAsFixed(1)});
 }

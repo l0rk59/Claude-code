@@ -44,7 +44,7 @@ class _ClusterViewState extends State<ClusterView> {
     final t = AppTokens.of(context);
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: appScreenBar(context, title: 'Phone cluster', showBack: true),
+      appBar: appScreenBar(context, title: 'Phone cluster'.tr, showBack: true),
       body: Obx(() {
         final role = cluster.role;
         return ListView(
@@ -53,9 +53,9 @@ class _ClusterViewState extends State<ClusterView> {
             const SizedBox(height: 8),
             AppSegmented<ClusterRole>(
               items: [
-                (ClusterRole.off, 'Off'),
-                if (ClusterService.canBeMaster) (ClusterRole.master, 'Master'),
-                (ClusterRole.worker, 'Worker'),
+                (ClusterRole.off, 'Off'.tr),
+                if (ClusterService.canBeMaster) (ClusterRole.master, 'Master'.tr),
+                (ClusterRole.worker, 'Worker'.tr),
               ],
               selected: role,
               onChanged: cluster.setRole,
@@ -63,7 +63,7 @@ class _ClusterViewState extends State<ClusterView> {
             const SizedBox(height: 16),
             if (role != ClusterRole.off && cluster.wifiAddress.value == null) ...[
               AppNotice(
-                'Turn on Wi-Fi. All phones in the cluster must be on the same Wi-Fi network.',
+                'Turn on Wi-Fi. All phones in the cluster must be on the same Wi-Fi network.'.tr,
                 icon: Icons.wifi_off_rounded,
                 color: t.orange,
               ),
@@ -86,10 +86,10 @@ class _ClusterViewState extends State<ClusterView> {
               ? 'Run models too big for one phone by sharing the work across '
                   'phones on the same Wi-Fi.\n\n'
                   'Master: the phone you chat on. It runs the model.\n'
-                  'Worker: a phone that lends its memory to the master.'
+                  'Worker: a phone that lends its memory to the master.'.tr
               : 'Help an Android phone running PrivateLM run models too big for '
                   'it alone: choose Worker, then scan this device\'s QR code '
-                  'from that phone.',
+                  'from that phone.'.tr,
           icon: Icons.hub_outlined,
         ),
       ];
@@ -106,31 +106,31 @@ class _ClusterViewState extends State<ClusterView> {
       body = _centered(context, [
         Icon(Icons.error_outline_rounded, size: 40, color: t.red),
         const SizedBox(height: 12),
-        Text('Worker stopped', style: t.bodyStrong),
+        Text('Worker stopped'.tr, style: t.bodyStrong),
         const SizedBox(height: 4),
-        Text(s.error ?? 'Unknown error', style: t.caption, textAlign: TextAlign.center),
+        Text(s.error ?? 'Unknown error'.tr, style: t.caption, textAlign: TextAlign.center),
         const SizedBox(height: 16),
-        PillButton(label: 'Try again', primary: true, onPressed: cluster.startWorker),
+        PillButton(label: 'Try again'.tr, primary: true, onPressed: cluster.startWorker),
       ]);
     } else if (s.peer != null) {
       body = _centered(context, [
         _PulsingDot(color: t.green),
         const SizedBox(height: 14),
-        Text('Sharing with master', style: t.bodyStrong.copyWith(fontSize: 18)),
+        Text('Sharing with master'.tr, style: t.bodyStrong.copyWith(fontSize: 18)),
         const SizedBox(height: 4),
         Text(s.peer!, style: t.caption),
         const SizedBox(height: 20),
         Row(children: [
-          Expanded(child: _Stat(label: 'Holding', value: _gb(s.heldMb))),
-          Expanded(child: _Stat(label: 'Free at start', value: _gb(s.ramMb))),
-          Expanded(child: _Stat(label: 'Memory speed', value: '${s.bandwidth.toStringAsFixed(1)} GB/s')),
+          Expanded(child: _Stat(label: 'Holding'.tr, value: _gb(s.heldMb))),
+          Expanded(child: _Stat(label: 'Free at start'.tr, value: _gb(s.ramMb))),
+          Expanded(child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
         ]),
       ]);
     } else if (!s.running || qr == null) {
       body = _centered(context, [
         const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5)),
         const SizedBox(height: 16),
-        Text(s.running ? 'Waiting for Wi-Fi…' : 'Measuring this phone…', style: t.caption),
+        Text(s.running ? 'Waiting for Wi-Fi…'.tr : 'Measuring this phone…'.tr, style: t.caption),
       ]);
     } else {
       body = _centered(context, [
@@ -143,17 +143,20 @@ class _ClusterViewState extends State<ClusterView> {
           child: QrImageView(data: qr, size: 220, padding: EdgeInsets.zero),
         ),
         const SizedBox(height: 16),
-        Text('Scan this from the master phone', style: t.bodyStrong),
+        Text('Scan this from the master phone'.tr, style: t.bodyStrong),
         const SizedBox(height: 6),
         Row(mainAxisSize: MainAxisSize.min, children: [
           StatusDot(t.green, size: 8),
           const SizedBox(width: 6),
-          Text('Ready · ${cluster.wifiAddress.value}', style: t.caption),
+          Text(
+              'Ready · @address'
+                  .trParams({'address': '${cluster.wifiAddress.value}'}),
+              style: t.caption),
         ]),
         const SizedBox(height: 16),
         Row(children: [
-          Expanded(child: _Stat(label: 'Free memory', value: _gb(s.ramMb))),
-          Expanded(child: _Stat(label: 'Memory speed', value: '${s.bandwidth.toStringAsFixed(1)} GB/s')),
+          Expanded(child: _Stat(label: 'Free memory'.tr, value: _gb(s.ramMb))),
+          Expanded(child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
         ]),
       ]);
     }
@@ -163,15 +166,15 @@ class _ClusterViewState extends State<ClusterView> {
         AppNotice(
           'Android is slowing this worker down (slow cores only), which slows '
           'the whole cluster. Set PrivateLM\'s battery use to Unrestricted, '
-          'then turn Worker off and on.',
+          'then turn Worker off and on.'.tr,
           icon: Icons.speed_rounded,
           color: t.orange,
         ),
         const SizedBox(height: 8),
-        const Align(
+        Align(
           alignment: Alignment.centerLeft,
           child: PillButton(
-            label: 'Set Unrestricted',
+            label: 'Set Unrestricted'.tr,
             primary: true,
             onPressed: LlamaCluster.requestBatteryUnrestricted,
           ),
@@ -181,10 +184,10 @@ class _ClusterViewState extends State<ClusterView> {
       AppCard(padding: const EdgeInsets.fromLTRB(16, 24, 16, 20), child: body),
       SectionFootnote(ClusterService.workerStopsWithApp
           ? 'Keep this device plugged in, on the same Wi-Fi, with PrivateLM open: '
-              'iOS pauses apps in the background. Close PrivateLM to stop sharing.'
+              'iOS pauses apps in the background. Close PrivateLM to stop sharing.'.tr
           : 'Keep this phone plugged in and on the same Wi-Fi, with PrivateLM '
               'open: the screen stays on while sharing, because Android slows '
-              'background work. Set Phone cluster to Off to stop.'),
+              'background work. Set Phone cluster to Off to stop.'.tr),
     ];
   }
 
@@ -201,18 +204,19 @@ class _ClusterViewState extends State<ClusterView> {
         const SizedBox(height: 16),
       ],
       PrimaryButton(
-        label: 'Scan a worker\'s QR code',
+        label: 'Scan a worker\'s QR code'.tr,
         icon: Icons.qr_code_scanner_rounded,
         onPressed: _scanQr,
       ),
-      SectionHeader('Workers (${cluster.workers.length})'),
+      SectionHeader(
+          'Workers (@count)'.trParams({'count': '${cluster.workers.length}'})),
       if (cluster.workers.isEmpty)
-        const AppGroup(children: [
+        AppGroup(children: [
           EmptyState(
             icon: Icons.devices_other_rounded,
-            title: 'No workers yet',
+            title: 'No workers yet'.tr,
             message: 'On each other phone, open Phone cluster, choose Worker, '
-                'then scan the QR code it shows.',
+                'then scan the QR code it shows.'.tr,
           ),
         ])
       else
@@ -223,32 +227,32 @@ class _ClusterViewState extends State<ClusterView> {
               title: w.model ?? w.name,
               subtitle: [
                 w.endpoint,
-                if (w.ramMb != null) '${_gb(w.ramMb!)} free',
-                if (w.bandwidth != null) '${w.bandwidth!.toStringAsFixed(1)} GB/s',
+                if (w.ramMb != null) '@size free'.trParams({'size': _gb(w.ramMb!)}),
+                if (w.bandwidth != null) _gbs(w.bandwidth!),
               ].join(' · '),
               trailing: IconButton(
                 icon: Icon(Icons.close_rounded, color: t.muted),
-                tooltip: 'Remove',
+                tooltip: 'Remove'.tr,
                 onPressed: () => cluster.remove(w),
               ),
             ),
         ]),
-      const SectionFootnote(
+      SectionFootnote(
         'Used the next time you load a GGUF model. If the model fits on this '
         'phone you can keep it here, which is faster. If it doesn\'t, the '
         'fastest phones get the biggest share and phones that aren\'t needed '
-        'are left out.',
+        'are left out.'.tr,
       ),
-      const SectionHeader('Other ways to add'),
+      SectionHeader('Other ways to add'.tr),
       Row(children: [
         PillButton(
-          label: cluster.isScanning.value ? 'Searching…' : 'Find nearby',
+          label: cluster.isScanning.value ? 'Searching…'.tr : 'Find nearby'.tr,
           icon: Icons.wifi_find_rounded,
           onPressed: cluster.isScanning.value ? null : cluster.scanNearby,
         ),
         const SizedBox(width: 10),
         PillButton(
-          label: 'Enter IP',
+          label: 'Enter IP'.tr,
           icon: Icons.keyboard_rounded,
           onPressed: () => _enterIp(context),
         ),
@@ -262,7 +266,7 @@ class _ClusterViewState extends State<ClusterView> {
               title: w.model ?? w.name,
               subtitle: w.endpoint,
               trailing: PillButton(
-                label: 'Add',
+                label: 'Add'.tr,
                 primary: true,
                 onPressed: () => _report(cluster.addFound(w)),
               ),
@@ -281,8 +285,8 @@ class _ClusterViewState extends State<ClusterView> {
     final ctrl = TextEditingController();
     final input = await showAppSheet<String>(
       context,
-      title: 'Enter worker IP',
-      subtitle: 'Shown under the worker\'s QR code',
+      title: 'Enter worker IP'.tr,
+      subtitle: 'Shown under the worker\'s QR code'.tr,
       builder: (ctx) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -295,7 +299,7 @@ class _ClusterViewState extends State<ClusterView> {
             onSubmitted: (v) => Navigator.pop(ctx, v),
           ),
           const SizedBox(height: 16),
-          PrimaryButton(label: 'Add', onPressed: () => Navigator.pop(ctx, ctrl.text)),
+          PrimaryButton(label: 'Add'.tr, onPressed: () => Navigator.pop(ctx, ctrl.text)),
         ],
       ),
     );
@@ -306,15 +310,20 @@ class _ClusterViewState extends State<ClusterView> {
   Future<void> _report(Future<String?> adding) async {
     final error = await adding;
     if (error != null) {
-      showToast('Couldn\'t add worker', error, tone: ToastTone.error);
+      showToast('Couldn\'t add worker'.tr, error, tone: ToastTone.error);
     } else {
-      showToast('Worker added', 'Used the next time you load a GGUF model.',
+      showToast('Worker added'.tr, 'Used the next time you load a GGUF model.'.tr,
           tone: ToastTone.success);
     }
   }
 }
 
-String _gb(num mb) => '${(mb / 1024).toStringAsFixed(1)} GB';
+String _gb(num mb) =>
+    '@size GB'.trParams({'size': (mb / 1024).toStringAsFixed(1)});
+
+/// Memory speed, e.g. "4.2 GB/s".
+String _gbs(double bandwidth) =>
+    '@size GB/s'.trParams({'size': bandwidth.toStringAsFixed(1)});
 
 /// How the loaded model is spread across phones: a stacked bar and legend.
 class _SplitCard extends StatelessWidget {
@@ -328,9 +337,12 @@ class _SplitCard extends StatelessWidget {
     final total = shares.fold<double>(0, (a, s) => a + s.mb);
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Loaded model', style: t.bodyStrong),
+        Text('Loaded model'.tr, style: t.bodyStrong),
         const SizedBox(height: 2),
-        Text('Running on ${shares.length} phones · ${_gb(total)}', style: t.caption),
+        Text(
+            'Running on @count phones · @size'
+                .trParams({'count': '${shares.length}', 'size': _gb(total)}),
+            style: t.caption),
         const SizedBox(height: 14),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
@@ -357,7 +369,9 @@ class _SplitCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  shares[i].isThisPhone ? '${shares[i].name} (this phone)' : shares[i].name,
+                  shares[i].isThisPhone
+                      ? '@name (this phone)'.trParams({'name': shares[i].name})
+                      : shares[i].name,
                   style: t.body,
                 ),
               ),
@@ -474,7 +488,7 @@ class _QrScanPageState extends State<_QrScanPage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Scan worker QR code'),
+        title: Text('Scan worker QR code'.tr),
       ),
       body: Stack(children: [
         MobileScanner(controller: _controller, onDetect: _onDetect),
@@ -488,14 +502,14 @@ class _QrScanPageState extends State<_QrScanPage> {
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           left: 24,
           right: 24,
           bottom: 48,
           child: Text(
-            'Point at the QR code on the worker phone',
+            'Point at the QR code on the worker phone'.tr,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
           ),
         ),
       ]),

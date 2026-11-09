@@ -18,7 +18,7 @@ class ServerView extends GetView<ServerController> {
 
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: appScreenBar(context, title: 'Server'),
+      appBar: appScreenBar(context, title: 'Server'.tr),
       body: Obx(() {
         final isRunning = controller.isRunning.value;
         final isStarting = controller.isStarting.value;
@@ -37,29 +37,29 @@ class ServerView extends GetView<ServerController> {
             ],
 
             // ── Model ──
-            const SectionHeader('Model'),
+            SectionHeader('Model'.tr),
             AppGroup(children: [
               AppRow(
                 icon: Icons.memory_rounded,
                 title: controller.modelName,
                 subtitle: controller.hasLocalModel
-                    ? 'Loaded on this device'
-                    : 'Load a GGUF or LiteRT-LM model to serve it',
+                    ? 'Loaded on this device'.tr
+                    : 'Load a GGUF or LiteRT-LM model to serve it'.tr,
                 trailing: controller.hasLocalModel
-                    ? AppTag('Ready', color: t.green)
-                    : AppTag('Not loaded', color: t.orange),
+                    ? AppTag('Ready'.tr, color: t.green)
+                    : AppTag('Not loaded'.tr, color: t.orange),
               ),
             ]),
 
             // ── Access ──
-            const SectionHeader('Access'),
+            SectionHeader('Access'.tr),
             AppGroup(children: [
               AppRow(
                 icon: Icons.lan_outlined,
-                title: 'Allow network access',
+                title: 'Allow network access'.tr,
                 subtitle: allowNetwork
-                    ? 'Reachable from other devices on your network'
-                    : 'Only apps on this device can connect',
+                    ? 'Reachable from other devices on your network'.tr
+                    : 'Only apps on this device can connect'.tr,
                 trailing: Switch(
                   value: allowNetwork,
                   onChanged:
@@ -68,10 +68,10 @@ class ServerView extends GetView<ServerController> {
               ),
               AppRow(
                 icon: Icons.key_outlined,
-                title: 'Require API key',
+                title: 'Require API key'.tr,
                 subtitle: allowNetwork
-                    ? 'Always on while network access is enabled'
-                    : 'Clients send Authorization: Bearer <key>',
+                    ? 'Always on while network access is enabled'.tr
+                    : 'Clients send Authorization: Bearer <key>'.tr,
                 trailing: Switch(
                   value: controller.requiresApiKey,
                   onChanged:
@@ -81,10 +81,10 @@ class ServerView extends GetView<ServerController> {
             ]),
             const SizedBox(height: 12),
             AppField(
-              label: 'API key',
+              label: 'API key'.tr,
               helper: controller.requiresApiKey
-                  ? 'Required for every request.'
-                  : 'Optional. Only checked when "Require API key" is on.',
+                  ? 'Required for every request.'.tr
+                  : 'Optional. Only checked when "Require API key" is on.'.tr,
               child: TextField(
                 controller: controller.apiKeyCtrl,
                 onChanged: controller.onApiKeyEdited,
@@ -94,10 +94,10 @@ class ServerView extends GetView<ServerController> {
                 enableSuggestions: false,
                 decoration: appInputDecoration(
                   context,
-                  hint: controller.requiresApiKey ? 'Required' : 'Optional',
+                  hint: controller.requiresApiKey ? 'Required'.tr : 'Optional'.tr,
                   suffix: Row(mainAxisSize: MainAxisSize.min, children: [
                     IconButton(
-                      tooltip: 'Generate key',
+                      tooltip: 'Generate key'.tr,
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
                         Haptics.lightImpact();
@@ -108,7 +108,7 @@ class ServerView extends GetView<ServerController> {
                     ),
                     _CopyButton(
                       text: hasKey ? controller.apiKey.value : null,
-                      tooltip: 'Copy key',
+                      tooltip: 'Copy key'.tr,
                     ),
                     const SizedBox(width: 4),
                   ]),
@@ -118,11 +118,11 @@ class ServerView extends GetView<ServerController> {
 
             // ── Endpoints ──
             if (isRunning) ...[
-              const SectionHeader('Endpoints'),
+              SectionHeader('Endpoints'.tr),
               AppGroup(children: [
-                _UrlRow(label: 'Base URL', url: controller.localUrl.value),
+                _UrlRow(label: 'Base URL'.tr, url: controller.localUrl.value),
                 _UrlRow(
-                    label: 'OpenAI base URL',
+                    label: 'OpenAI base URL'.tr,
                     url: controller.localUrl.value == null
                         ? null
                         : controller.openAiBaseUrl),
@@ -131,22 +131,22 @@ class ServerView extends GetView<ServerController> {
               _HealthTest(baseUrl: controller.localUrl.value),
 
               // ── Examples ──
-              const SectionHeader('Usage examples'),
+              SectionHeader('Usage examples'.tr),
               _CodeBlock(
-                title: 'List models',
+                title: 'List models'.tr,
                 lang: 'curl',
                 code: 'curl ${controller.baseUrl}/v1/models${_authHeader()}',
               ),
               const SizedBox(height: 12),
               _CodeBlock(
-                title: 'Chat completion',
+                title: 'Chat completion'.tr,
                 lang: 'curl',
                 code:
                     'curl ${controller.baseUrl}/v1/chat/completions \\\n  -H "Content-Type: application/json"${_authHeader()} \\\n  -d \'{"model":"${controller.inference.loadedModelName.value}","messages":[{"role":"user","content":"Hello"}]}\'',
               ),
               const SizedBox(height: 12),
               _CodeBlock(
-                title: 'OpenAI SDK',
+                title: 'OpenAI SDK'.tr,
                 lang: 'python',
                 code:
                     'from openai import OpenAI\n\nclient = OpenAI(\n    base_url="${controller.baseUrl}/v1",\n    api_key="${controller.requiresApiKey ? controller.apiKey.value : "not-needed"}"\n)\n\nresponse = client.chat.completions.create(\n    model="${controller.inference.loadedModelName.value}",\n    messages=[{"role": "user", "content": "Hello"}],\n)\nprint(response.choices[0].message.content)',
@@ -183,20 +183,24 @@ class _StatusHero extends StatelessWidget {
     final String meta;
     if (isStarting) {
       dot = t.orange;
-      title = 'Starting…';
+      title = 'Starting…'.tr;
       meta = controller.serverStatus.value;
     } else if (isRunning) {
       dot = t.green;
-      title = 'Running on port ${ServerController.port}';
+      title = 'Running on port @port'
+          .trParams({'port': '${ServerController.port}'});
       meta = controller.allowNetwork.value
-          ? 'Serving ${controller.modelName} · open to your network'
-          : 'Serving ${controller.modelName} · this device only';
+          ? 'Serving @name · open to your network'
+              .trParams({'name': controller.modelName})
+          : 'Serving @name · this device only'
+              .trParams({'name': controller.modelName});
     } else {
       dot = t.faint;
-      title = 'Stopped';
+      title = 'Stopped'.tr;
       meta = controller.hasLocalModel
-          ? 'Expose ${controller.modelName} as an OpenAI-compatible API'
-          : 'Expose a local model as an OpenAI-compatible API';
+          ? 'Expose @name as an OpenAI-compatible API'
+              .trParams({'name': controller.modelName})
+          : 'Expose a local model as an OpenAI-compatible API'.tr;
     }
 
     return AppCard(
@@ -205,7 +209,7 @@ class _StatusHero extends StatelessWidget {
         Row(children: [
           StatusDot(dot, size: 8),
           const SizedBox(width: 8),
-          Text('Local API server', style: t.small),
+          Text('Local API server'.tr, style: t.small),
         ]),
         const SizedBox(height: 10),
         Text(title, style: t.title.copyWith(fontSize: 20, letterSpacing: -0.5)),
@@ -216,7 +220,7 @@ class _StatusHero extends StatelessWidget {
         if (isRunning && !isStarting)
           SizedBox(
             width: double.infinity,
-            child: TonalButton.destructive(context, label: 'Stop server',
+            child: TonalButton.destructive(context, label: 'Stop server'.tr,
                 onTap: () {
               Haptics.mediumImpact();
               controller.toggleServer(false);
@@ -224,7 +228,7 @@ class _StatusHero extends StatelessWidget {
           )
         else
           PrimaryButton(
-            label: isStarting ? 'Starting…' : 'Start server',
+            label: isStarting ? 'Starting…'.tr : 'Start server'.tr,
             icon: Icons.play_arrow_rounded,
             busy: isStarting,
             onPressed: () {
@@ -241,8 +245,8 @@ class _StatusHero extends StatelessWidget {
 
 class _CopyButton extends StatefulWidget {
   final String? text;
-  final String tooltip;
-  const _CopyButton({required this.text, this.tooltip = 'Copy'});
+  final String? tooltip;
+  const _CopyButton({required this.text, this.tooltip});
 
   @override
   State<_CopyButton> createState() => _CopyButtonState();
@@ -276,7 +280,7 @@ class _CopyButtonState extends State<_CopyButton> {
     final t = AppTokens.of(context);
     final enabled = widget.text != null;
     return IconButton(
-      tooltip: _copied ? 'Copied' : widget.tooltip,
+      tooltip: _copied ? 'Copied'.tr : widget.tooltip ?? 'Copy'.tr,
       visualDensity: VisualDensity.compact,
       onPressed: enabled ? _copy : null,
       icon: AnimatedSwitcher(
@@ -314,14 +318,15 @@ class _UrlRow extends StatelessWidget {
             Text(label, style: t.small),
             const SizedBox(height: 3),
             Text(
-              url ?? 'Not available',
+              url ?? 'Not available'.tr,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: t.mono.copyWith(color: url == null ? t.faint : t.text),
             ),
           ]),
         ),
-        _CopyButton(text: url, tooltip: 'Copy $label'),
+        _CopyButton(
+            text: url, tooltip: 'Copy @label'.trParams({'label': label})),
       ]),
     );
   }
@@ -360,14 +365,16 @@ class _HealthTestState extends State<_HealthTest> {
       setState(() {
         _ok = ok;
         _message = ok
-            ? 'Server is healthy · HTTP ${r.statusCode}'
-            : 'Health check returned HTTP ${r.statusCode}';
+            ? 'Server is healthy · HTTP @code'
+                .trParams({'code': '${r.statusCode}'})
+            : 'Health check returned HTTP @code'
+                .trParams({'code': '${r.statusCode}'});
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _ok = false;
-        _message = 'Health check failed: $e';
+        _message = 'Health check failed: @error'.trParams({'error': '$e'});
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -380,13 +387,13 @@ class _HealthTestState extends State<_HealthTest> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         PillButton(
-          label: _busy ? 'Testing…' : 'Test connection',
+          label: _busy ? 'Testing…'.tr : 'Test connection'.tr,
           icon: Icons.network_check_rounded,
           onPressed: widget.baseUrl == null || _busy ? null : _run,
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text('Calls GET /health',
+          child: Text('Calls GET /health'.tr,
               style: t.small, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ]),
@@ -436,7 +443,7 @@ class _CodeBlock extends StatelessWidget {
             const SizedBox(width: 8),
             AppTag(lang),
             const Spacer(),
-            _CopyButton(text: code, tooltip: 'Copy snippet'),
+            _CopyButton(text: code, tooltip: 'Copy snippet'.tr),
           ]),
         ),
         Container(height: 0.5, color: t.hairline),

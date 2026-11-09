@@ -608,7 +608,8 @@ class ModelView extends GetView<ModelController> {
     final canUse = cloud.canSelectModel(provider.id);
     final model = cloud.activeModelFor(provider.id);
     final hasSelectedModel = canUse && model.isNotEmpty;
-    final name = isCustom ? settings.customCloudName.value : provider.name;
+    final name =
+        isCustom ? settings.customCloudName.value.tr : provider.name;
     final error = cloud.errorByProvider[provider.id];
     final meta = hasSelectedModel
         ? model
@@ -737,7 +738,8 @@ class ModelView extends GetView<ModelController> {
         final t = AppTokens.of(ctx);
         final model = cloud.activeModelFor(provider.id);
         final configured = cloud.isConfigured(provider.id);
-        final name = isCustom ? settings.customCloudName.value : provider.name;
+        final name =
+            isCustom ? settings.customCloudName.value.tr : provider.name;
 
         return Column(
           mainAxisSize: MainAxisSize.min,

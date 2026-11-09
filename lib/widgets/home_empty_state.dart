@@ -227,7 +227,7 @@ String providerLabel(SettingsController s) {
       return 'Kimi';
     case 'custom':
       final n = s.customCloudName.value.trim();
-      return n.isEmpty ? 'a custom endpoint'.tr : n;
+      return n.isEmpty ? 'a custom endpoint'.tr : n.tr;
     default:
       return 'the cloud'.tr;
   }

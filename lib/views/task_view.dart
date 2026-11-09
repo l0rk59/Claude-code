@@ -25,28 +25,28 @@ class TaskView extends GetView<TaskController> {
           appBar: current == null
               ? appScreenBar(
                   context,
-                  title: 'Tasks',
+                  title: 'Tasks'.tr,
                   showBack: Navigator.of(context).canPop(),
                   actions: [
                     AppBarIcon(
                       icon: Icons.add_rounded,
-                      tooltip: 'New task',
+                      tooltip: 'New task'.tr,
                       onPressed: () => _showCreateSheet(context),
                     ),
                   ],
                 )
               : appScreenBar(
                   context,
-                  title: 'Task',
+                  title: 'Task'.tr,
                   leading: IconButton(
-                    tooltip: 'All tasks',
+                    tooltip: 'All tasks'.tr,
                     icon: Icon(Icons.arrow_back_rounded, color: t.text),
                     onPressed: () => controller.currentTask.value = null,
                   ),
                   actions: [
                     AppBarIcon(
                       icon: Icons.delete_outline_rounded,
-                      tooltip: 'Delete task',
+                      tooltip: 'Delete task'.tr,
                       onPressed: controller.isExecuting.value
                           ? null
                           : () => _confirmDelete(context, current),
@@ -69,11 +69,11 @@ class TaskView extends GetView<TaskController> {
         child: SingleChildScrollView(
           child: EmptyState(
             icon: Icons.checklist_rounded,
-            title: 'No tasks yet',
+            title: 'No tasks yet'.tr,
             message:
-                'Describe a goal and the model will plan it\ninto steps, then run them for you.',
+                'Describe a goal and the model will plan it\ninto steps, then run them for you.'.tr,
             action: PrimaryButton(
-              label: 'New task',
+              label: 'New task'.tr,
               icon: Icons.add_rounded,
               expand: false,
               onPressed: () => _showCreateSheet(context),
@@ -87,7 +87,7 @@ class TaskView extends GetView<TaskController> {
       padding: kPagePadding,
       children: [
         SectionHeader(
-          'Recent',
+          'Recent'.tr,
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
           trailing: Text('${controller.tasks.length}',
               style: AppTokens.of(context).small),
@@ -95,7 +95,7 @@ class TaskView extends GetView<TaskController> {
         AppGroup(children: [
           for (final task in controller.tasks) _TaskRow(task: task),
         ]),
-        const SectionFootnote('Swipe a task left to delete it.'),
+        SectionFootnote('Swipe a task left to delete it.'.tr),
       ],
     );
   }
@@ -125,7 +125,11 @@ class TaskView extends GetView<TaskController> {
                 child: Text(
                   steps.isEmpty
                       ? _formatDate(task.createdAt)
-                      : '$done of ${steps.length} steps · ${_formatDate(task.createdAt)}',
+                      : '@done of @total steps · @date'.trParams({
+                          'done': '$done',
+                          'total': '${steps.length}',
+                          'date': _formatDate(task.createdAt)
+                        }),
                   style: t.small,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -150,17 +154,17 @@ class TaskView extends GetView<TaskController> {
                         strokeWidth: 2, color: t.muted),
                   ),
                   const SizedBox(height: 14),
-                  Text('Planning steps…', style: t.caption),
+                  Text('Planning steps…'.tr, style: t.caption),
                 ]),
               )
             else if (steps.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.format_list_bulleted_rounded,
-                title: 'No steps generated',
-                message: 'The model did not return a plan for this goal.',
+                title: 'No steps generated'.tr,
+                message: 'The model did not return a plan for this goal.'.tr,
               )
             else ...[
-              const SectionHeader('Steps'),
+              SectionHeader('Steps'.tr),
               AppGroup(
                 dividerIndent: 48,
                 children: [
@@ -180,10 +184,10 @@ class TaskView extends GetView<TaskController> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: task.status == 'completed'
-                ? AppNotice('Task completed',
+                ? AppNotice('Task completed'.tr,
                     icon: Icons.check_circle_outline_rounded, color: t.green)
                 : PrimaryButton(
-                    label: executing ? 'Running…' : 'Run all steps',
+                    label: executing ? 'Running…'.tr : 'Run all steps'.tr,
                     icon: Icons.play_arrow_rounded,
                     busy: executing,
                     onPressed: () {
@@ -202,8 +206,8 @@ class TaskView extends GetView<TaskController> {
     final textCtrl = TextEditingController();
     showAppSheet<void>(
       context,
-      title: 'New task',
-      subtitle: 'The model will break your goal into steps you can run.',
+      title: 'New task'.tr,
+      subtitle: 'The model will break your goal into steps you can run.'.tr,
       builder: (ctx) {
         void submit() {
           final goal = textCtrl.text.trim();
@@ -215,7 +219,7 @@ class TaskView extends GetView<TaskController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppField(
-              label: 'Goal',
+              label: 'Goal'.tr,
               child: TextField(
                 controller: textCtrl,
                 autofocus: true,
@@ -224,14 +228,14 @@ class TaskView extends GetView<TaskController> {
                 textCapitalization: TextCapitalization.sentences,
                 style: AppTokens.of(ctx).body,
                 decoration: appInputDecoration(ctx,
-                    hint: 'Describe what you want done…'),
+                    hint: 'Describe what you want done…'.tr),
               ),
             ),
             const SizedBox(height: 18),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: textCtrl,
               builder: (_, value, __) => PrimaryButton(
-                label: 'Create task',
+                label: 'Create task'.tr,
                 onPressed: value.text.trim().isEmpty ? null : submit,
               ),
             ),
@@ -244,9 +248,9 @@ class TaskView extends GetView<TaskController> {
   Future<void> _confirmDelete(BuildContext context, TaskModel task) async {
     final ok = await confirmSheet(
       context,
-      title: 'Delete task?',
-      message: 'This removes the task and its steps.',
-      confirmLabel: 'Delete',
+      title: 'Delete task?'.tr,
+      message: 'This removes the task and its steps.'.tr,
+      confirmLabel: 'Delete'.tr,
       destructive: true,
     );
     if (!ok) return;
@@ -261,7 +265,9 @@ String _formatDate(DateTime d) {
   final now = DateTime.now();
   final sameDay =
       d.year == now.year && d.month == now.month && d.day == now.day;
-  if (sameDay) return 'Today, ${DateFormat.jm().format(d)}';
+  if (sameDay) {
+    return 'Today, @time'.trParams({'time': DateFormat.jm().format(d)});
+  }
   if (d.year == now.year) return DateFormat.MMMd().format(d);
   return DateFormat.yMMMd().format(d);
 }
@@ -270,15 +276,15 @@ Widget _statusTag(BuildContext context, String status) {
   final t = AppTokens.of(context);
   switch (status) {
     case 'planning':
-      return const AppTag('Planning');
+      return AppTag('Planning'.tr);
     case 'running':
-      return AppTag('Running', color: t.accent);
+      return AppTag('Running'.tr, color: t.accent);
     case 'completed':
-      return AppTag('Completed', color: t.green);
+      return AppTag('Completed'.tr, color: t.green);
     case 'failed':
-      return AppTag('Failed', color: t.red);
+      return AppTag('Failed'.tr, color: t.red);
     default:
-      return const AppTag('Ready');
+      return AppTag('Ready'.tr);
   }
 }
 

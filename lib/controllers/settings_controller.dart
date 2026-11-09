@@ -629,10 +629,11 @@ class SettingsController extends GetxController {
         text.split('\n').where((l) => l.trim().isNotEmpty).take(8).join('\n');
     await _hive.setSetting(AppConstants.keyStopSequences, list);
     showToast(
-        'Saved',
+        'Saved'.tr,
         list.isEmpty
-            ? 'Stop sequences cleared.'
-            : '${list.length} stop sequence(s) saved.',
+            ? 'Stop sequences cleared.'.tr
+            : '@count stop sequence(s) saved.'
+                .trParams({'count': '${list.length}'}),
         tone: ToastTone.success);
   }
 
@@ -771,12 +772,12 @@ class SettingsController extends GetxController {
     final vendor = imageGpuVendor.value;
     final backend = recommendedImageGpuBackend();
     final vendorLabel = vendor == 'detecting'
-        ? 'Detecting'
+        ? 'Detecting'.tr
         : vendor == 'unknown'
-            ? 'Unknown GPU'
+            ? 'Unknown GPU'.tr
             : vendor.toUpperCase();
     return backend == Backend.cpu
-        ? '$vendorLabel - GPU unavailable'
+        ? '$vendorLabel - ${'GPU unavailable'.tr}'
         : '$vendorLabel - ${backend.displayName}';
   }
 

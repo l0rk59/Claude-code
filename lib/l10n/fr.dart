@@ -653,4 +653,308 @@ const Map<String, String> fr = {
       'Vérifiez que ce fichier LiteRT-LM correspond à votre architecture.',
   'Hide technical details': 'Masquer les détails techniques',
   'Show technical details': 'Afficher les détails techniques',
+
+  // ── Phone cluster ─────────────────────────────────────────────────────
+  'Turn on Wi-Fi. All phones in the cluster must be on the same Wi-Fi network.':
+      'Activez le Wi-Fi. Tous les téléphones du cluster doivent être sur le '
+          'même réseau Wi-Fi.',
+  'Run models too big for one phone by sharing the work across phones on the same Wi-Fi.\n\nMaster: the phone you chat on. It runs the model.\nWorker: a phone that lends its memory to the master.':
+      'Faites tourner des modèles trop gros pour un seul téléphone en '
+          'partageant le travail entre plusieurs téléphones sur le même '
+          'Wi-Fi.\n\nPrincipal : le téléphone sur lequel vous discutez. Il '
+          'exécute le modèle.\nAuxiliaire : un téléphone qui prête sa mémoire '
+          'au principal.',
+  "Help an Android phone running PrivateLM run models too big for it alone: choose Worker, then scan this device's QR code from that phone.":
+      'Aidez un téléphone Android sous PrivateLM à faire tourner des modèles '
+          'trop gros pour lui seul : choisissez Auxiliaire, puis scannez le '
+          'code QR de cet appareil depuis ce téléphone.',
+  'Worker stopped': 'Auxiliaire arrêté',
+  'Unknown error': 'Erreur inconnue',
+  'Try again': 'Réessayer',
+  'Sharing with master': 'Partage avec le principal',
+  'Holding': 'Hébergé',
+  'Free at start': 'Libre au départ',
+  'Memory speed': 'Vitesse mémoire',
+  '@size GB/s': '@size Go/s',
+  'Waiting for Wi-Fi…': 'En attente du Wi-Fi…',
+  'Measuring this phone…': 'Mesure de ce téléphone…',
+  'Scan this from the master phone': 'Scannez ce code depuis le principal',
+  'Ready · @address': 'Prêt · @address',
+  'Free memory': 'Mémoire libre',
+  "Android is slowing this worker down (slow cores only), which slows the whole cluster. Set PrivateLM's battery use to Unrestricted, then turn Worker off and on.":
+      'Android bride cet auxiliaire (cœurs lents uniquement), ce qui ralentit '
+          "tout le cluster. Réglez l'utilisation de la batterie de PrivateLM "
+          'sur Non restreinte, puis désactivez et réactivez Auxiliaire.',
+  'Set Unrestricted': 'Passer en Non restreinte',
+  'Keep this device plugged in, on the same Wi-Fi, with PrivateLM open: iOS pauses apps in the background. Close PrivateLM to stop sharing.':
+      'Gardez cet appareil branché, sur le même Wi-Fi, avec PrivateLM ouvert : '
+          'iOS met en pause les applis en arrière-plan. Fermez PrivateLM pour '
+          'arrêter le partage.',
+  'Keep this phone plugged in and on the same Wi-Fi, with PrivateLM open: the screen stays on while sharing, because Android slows background work. Set Phone cluster to Off to stop.':
+      'Gardez ce téléphone branché et sur le même Wi-Fi, avec PrivateLM '
+          "ouvert : l'écran reste allumé pendant le partage, car Android "
+          "ralentit le travail en arrière-plan. Réglez Cluster de téléphones "
+          'sur Désactivé pour arrêter.',
+  "Scan a worker's QR code": "Scanner le code QR d'un auxiliaire",
+  'Workers (@count)': 'Auxiliaires (@count)',
+  'No workers yet': "Aucun auxiliaire pour l'instant",
+  'On each other phone, open Phone cluster, choose Worker, then scan the QR code it shows.':
+      'Sur chaque autre téléphone, ouvrez Cluster de téléphones, choisissez '
+          'Auxiliaire, puis scannez le code QR affiché.',
+  '@size free': '@size libres',
+  "Used the next time you load a GGUF model. If the model fits on this phone you can keep it here, which is faster. If it doesn't, the fastest phones get the biggest share and phones that aren't needed are left out.":
+      "Utilisé au prochain chargement d'un modèle GGUF. Si le modèle tient "
+          "sur ce téléphone, vous pouvez le garder ici, c'est plus rapide. "
+          'Sinon, les téléphones les plus rapides en prennent la plus grande '
+          'part et ceux qui ne sont pas nécessaires sont laissés de côté.',
+  'Other ways to add': "Autres façons d'ajouter",
+  'Searching…': 'Recherche…',
+  'Find nearby': 'Chercher à proximité',
+  'Enter IP': "Saisir l'IP",
+  'Add': 'Ajouter',
+  'Enter worker IP': "Saisir l'IP de l'auxiliaire",
+  "Shown under the worker's QR code": "Affichée sous le code QR de l'auxiliaire",
+  "Couldn't add worker": "Impossible d'ajouter l'auxiliaire",
+  'Worker added': 'Auxiliaire ajouté',
+  'Used the next time you load a GGUF model.':
+      "Utilisé au prochain chargement d'un modèle GGUF.",
+  'Loaded model': 'Modèle chargé',
+  'Running on @count phones · @size': 'Réparti sur @count téléphones · @size',
+  '@name (this phone)': '@name (ce téléphone)',
+  'Scan worker QR code': "Scanner le code QR de l'auxiliaire",
+  'Point at the QR code on the worker phone':
+      "Visez le code QR affiché sur l'auxiliaire",
+  'Still sharing': 'Partage en cours',
+  'Close PrivateLM to stop sharing this device.':
+      'Fermez PrivateLM pour arrêter de partager cet appareil.',
+  "That isn't a PrivateLM worker code":
+      "Ce n'est pas un code d'auxiliaire PrivateLM",
+  "Enter the worker phone's IP address":
+      "Saisissez l'adresse IP du téléphone auxiliaire",
+  'Use the form 192.168.1.20:50052': 'Utilisez le format 192.168.1.20:50052',
+  "Can't reach @endpoint. Check that the phone is a worker and on the same Wi-Fi.":
+      'Impossible de joindre @endpoint. Vérifiez que le téléphone est en mode '
+          'auxiliaire et sur le même Wi-Fi.',
+  'Not reachable, loading without: @names':
+      'Injoignable(s), chargement sans : @names',
+  // Cluster load errors must keep the word "cluster": the Models screen
+  // uses it to recognise them.
+  'This model (@size) is too big for these @count phones: together they have about @free free. Add another worker, close apps on the phones, or pick a smaller model.':
+      'Ce modèle (@size) est trop gros pour les @count téléphones du cluster : '
+          'ensemble, ils ont environ @free de libre. Ajoutez un auxiliaire, '
+          'fermez des applis sur les téléphones ou choisissez un modèle plus '
+          'petit.',
+  'This model (@size) is too big for these @count phones: together they have about @free free. Not reachable: @names. Add another worker, close apps on the phones, or pick a smaller model.':
+      'Ce modèle (@size) est trop gros pour les @count téléphones du cluster : '
+          'ensemble, ils ont environ @free de libre. Injoignable(s) : @names. '
+          'Ajoutez un auxiliaire, fermez des applis sur les téléphones ou '
+          'choisissez un modèle plus petit.',
+  "@error. Turn on Worker on that phone, or set this phone's Phone cluster to Off.":
+      '@error. Activez Auxiliaire sur ce téléphone, ou réglez le Cluster de '
+          'téléphones de cet appareil sur Désactivé.',
+  'A worker is unreachable': 'Un auxiliaire est injoignable',
+  "This model can't use your workers":
+      'Ce modèle ne peut pas utiliser vos auxiliaires',
+  '@name is a LiteRT model, and only GGUF models can be shared across phones. It will run on this phone only. To use your workers, load a GGUF model instead.':
+      '@name est un modèle LiteRT, et seuls les modèles GGUF peuvent être '
+          'répartis entre téléphones. Il tournera uniquement sur ce téléphone. '
+          'Pour utiliser vos auxiliaires, chargez plutôt un modèle GGUF.',
+  'Load on this phone only': 'Charger sur ce téléphone uniquement',
+  'This model fits on this phone': 'Ce modèle tient sur ce téléphone',
+  '@name needs about @size, and this phone has room for it. Running it here is faster, because sharing sends every word over Wi-Fi. Share it to free up memory on this phone.':
+      "@name a besoin d'environ @size, et ce téléphone a la place. Le faire "
+          'tourner ici est plus rapide, car le partage envoie chaque mot par '
+          'Wi-Fi. Partagez-le pour libérer de la mémoire sur ce téléphone.',
+  'Share with 1 worker': 'Partager avec 1 auxiliaire',
+  'Share with @count workers': 'Partager avec @count auxiliaires',
+  'This phone': 'Ce téléphone',
+
+  // ── API server ────────────────────────────────────────────────────────
+  'Loaded on this device': 'Chargé sur cet appareil',
+  'Load a GGUF or LiteRT-LM model to serve it':
+      'Chargez un modèle GGUF ou LiteRT-LM pour le servir',
+  'Not loaded': 'Non chargé',
+  'Access': 'Accès',
+  'Allow network access': "Autoriser l'accès réseau",
+  'Reachable from other devices on your network':
+      'Accessible depuis les autres appareils de votre réseau',
+  'Only apps on this device can connect':
+      'Seules les applis de cet appareil peuvent se connecter',
+  'Require API key': 'Exiger une clé API',
+  'Always on while network access is enabled':
+      "Toujours activé quand l'accès réseau est autorisé",
+  'Clients send Authorization: Bearer <key>':
+      'Les clients envoient Authorization: Bearer <clé>',
+  'Required for every request.': 'Exigée pour chaque requête.',
+  'Optional. Only checked when "Require API key" is on.':
+      'Facultative. Vérifiée seulement si « Exiger une clé API » est activé.',
+  'Required': 'Obligatoire',
+  'Optional': 'Facultative',
+  'Generate key': 'Générer une clé',
+  'Copy key': 'Copier la clé',
+  'Endpoints': 'Points de terminaison',
+  'OpenAI base URL': 'URL de base OpenAI',
+  'Usage examples': "Exemples d'utilisation",
+  'List models': 'Lister les modèles',
+  'Chat completion': 'Complétion de chat',
+  'OpenAI SDK': 'SDK OpenAI',
+  'Starting…': 'Démarrage…',
+  'Running on port @port': 'En marche sur le port @port',
+  'Serving @name · open to your network':
+      'Sert @name · ouvert à votre réseau',
+  'Serving @name · this device only': 'Sert @name · cet appareil uniquement',
+  'Stopped': 'Arrêté',
+  'Expose @name as an OpenAI-compatible API':
+      'Exposer @name comme API compatible OpenAI',
+  'Expose a local model as an OpenAI-compatible API':
+      'Exposer un modèle local comme API compatible OpenAI',
+  'Local API server': 'Serveur API local',
+  'Stop server': 'Arrêter le serveur',
+  'Start server': 'Démarrer le serveur',
+  'Copied': 'Copié',
+  'Not available': 'Indisponible',
+  'Copy @label': 'Copier : @label',
+  'Server is healthy · HTTP @code': 'Le serveur fonctionne · HTTP @code',
+  'Health check returned HTTP @code':
+      'La vérification a renvoyé HTTP @code',
+  'Health check failed: @error': 'Échec de la vérification : @error',
+  'Testing…': 'Test…',
+  'Test connection': 'Tester la connexion',
+  'Calls GET /health': 'Appelle GET /health',
+  'Copy snippet': "Copier l'extrait",
+  'Server stopped': 'Serveur arrêté',
+  'Load a local GGUF or LiteRT-LM model first.':
+      "Chargez d'abord un modèle local GGUF ou LiteRT-LM.",
+  'Server not started': 'Serveur non démarré',
+  'Starting server...': 'Démarrage du serveur...',
+  'Server running': 'Serveur en marche',
+  'Server failed': 'Échec du serveur',
+  '@label copied.': '@label copié.',
+
+  // ── Tasks ─────────────────────────────────────────────────────────────
+  'Tasks': 'Tâches',
+  'New task': 'Nouvelle tâche',
+  'Task': 'Tâche',
+  'All tasks': 'Toutes les tâches',
+  'Delete task': 'Supprimer la tâche',
+  'No tasks yet': "Aucune tâche pour l'instant",
+  'Describe a goal and the model will plan it\ninto steps, then run them for you.':
+      'Décrivez un objectif : le modèle le découpera\nen étapes, puis les '
+          'exécutera pour vous.',
+  'Recent': 'Récentes',
+  'Swipe a task left to delete it.':
+      'Balayez une tâche vers la gauche pour la supprimer.',
+  '@done of @total steps · @date': '@done étape(s) sur @total · @date',
+  'Planning steps…': 'Planification des étapes…',
+  'No steps generated': 'Aucune étape générée',
+  'The model did not return a plan for this goal.':
+      "Le modèle n'a pas renvoyé de plan pour cet objectif.",
+  'Task completed': 'Tâche terminée',
+  'Running…': 'Exécution…',
+  'Run all steps': 'Exécuter toutes les étapes',
+  'The model will break your goal into steps you can run.':
+      'Le modèle découpera votre objectif en étapes exécutables.',
+  'Goal': 'Objectif',
+  'Describe what you want done…': 'Décrivez ce que vous voulez faire…',
+  'Create task': 'Créer la tâche',
+  'Delete task?': 'Supprimer la tâche ?',
+  'This removes the task and its steps.':
+      'La tâche et ses étapes seront supprimées.',
+  'Today, @time': "Aujourd'hui, @time",
+  'Planning': 'Planification',
+  'Running': 'En cours',
+  'Completed': 'Terminée',
+  'Failed': 'Échec',
+  'Command execution is not available.':
+      "L'exécution de commandes n'est pas disponible.",
+
+  // ── Logs ──────────────────────────────────────────────────────────────
+  'All': 'Tous',
+  'Errors': 'Erreurs',
+  'Warnings': 'Avertissements',
+  'Info': 'Infos',
+  'Debug': 'Débogage',
+  'Important logs copied to the clipboard.':
+      'Journaux importants copiés dans le presse-papiers.',
+  'Clear logs?': 'Effacer les journaux ?',
+  'All captured log entries will be removed.':
+      'Toutes les entrées de journal seront supprimées.',
+  'Copy important logs': 'Copier les journaux importants',
+  'Clear logs': 'Effacer les journaux',
+  'No logs yet': "Aucun journal pour l'instant",
+  'No errors': 'Aucune erreur',
+  'No warnings': 'Aucun avertissement',
+  'No info': 'Aucune info',
+  'No debug': 'Aucun débogage',
+  'Errors, warnings and debug details will appear here.':
+      'Les erreurs, avertissements et détails de débogage apparaîtront ici.',
+  'Nothing at this level has been captured.':
+      "Rien n'a été enregistré à ce niveau.",
+  'Error': 'Erreur',
+  'Warning': 'Avertissement',
+  'Hide details': 'Masquer les détails',
+  'Show details': 'Afficher les détails',
+
+  // ── Cloud providers and chat messages ─────────────────────────────────
+  'Free model list · OpenAI compatible':
+      'Liste de modèles gratuits · compatible OpenAI',
+  'Native OpenAI chat models': 'Modèles de chat OpenAI natifs',
+  'OpenAI compatible V4 models': 'Modèles V4 compatibles OpenAI',
+  'Gemini native API models': "Modèles de l'API Gemini native",
+  'OpenAI compatible hosted NIM models':
+      'Modèles NIM hébergés compatibles OpenAI',
+  'Manual OpenAI-compatible endpoint':
+      'Point de terminaison compatible OpenAI saisi à la main',
+  'Connected': 'Connecté',
+  'Needs Key': 'Clé requise',
+  'Built-in list': 'Liste intégrée',
+  'Not fetched yet': 'Pas encore récupérée',
+  'Updated just now': "Mise à jour à l'instant",
+  'Updated @count min ago': 'Mise à jour il y a @count min',
+  'Updated @count h ago': 'Mise à jour il y a @count h',
+  'Updated @count d ago': 'Mise à jour il y a @count j',
+  'Cloud Model Active': 'Modèle cloud actif',
+  'Base URL is required.': "L'URL de base est obligatoire.",
+  'Enter a valid OpenAI-compatible base URL.':
+      'Saisissez une URL de base valide compatible OpenAI.',
+  'API key is required.': 'La clé API est obligatoire.',
+  'Model ID is required.': "L'ID du modèle est obligatoire.",
+  'Warning: Text-Only Model': 'Attention : modèle texte uniquement',
+  'The selected model (@name) might not support images. If you get an error, switch to a vision model (like Gemini, GPT-4o, or Claude 3).':
+      "Le modèle sélectionné (@name) ne gère peut-être pas les images. En cas "
+          "d'erreur, passez à un modèle de vision (comme Gemini, GPT-4o ou "
+          'Claude 3).',
+  'Not supported by this model': 'Non pris en charge par ce modèle',
+  'This model reads text only. Attach a PDF, DOCX, or text/code file.':
+      'Ce modèle ne lit que du texte. Joignez un fichier PDF, DOCX ou '
+          'texte/code.',
+  'Unsupported file': 'Fichier non pris en charge',
+  'Only images, audio, PDF, DOCX, and text/code files are supported.':
+      "Seuls les images, l'audio, les PDF, les DOCX et les fichiers "
+          'texte/code sont pris en charge.',
+  'File not attached': 'Fichier non joint',
+  'Permission Denied': 'Autorisation refusée',
+  'Cannot save images without gallery access.':
+      "Impossible d'enregistrer les images sans accès à la galerie.",
+  'Success': 'Terminé',
+  'Saved @count images to gallery.':
+      '@count images enregistrées dans la galerie.',
+  'Failed to save images: @error':
+      "Échec de l'enregistrement des images : @error",
+  'Auto size': 'Taille auto',
+  'Local image generation failed.': "Échec de la génération d'image locale.",
+  'Here is your generated image:': 'Voici votre image générée :',
+  'Error: @error': 'Erreur : @error',
+  'Describe this image.': 'Décris cette image.',
+  'Summarize this PDF.': 'Résume ce PDF.',
+  'Summarize this document.': 'Résume ce document.',
+  'Transcribe or analyze this audio.': 'Transcris ou analyse cet audio.',
+  'Review this file.': 'Analyse ce fichier.',
+  'Review this attachment.': 'Analyse cette pièce jointe.',
+  'Stop sequences cleared.': "Séquences d'arrêt effacées.",
+  '@count stop sequence(s) saved.':
+      "@count séquence(s) d'arrêt enregistrée(s).",
+  'Detecting': 'Détection',
+  'Unknown GPU': 'GPU inconnu',
+  'GPU unavailable': 'GPU indisponible',
 };

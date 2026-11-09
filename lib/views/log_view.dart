@@ -16,6 +16,7 @@ class _LogViewState extends State<LogView> {
   final _logs = Get.find<AppLogService>();
   final _filter = 'ALL'.obs;
 
+  /// Labels are English; shown with .tr.
   static const _filters = [
     ('ALL', 'All'),
     ('ERROR', 'Errors'),
@@ -27,16 +28,16 @@ class _LogViewState extends State<LogView> {
   Future<void> _copy() async {
     await _logs.copyImportantLogs();
     if (!mounted) return;
-    showToast('Copied', 'Important logs copied to the clipboard.',
+    showToast('Copied'.tr, 'Important logs copied to the clipboard.'.tr,
         tone: ToastTone.success);
   }
 
   Future<void> _clear() async {
     final ok = await confirmSheet(
       context,
-      title: 'Clear logs?',
-      message: 'All captured log entries will be removed.',
-      confirmLabel: 'Clear',
+      title: 'Clear logs?'.tr,
+      message: 'All captured log entries will be removed.'.tr,
+      confirmLabel: 'Clear'.tr,
       destructive: true,
     );
     if (ok) _logs.clear();
@@ -49,17 +50,17 @@ class _LogViewState extends State<LogView> {
       backgroundColor: t.bg,
       appBar: appScreenBar(
         context,
-        title: 'Logs',
+        title: 'Logs'.tr,
         showBack: true,
         actions: [
           Obx(() => AppBarIcon(
                 icon: Icons.copy_rounded,
-                tooltip: 'Copy important logs',
+                tooltip: 'Copy important logs'.tr,
                 onPressed: _logs.entries.isEmpty ? null : _copy,
               )),
           Obx(() => AppBarIcon(
                 icon: Icons.delete_outline_rounded,
-                tooltip: 'Clear logs',
+                tooltip: 'Clear logs'.tr,
                 onPressed: _logs.entries.isEmpty ? null : _clear,
               )),
         ],
@@ -68,7 +69,7 @@ class _LogViewState extends State<LogView> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 8, 10),
           child: Obx(() => AppChips<String>(
-                items: _filters,
+                items: [for (final (id, label) in _filters) (id, label.tr)],
                 selected: _filter.value,
                 onSelected: (v) => _filter.value = v,
               )),
@@ -83,17 +84,20 @@ class _LogViewState extends State<LogView> {
                 : all.where((e) => e.level == f).toList();
 
             if (filtered.isEmpty) {
-              final label = _filters.firstWhere((e) => e.$1 == f).$2;
               return Center(
                 child: SingleChildScrollView(
                   child: EmptyState(
                     icon: Icons.check_rounded,
-                    title: f == 'ALL'
-                        ? 'No logs yet'
-                        : 'No ${label.toLowerCase()}',
+                    title: switch (f) {
+                      'ALL' => 'No logs yet'.tr,
+                      'ERROR' => 'No errors'.tr,
+                      'WARNING' => 'No warnings'.tr,
+                      'INFO' => 'No info'.tr,
+                      _ => 'No debug'.tr,
+                    },
                     message: f == 'ALL'
-                        ? 'Errors, warnings and debug details will appear here.'
-                        : 'Nothing at this level has been captured.',
+                        ? 'Errors, warnings and debug details will appear here.'.tr
+                        : 'Nothing at this level has been captured.'.tr,
                   ),
                 ),
               );
@@ -134,10 +138,10 @@ class _LogEntryTileState extends State<_LogEntryTile> {
     final hasDetails = e.details != null && e.details!.trim().isNotEmpty;
 
     final (String levelLabel, Color? levelColor) = switch (e.level) {
-      'ERROR' => ('Error', t.red),
-      'WARNING' => ('Warning', t.orange),
-      'INFO' => ('Info', null),
-      'DEBUG' => ('Debug', null),
+      'ERROR' => ('Error'.tr, t.red),
+      'WARNING' => ('Warning'.tr, t.orange),
+      'INFO' => ('Info'.tr, null),
+      'DEBUG' => ('Debug'.tr, null),
       _ => (e.level, null),
     };
 
@@ -161,7 +165,7 @@ class _LogEntryTileState extends State<_LogEntryTile> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(_expanded ? 'Hide details' : 'Show details',
+                Text(_expanded ? 'Hide details'.tr : 'Show details'.tr,
                     style: t.small.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(width: 2),
                 AnimatedRotation(

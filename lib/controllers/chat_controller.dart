@@ -152,7 +152,8 @@ class ChatController extends GetxController {
         },
         listenFor: const Duration(seconds: 60),
         pauseFor: const Duration(seconds: 4),
-        localeId: 'en_US',
+        // Listen in the app's language.
+        localeId: Get.locale?.toString() ?? 'en_US',
       );
       isListening.value = true;
     } catch (_) {
@@ -187,7 +188,7 @@ class ChatController extends GetxController {
 
   void createNewChat() {
     final id = _uuid.v4();
-    final session = ChatSession(id: id, title: 'New Chat');
+    final session = ChatSession(id: id, title: 'New chat'.tr);
     _hive.saveSession(id, session.toMap());
     sessions.insert(0, session);
     openChat(id);
@@ -313,8 +314,9 @@ class ChatController extends GetxController {
 
     if (!isVision) {
       showToast(
-        'Warning: Text-Only Model',
-        'The selected model ($modelName) might not support images. If you get an error, switch to a vision model (like Gemini, GPT-4o, or Claude 3).',
+        'Warning: Text-Only Model'.tr,
+        'The selected model (@name) might not support images. If you get an error, switch to a vision model (like Gemini, GPT-4o, or Claude 3).'
+            .trParams({'name': modelName}),
         tone: ToastTone.warning,
         duration: const Duration(seconds: 6),
       );
@@ -371,8 +373,9 @@ class ChatController extends GetxController {
       // Reject unsupported or extension-less files
       if (documentsOnly && (fileType == 'image' || fileType == 'audio')) {
         showToast(
-          'Not supported by this model',
-          'This model reads text only. Attach a PDF, DOCX, or text/code file.',
+          'Not supported by this model'.tr,
+          'This model reads text only. Attach a PDF, DOCX, or text/code file.'
+              .tr,
           tone: ToastTone.warning,
         );
         return;
@@ -380,8 +383,9 @@ class ChatController extends GetxController {
 
       if (extension.isEmpty || fileType == 'file') {
         showToast(
-          'Unsupported file',
-          'Only images, audio, PDF, DOCX, and text/code files are supported.',
+          'Unsupported file'.tr,
+          'Only images, audio, PDF, DOCX, and text/code files are supported.'
+              .tr,
           tone: ToastTone.warning,
         );
         return;
@@ -445,7 +449,7 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       Get.find<AppLogService>().warning('File attachment failed', details: e);
-      showToast('File not attached', '$e', tone: ToastTone.error);
+      showToast('File not attached'.tr, '$e', tone: ToastTone.error);
     }
   }
 
@@ -548,8 +552,8 @@ class ChatController extends GetxController {
       if (!hasAccess) {
         final granted = await Gal.requestAccess();
         if (!granted) {
-          showToast(
-              'Permission Denied', 'Cannot save images without gallery access.',
+          showToast('Permission Denied'.tr,
+              'Cannot save images without gallery access.'.tr,
               tone: ToastTone.error);
           return;
         }
@@ -558,11 +562,14 @@ class ChatController extends GetxController {
         await Gal.putImageBytes(base64Decode(base64));
       }
       showToast(
-          'Success', 'Saved ${lastBatchImagesBase64.length} images to gallery.',
+          'Success'.tr,
+          'Saved @count images to gallery.'
+              .trParams({'count': '${lastBatchImagesBase64.length}'}),
           tone: ToastTone.success);
       lastBatchImagesBase64.clear();
     } catch (e) {
-      showToast('Error', 'Failed to save images: $e', tone: ToastTone.error);
+      showToast('Error'.tr, 'Failed to save images: @error'.trParams({'error': '$e'}),
+          tone: ToastTone.error);
     }
   }
 
@@ -703,7 +710,7 @@ class ChatController extends GetxController {
               AppConstants.defaultImageSteps;
           final sizeSetting = settings.imageGenSize.value;
           final sizeLabel =
-              sizeSetting == 0 ? 'Auto size' : '${sizeSetting}x$sizeSetting';
+              sizeSetting == 0 ? 'Auto size'.tr : '${sizeSetting}x$sizeSetting';
           final backendLabel = localImage.currentBackend.value == Backend.cpu
               ? 'CPU'
               : localImage.currentBackend.value.displayName
@@ -779,7 +786,7 @@ class ChatController extends GetxController {
             final reason = localImage.lastFailureReason;
             rawResponse = reason != null
                 ? '⏳ $reason'
-                : '❌ Local image generation failed.';
+                : '❌ ${'Local image generation failed.'.tr}';
           }
         } else {
           final inference = Get.find<InferenceService>();
@@ -844,7 +851,7 @@ class ChatController extends GetxController {
       String? outImageBase64;
       if (rawResponse.startsWith('[IMAGE_BASE64]')) {
         outImageBase64 = rawResponse.substring('[IMAGE_BASE64]'.length);
-        rawResponse = 'Here is your generated image:';
+        rawResponse = 'Here is your generated image:'.tr;
       }
 
       // Calculate total generation time for image gen
@@ -893,7 +900,7 @@ class ChatController extends GetxController {
         id: _uuid.v4(),
         chatId: currentSessionId.value,
         role: 'assistant',
-        content: '❌ Error: $e',
+        content: '❌ ${'Error: @error'.trParams({'error': '$e'})}',
       );
       messages.add(errorMsg);
       _hive.saveMessage(errorMsg.id, errorMsg.toMap());
@@ -1044,17 +1051,17 @@ class ChatController extends GetxController {
   String _defaultAttachmentPrompt(String? fileType) {
     switch (fileType) {
       case 'image':
-        return 'Describe this image.';
+        return 'Describe this image.'.tr;
       case 'pdf':
-        return 'Summarize this PDF.';
+        return 'Summarize this PDF.'.tr;
       case 'docx':
-        return 'Summarize this document.';
+        return 'Summarize this document.'.tr;
       case 'audio':
-        return 'Transcribe or analyze this audio.';
+        return 'Transcribe or analyze this audio.'.tr;
       case 'text':
-        return 'Review this file.';
+        return 'Review this file.'.tr;
       default:
-        return 'Review this attachment.';
+        return 'Review this attachment.'.tr;
     }
   }
 }
