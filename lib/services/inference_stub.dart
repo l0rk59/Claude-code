@@ -2,6 +2,8 @@
 /// (Web). All methods are no-ops that return appropriate errors.
 library;
 
+import 'package:get/get.dart' show Trans;
+
 bool get supportsLocalInference => false;
 
 bool get isRunning32Bit => false;
@@ -15,6 +17,7 @@ class LoadResult {
   final int gpuLayers;
   final String runtime;
   final String backend;
+  final bool visionDisabled;
   LoadResult({
     required this.success,
     required this.message,
@@ -22,6 +25,7 @@ class LoadResult {
     this.gpuLayers = 0,
     this.runtime = '',
     this.backend = '',
+    this.visionDisabled = false,
   });
 }
 
@@ -43,7 +47,7 @@ class InferenceEngine {
   }) async {
     return LoadResult(
       success: false,
-      message: 'Local inference is not available on this platform.',
+      message: 'Local inference is not available on this platform.'.tr,
     );
   }
 
@@ -59,7 +63,8 @@ class InferenceEngine {
     String source = 'chat',
     void Function(String token)? onToken,
   }) async {
-    return 'ERROR: Local inference is not available on this platform. Use Cloud mode.';
+    return 'ERROR: Local inference is not available on this platform. Use Cloud mode.'
+        .tr;
   }
 
   Future<void> stop() async {}

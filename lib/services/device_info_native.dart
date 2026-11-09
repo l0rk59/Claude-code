@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:get/get.dart' show Trans;
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 
 /// Detected SoC family.
@@ -42,30 +43,30 @@ extension SocFamilyExt on SocFamily {
   String get recommendedQuant {
     switch (this) {
       case SocFamily.apple:
-        return 'Q4_K_M (safe default) · Q5_K_M for quality';
+        return 'Q4_K_M (safe default) · Q5_K_M for quality'.tr;
       case SocFamily.snapdragon:
-        return 'Q4_K_M (recommended) · Q4_0_4_8 on X Elite';
+        return 'Q4_K_M (recommended) · Q4_0_4_8 on X Elite'.tr;
       case SocFamily.mediatek:
-        return 'Q4_K_M (recommended)';
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.exynos:
-        return 'Q4_K_M (recommended)';
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.googleTensor:
-        return 'Q4_0 or Q5_K_M · AVOID Q4_K_M';
+        return 'Q4_0 or Q5_K_M · AVOID Q4_K_M'.tr;
       case SocFamily.unisoc:
-        return 'Q4_K_M (recommended)';
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.rockchip:
-        return 'Q4_K_M (recommended)';
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.hisilicon:
-        return 'Q4_K_M (recommended)';
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.unknown:
-        return 'Q4_K_M (universal default)';
+        return 'Q4_K_M (universal default)'.tr;
     }
   }
 
   String? get quantWarning {
     switch (this) {
       case SocFamily.googleTensor:
-        return 'Google Tensor has a known bug with Q4_K_M quantization that produces empty or garbled responses. Use Q4_0 or Q5_K_M models instead.';
+        return 'Google Tensor has a known bug with Q4_K_M quantization that produces empty or garbled responses. Use Q4_0 or Q5_K_M models instead.'.tr;
       default:
         return null;
     }

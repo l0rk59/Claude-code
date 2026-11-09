@@ -280,8 +280,7 @@ const Map<String, String> fr = {
   'Loading model': 'Chargement du modèle',
   'Reading image…': "Lecture de l'image…",
   'Listening to audio…': "Écoute de l'audio…",
-  'Listening… tap mic to stop':
-      "J'écoute… touchez le micro pour arrêter",
+  'Listening… tap mic to stop': "J'écoute… touchez le micro pour arrêter",
   'Image gen · @steps · @size · @backend':
       "Génération d'image · @steps · @size · @backend",
   '@count step': '@count étape',
@@ -296,8 +295,7 @@ const Map<String, String> fr = {
   'Load a model to start chatting':
       'Chargez un modèle pour commencer à discuter',
   'Test mode': 'Mode test',
-  'Added 15 test prompts to the batch.':
-      '15 prompts de test ajoutés au lot.',
+  'Added 15 test prompts to the batch.': '15 prompts de test ajoutés au lot.',
   'Batch limit': 'Limite du lot',
   'You can add up to 20 prompts per batch.':
       "Vous pouvez ajouter jusqu'à 20 prompts par lot.",
@@ -713,7 +711,8 @@ const Map<String, String> fr = {
   'Enter IP': "Saisir l'IP",
   'Add': 'Ajouter',
   'Enter worker IP': "Saisir l'IP de l'auxiliaire",
-  "Shown under the worker's QR code": "Affichée sous le code QR de l'auxiliaire",
+  "Shown under the worker's QR code":
+      "Affichée sous le code QR de l'auxiliaire",
   "Couldn't add worker": "Impossible d'ajouter l'auxiliaire",
   'Worker added': 'Auxiliaire ajouté',
   'Used the next time you load a GGUF model.':
@@ -800,8 +799,7 @@ const Map<String, String> fr = {
   'OpenAI SDK': 'SDK OpenAI',
   'Starting…': 'Démarrage…',
   'Running on port @port': 'En marche sur le port @port',
-  'Serving @name · open to your network':
-      'Sert @name · ouvert à votre réseau',
+  'Serving @name · open to your network': 'Sert @name · ouvert à votre réseau',
   'Serving @name · this device only': 'Sert @name · cet appareil uniquement',
   'Stopped': 'Arrêté',
   'Expose @name as an OpenAI-compatible API':
@@ -815,8 +813,7 @@ const Map<String, String> fr = {
   'Not available': 'Indisponible',
   'Copy @label': 'Copier : @label',
   'Server is healthy · HTTP @code': 'Le serveur fonctionne · HTTP @code',
-  'Health check returned HTTP @code':
-      'La vérification a renvoyé HTTP @code',
+  'Health check returned HTTP @code': 'La vérification a renvoyé HTTP @code',
   'Health check failed: @error': 'Échec de la vérification : @error',
   'Testing…': 'Test…',
   'Test connection': 'Tester la connexion',
@@ -957,4 +954,140 @@ const Map<String, String> fr = {
   'Detecting': 'Détection',
   'Unknown GPU': 'GPU inconnu',
   'GPU unavailable': 'GPU indisponible',
+
+  // ── Local engine: loading and generation ──────────────────────────────
+  'GPU (@layers layers, @gpu)': 'GPU (@layers couches, @gpu)',
+  'CPU (@threads threads)': 'CPU (@threads threads)',
+  'Model loaded (@accel).': 'Modèle chargé (@accel).',
+  'Model loaded across @split.': 'Modèle chargé sur @split.',
+  '@count phones': '@count téléphones',
+  'LiteRT-LM is enabled for Android only in this app.':
+      "Dans cette app, LiteRT-LM n'est disponible que sur Android.",
+  'LiteRT-LM model loaded (@backend backend).':
+      'Modèle LiteRT-LM chargé (moteur @backend).',
+  'This LiteRT-LM file is text-only, but it was loaded as a vision model. Turn off Vision for this model or re-import it as a normal chat model.':
+      'Ce fichier LiteRT-LM ne gère que le texte, mais il a été chargé comme '
+          'modèle de vision. Désactivez Vision pour ce modèle ou réimportez-le '
+          'comme modèle de chat normal.',
+  'Model loaded in text-only mode. Its vision features are incompatible with the LiteRT engine (expected 1 signature, found multiple).':
+      'Modèle chargé en mode texte seul. Ses fonctions de vision sont '
+          'incompatibles avec le moteur LiteRT (1 signature attendue, '
+          'plusieurs trouvées).',
+  'LiteRT load failed: @error': 'Échec du chargement LiteRT : @error',
+  'This vision model is incompatible with the LiteRT engine (expected 1 signature, found multiple). Please try a standard GGUF model or a text-only LiteRT model instead.':
+      "Ce modèle de vision est incompatible avec le moteur LiteRT (1 "
+          'signature attendue, plusieurs trouvées). Essayez plutôt un modèle '
+          'GGUF standard ou un modèle LiteRT texte seul.',
+  "This model can't read images. Load a vision model (one marked Vision in Models) to ask about photos.":
+      'Ce modèle ne peut pas lire les images. Chargez un modèle de vision '
+          '(marqué Vision dans Modèles) pour poser des questions sur des '
+          'photos.',
+  'GGUF audio input is not available in this build yet. Text files can be read when their content is attached, but audio needs a model/runtime path that supports audio input.':
+      "L'entrée audio GGUF n'est pas encore disponible dans cette version. "
+          'Les fichiers texte peuvent être lus quand leur contenu est joint, '
+          "mais l'audio nécessite un modèle et un moteur qui le prennent en "
+          'charge.',
+  'ERROR: Generation failed — @error':
+      'ERREUR : échec de la génération — @error',
+  'ERROR: Model did not respond. Try a smaller model or shorter conversation.':
+      "ERREUR : le modèle n'a pas répondu. Essayez un modèle plus petit ou une "
+          'conversation plus courte.',
+  'ERROR: Generation timed out.': 'ERREUR : délai de génération dépassé.',
+  'ERROR: LiteRT-LM multimodal generation failed - @error':
+      'ERREUR : échec de la génération multimodale LiteRT-LM — @error',
+  'ERROR: LiteRT-LM multimodal model did not respond.':
+      "ERREUR : le modèle multimodal LiteRT-LM n'a pas répondu.",
+  'ERROR: LiteRT-LM multimodal generation timed out.':
+      'ERREUR : délai de génération multimodale LiteRT-LM dépassé.',
+  'ERROR: LiteRT-LM generation failed - @error':
+      'ERREUR : échec de la génération LiteRT-LM — @error',
+  'ERROR: LiteRT-LM model did not respond. Try a smaller model.':
+      "ERREUR : le modèle LiteRT-LM n'a pas répondu. Essayez un modèle plus "
+          'petit.',
+  'ERROR: LiteRT-LM generation timed out.':
+      'ERREUR : délai de génération LiteRT-LM dépassé.',
+  'Stopped: this reply hit the time limit for one response.':
+      'Arrêté : cette réponse a atteint la durée maximale autorisée.',
+  'ERROR: Local inference is not available on this platform. Use Cloud mode.':
+      "ERREUR : l'inférence locale n'est pas disponible sur cette plateforme. "
+          'Utilisez le mode Cloud.',
+  'Local inference is not available on this platform.':
+      "L'inférence locale n'est pas disponible sur cette plateforme.",
+  'ERROR: Model is already loading.':
+      'ERREUR : le modèle est déjà en cours de chargement.',
+  'ERROR: LiteRT models need 64-bit Android. This phone runs 32-bit Android; use a small GGUF model (under 1.5 GB) instead.':
+      'ERREUR : les modèles LiteRT nécessitent Android 64 bits. Ce téléphone '
+          'tourne sous Android 32 bits ; utilisez plutôt un petit modèle GGUF '
+          '(moins de 1,5 Go).',
+  'ERROR: This model is too large for 32-bit Android. Choose a GGUF model under 1.5 GB (for example a 1B Q4 model).':
+      'ERREUR : ce modèle est trop gros pour Android 32 bits. Choisissez un '
+          'modèle GGUF de moins de 1,5 Go (par exemple un modèle 1B Q4).',
+  'ERROR: Cannot load image generation models (.safetensors) into the local text engine. Native local image generation requires the upcoming stable-diffusion engine update. Use Cloud Stability AI for now.':
+      "ERREUR : impossible de charger un modèle de génération d'images "
+          '(.safetensors) dans le moteur de texte local. La génération '
+          "d'images locale native nécessite la future mise à jour du moteur "
+          'stable-diffusion. Utilisez Stability AI dans le cloud pour le '
+          'moment.',
+  'ERROR: Failed to load model — @error':
+      'ERREUR : échec du chargement du modèle — @error',
+  'ERROR: No model loaded. Go to Models tab to download and load one.':
+      "ERREUR : aucun modèle chargé. Allez dans l'onglet Modèles pour en "
+          'télécharger et en charger un.',
+  "⚠️ This Gemma model is incompatible with your Pixel's Google Tensor chip. The Q4_K_M quantization format has a known bug on Tensor SoC that produces empty responses.\n\nTry one of these fixes:\n1. Download a Q4_0 or Q5_K_M version of the same model\n2. Use a different model (Qwen, Phi, or Llama-3)\n3. Switch to Cloud mode in Settings":
+      '⚠️ Ce modèle Gemma est incompatible avec la puce Google Tensor de '
+          'votre Pixel. Le format de quantification Q4_K_M a un bug connu sur '
+          "les SoC Tensor qui produit des réponses vides.\n\nEssayez l'une de "
+          'ces solutions :\n1. Téléchargez une version Q4_0 ou Q5_K_M du même '
+          'modèle\n2. Utilisez un autre modèle (Qwen, Phi ou Llama-3)\n3. '
+          'Passez en mode Cloud dans les Paramètres',
+
+  // ── Downloads and device ──────────────────────────────────────────────
+  'Import this file to use it in the app.':
+      "Importez ce fichier pour l'utiliser dans l'app.",
+  'ERROR: Downloading models is not supported on web.':
+      "ERREUR : le téléchargement de modèles n'est pas pris en charge sur le "
+          'web.',
+  'Download failed': 'Échec du téléchargement',
+  'Switching to direct download...': 'Passage au téléchargement direct...',
+  'Download was interrupted at @done of @total bytes. Tap download again to resume.':
+      'Le téléchargement a été interrompu à @done octets sur @total. Touchez '
+          'Télécharger à nouveau pour reprendre.',
+  'Downloaded file is larger than expected; please retry.':
+      'Le fichier téléchargé est plus gros que prévu ; réessayez.',
+  'Download failed: @error. Tap download again to resume.':
+      'Le téléchargement a échoué : @error. Touchez Télécharger à nouveau '
+          'pour reprendre.',
+  'Q4_K_M (safe default) · Q5_K_M for quality':
+      'Q4_K_M (choix sûr) · Q5_K_M pour la qualité',
+  'Q4_K_M (recommended) · Q4_0_4_8 on X Elite':
+      'Q4_K_M (recommandé) · Q4_0_4_8 sur X Elite',
+  'Q4_K_M (recommended)': 'Q4_K_M (recommandé)',
+  'Q4_0 or Q5_K_M · AVOID Q4_K_M': 'Q4_0 ou Q5_K_M · ÉVITER Q4_K_M',
+  'Q4_K_M (universal default)': 'Q4_K_M (choix universel)',
+  'Google Tensor has a known bug with Q4_K_M quantization that produces empty or garbled responses. Use Q4_0 or Q5_K_M models instead.':
+      'Les puces Google Tensor ont un bug connu avec la quantification Q4_K_M '
+          'qui produit des réponses vides ou incohérentes. Utilisez plutôt des '
+          'modèles Q4_0 ou Q5_K_M.',
+};
+
+/// Download statuses the Android code reports in English (shown through
+/// DownloadService.statusLabel). They are not in the Dart code, so the
+/// translation test does not look for them there.
+const Map<String, String> frNativeStatuses = {
+  'Waiting to start...': 'En attente de démarrage...',
+  'Downloading...': 'Téléchargement...',
+  'Downloading to phone...': 'Téléchargement sur le téléphone...',
+  'Paused': 'En pause',
+  'Paused: waiting for network': 'En pause : en attente du réseau',
+  'Paused: waiting for Wi-Fi': 'En pause : en attente du Wi-Fi',
+  'Paused: retrying': 'En pause : nouvelle tentative',
+  'Importing to app storage...': "Importation dans le stockage de l'app...",
+  'Saving to Downloads...': 'Enregistrement dans Téléchargements...',
+  'Saved to Downloads': 'Enregistré dans Téléchargements',
+  'Save failed': "Échec de l'enregistrement",
+  'Download stalled': 'Téléchargement bloqué',
+  'Download complete': 'Téléchargement terminé',
+  'Download cancelled': 'Téléchargement annulé',
+  'Download failed: import error':
+      "Échec du téléchargement : erreur d'importation",
 };

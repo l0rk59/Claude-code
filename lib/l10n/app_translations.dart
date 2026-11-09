@@ -25,7 +25,9 @@ class AppTranslations extends Translations {
   static const languageCodes = [system, 'en', 'fr'];
 
   @override
-  Map<String, Map<String, String>> get keys => {'fr_FR': fr};
+  Map<String, Map<String, String>> get keys => {
+        'fr_FR': {...frNativeStatuses, ...fr},
+      };
 
   /// The locale for a saved language choice ('system', 'en' or 'fr').
   static Locale localeFor(String language) {

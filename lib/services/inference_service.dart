@@ -23,6 +23,10 @@ class InferenceService extends GetxService {
   final isGenerating = false.obs;
   final isLoadingModel = false.obs;
   final isVisionLoaded = false.obs;
+
+  /// The last load succeeded but dropped the vision features it was asked
+  /// for (LiteRT text-only fallback).
+  bool lastLoadVisionDisabled = false;
   final loadingModelName = ''.obs;
   final loadedModelName = ''.obs;
   final tokenCount = 0.obs;
@@ -65,26 +69,31 @@ class InferenceService extends GetxService {
     String? mmprojPath,
   }) async {
     if (!supportsLocalInference) {
-      return 'ERROR: Local inference is not available on this platform. Use Cloud mode.';
+      return 'ERROR: Local inference is not available on this platform. Use Cloud mode.'
+          .tr;
     }
-    if (isLoadingModel.value) return 'ERROR: Model is already loading.';
+    if (isLoadingModel.value) return 'ERROR: Model is already loading.'.tr;
+    lastLoadVisionDisabled = false;
 
     if (platform.isRunning32Bit) {
       final lower = modelPath.toLowerCase();
       if (_runtimeFor(modelPath, modelRuntime) == 'litert') {
         return 'ERROR: LiteRT models need 64-bit Android. This phone runs '
-            '32-bit Android; use a small GGUF model (under 1.5 GB) instead.';
+                '32-bit Android; use a small GGUF model (under 1.5 GB) instead.'
+            .tr;
       }
       // A 32-bit process can't map a model this large next to everything else.
       if (lower.endsWith('.gguf') &&
           await _fileBytes(modelPath) > 1536 * 1024 * 1024) {
         return 'ERROR: This model is too large for 32-bit Android. Choose a '
-            'GGUF model under 1.5 GB (for example a 1B Q4 model).';
+                'GGUF model under 1.5 GB (for example a 1B Q4 model).'
+            .tr;
       }
     }
 
     if (modelPath.toLowerCase().endsWith('.safetensors')) {
-      return 'ERROR: Cannot load image generation models (.safetensors) into the local text engine. Native local image generation requires the upcoming stable-diffusion engine update. Use Cloud Stability AI for now.';
+      return 'ERROR: Cannot load image generation models (.safetensors) into the local text engine. Native local image generation requires the upcoming stable-diffusion engine update. Use Cloud Stability AI for now.'
+          .tr;
     }
 
     try {
@@ -176,6 +185,7 @@ class InferenceService extends GetxService {
       }
 
       isModelLoaded.value = result.success;
+      lastLoadVisionDisabled = result.visionDisabled;
       isLoadingModel.value = false;
       loadingModelName.value = '';
       modelLoadProgress.value = 1.0;
@@ -206,7 +216,10 @@ class InferenceService extends GetxService {
       if (clusterWorkers > 0) {
         final cluster = Get.find<ClusterService>();
         await cluster.refreshSplit(modelPath);
-        return 'Model loaded across ${cluster.splitSummary ?? '${clusterWorkers + 1} phones'}.';
+        return 'Model loaded across @split.'.trParams({
+          'split': cluster.splitSummary ??
+              '@count phones'.trParams({'count': '${clusterWorkers + 1}'})
+        });
       }
       return result.message;
     } catch (e) {
@@ -216,7 +229,7 @@ class InferenceService extends GetxService {
       modelLoadProgress.value = 0.0;
       loadedBackend.value = '';
       Get.find<AppLogService>().error('Failed to load local model', details: e);
-      return 'ERROR: Failed to load model — $e';
+      return 'ERROR: Failed to load model — @error'.trParams({'error': '$e'});
     }
   }
 
@@ -256,7 +269,8 @@ class InferenceService extends GetxService {
     void Function(String token)? onToken,
   }) async {
     if (!supportsLocalInference || _engine == null || !isModelLoaded.value) {
-      return 'ERROR: No model loaded. Go to Models tab to download and load one.';
+      return 'ERROR: No model loaded. Go to Models tab to download and load one.'
+          .tr;
     }
 
     if (isGenerating.value) {
@@ -382,12 +396,13 @@ class InferenceService extends GetxService {
           loadedModelName.value.toLowerCase().contains('gemma')) {
         final isTensor = _getIsTensorSoC();
         if (isTensor) {
-          return '⚠️ This Gemma model is incompatible with your Pixel\'s Google Tensor chip. '
-              'The Q4_K_M quantization format has a known bug on Tensor SoC that produces empty responses.\n\n'
-              'Try one of these fixes:\n'
-              '1. Download a Q4_0 or Q5_K_M version of the same model\n'
-              '2. Use a different model (Qwen, Phi, or Llama-3)\n'
-              '3. Switch to Cloud mode in Settings';
+          return "⚠️ This Gemma model is incompatible with your Pixel's Google Tensor chip. "
+                  'The Q4_K_M quantization format has a known bug on Tensor SoC that produces empty responses.\n\n'
+                  'Try one of these fixes:\n'
+                  '1. Download a Q4_0 or Q5_K_M version of the same model\n'
+                  '2. Use a different model (Qwen, Phi, or Llama-3)\n'
+                  '3. Switch to Cloud mode in Settings'
+              .tr;
         }
       }
 
@@ -516,13 +531,15 @@ class InferenceService extends GetxService {
         } catch (cpuError) {
           return platform.LoadResult(
             success: false,
-            message: 'ERROR: Failed to load model - $cpuError',
+            message: 'ERROR: Failed to load model — @error'
+                .trParams({'error': '$cpuError'}),
           );
         }
       }
       return platform.LoadResult(
         success: false,
-        message: 'ERROR: Failed to load model - $e',
+        message:
+            'ERROR: Failed to load model — @error'.trParams({'error': '$e'}),
       );
     }
   }

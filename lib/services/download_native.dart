@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:get/get.dart' show Trans;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:archive/archive_io.dart';
@@ -181,13 +182,15 @@ Future<String> downloadModel({
     if (total > 0 && downloadedBytes < total) {
       // Keep the partial file so the next attempt resumes.
       throw Exception(
-        'Download was interrupted at $downloadedBytes of $total bytes. '
-        'Tap download again to resume.',
+        'Download was interrupted at @done of @total bytes. '
+                'Tap download again to resume.'
+            .trParams({'done': '$downloadedBytes', 'total': '$total'}),
       );
     }
     if (total > 0 && downloadedBytes > total) {
       await partial.delete();
-      throw Exception('Downloaded file is larger than expected; please retry.');
+      throw Exception(
+          'Downloaded file is larger than expected; please retry.'.tr);
     }
 
     final finalFile = File(savePath);
@@ -205,8 +208,8 @@ Future<String> downloadModel({
   } on DioException catch (e) {
     _cancelTokens.remove(filename);
     if (e.type == DioExceptionType.cancel) return 'PAUSED';
-    throw Exception(
-        'Download failed: ${e.message}. Tap download again to resume.');
+    throw Exception('Download failed: @error. Tap download again to resume.'
+        .trParams({'error': '${e.message}'}));
   } catch (e) {
     _cancelTokens.remove(filename);
     rethrow;

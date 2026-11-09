@@ -182,8 +182,8 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
                   status == 'Download cancelled') {
                 if (status == 'Download complete' && isPhoneDownload) {
                   showToast(
-                    'Saved to Downloads',
-                    'Import this file to use it in the app.',
+                    'Saved to Downloads'.tr,
+                    'Import this file to use it in the app.'.tr,
                     tone: ToastTone.success,
                     duration: const Duration(seconds: 5),
                   );
@@ -264,7 +264,9 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     required String filename,
     String? authToken,
   }) async {
-    if (kIsWeb) return 'ERROR: Downloading models is not supported on web.';
+    if (kIsWeb) {
+      return 'ERROR: Downloading models is not supported on web.'.tr;
+    }
 
     final downloadProgress = DownloadProgress(filename: filename);
     activeDownloads[filename] = downloadProgress;
@@ -348,7 +350,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
 
   void _notifyFailure(String filename, String message) {
     showToast(
-      'Download failed',
+      'Download failed'.tr,
       '$filename: ${message.replaceFirst('Download failed: ', '')}',
       tone: ToastTone.error,
       duration: const Duration(seconds: 6),
@@ -380,19 +382,28 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     await platform_dl.deleteModel(await modelPath(filename));
   }
 
+  /// A download or import status for display. Statuses are kept in English
+  /// (code compares them); the Android ones are translated in
+  /// `frNativeStatuses`.
+  static String statusLabel(String status) => status.tr;
+
   static String formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024) return '@size B'.trParams({'size': '$bytes'});
+    if (bytes < 1024 * 1024) {
+      return '@size KB'.trParams({'size': (bytes / 1024).toStringAsFixed(1)});
     }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '@size MB'
+          .trParams({'size': (bytes / (1024 * 1024)).toStringAsFixed(1)});
+    }
+    return '@size GB'
+        .trParams({'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)});
   }
 
   static String formatWholeMb(int bytes) {
-    if (bytes <= 0) return '0 MB';
+    if (bytes <= 0) return '@size MB'.trParams({'size': '0'});
     final mb = (bytes / (1024 * 1024)).round().clamp(1, 1 << 31);
-    return '$mb MB';
+    return '@size MB'.trParams({'size': '$mb'});
   }
 
   static String formatSpeed(double bytesPerSecond) {

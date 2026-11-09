@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ffi' show Abi;
 import 'dart:io' show Platform, Directory, File;
+import 'package:get/get.dart' show Trans;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_litert_lm/flutter_litert_lm.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
@@ -24,6 +25,9 @@ class LoadResult {
   final int gpuLayers;
   final String runtime;
   final String backend;
+
+  /// Loaded, but without the vision features it was asked for.
+  final bool visionDisabled;
   LoadResult({
     required this.success,
     required this.message,
@@ -31,6 +35,7 @@ class LoadResult {
     this.gpuLayers = 0,
     this.runtime = '',
     this.backend = '',
+    this.visionDisabled = false,
   });
 }
 
@@ -191,13 +196,14 @@ class InferenceEngine {
     }
 
     final accel = gpuLayers > 0
-        ? 'GPU ($gpuLayers layers, $gpuNameStr)'
-        : 'CPU ($threads threads)';
+        ? 'GPU (@layers layers, @gpu)'
+            .trParams({'layers': '$gpuLayers', 'gpu': gpuNameStr})
+        : 'CPU (@threads threads)'.trParams({'threads': '$threads'});
     print('[Inference] ✓ Model loaded: $accel, ctx=$contextSize');
 
     return LoadResult(
       success: true,
-      message: 'Model loaded ($accel).',
+      message: 'Model loaded (@accel).'.trParams({'accel': accel}),
       gpuName: gpuNameStr,
       gpuLayers: gpuLayers,
       runtime: 'llama',
@@ -216,7 +222,7 @@ class InferenceEngine {
   }) async {
     if (!Platform.isAndroid) {
       throw UnsupportedError(
-          'LiteRT-LM is enabled for Android only in this app.');
+          'LiteRT-LM is enabled for Android only in this app.'.tr);
     }
 
     _isLiteRt = true;
@@ -252,7 +258,8 @@ class InferenceEngine {
           '[Inference] LiteRT-LM loaded with $backendLabel backend, ctx=$contextSize');
       return LoadResult(
         success: true,
-        message: 'LiteRT-LM model loaded ($backendLabel backend).',
+        message: 'LiteRT-LM model loaded (@backend backend).'
+            .trParams({'backend': backendLabel}),
         gpuName: backend == LiteLmBackend.gpu ? 'LiteRT GPU' : '',
         gpuLayers: backend == LiteLmBackend.gpu ? 1 : 0,
         runtime: 'litert',
@@ -265,7 +272,8 @@ class InferenceEngine {
         return LoadResult(
           success: false,
           message:
-              'This LiteRT-LM file is text-only, but it was loaded as a vision model. Turn off Vision for this model or re-import it as a normal chat model.',
+              'This LiteRT-LM file is text-only, but it was loaded as a vision model. Turn off Vision for this model or re-import it as a normal chat model.'
+                  .tr,
         );
       }
       if (enableVision && errorStr.contains('exactly one signature but got')) {
@@ -284,17 +292,20 @@ class InferenceEngine {
           return LoadResult(
             success: true,
             message:
-                'Model loaded in text-only mode. Its vision features are incompatible with the LiteRT engine (expected 1 signature, found multiple).',
+                'Model loaded in text-only mode. Its vision features are incompatible with the LiteRT engine (expected 1 signature, found multiple).'
+                    .tr,
             gpuName: backend == LiteLmBackend.gpu ? 'LiteRT GPU' : '',
             gpuLayers: backend == LiteLmBackend.gpu ? 1 : 0,
             runtime: 'litert',
             backend: backend.name,
+            visionDisabled: true,
           );
         } catch (fallbackError) {
           print('[Inference] LiteRT-LM fallback load failed: $fallbackError');
           return LoadResult(
             success: false,
-            message: 'LiteRT load failed: $fallbackError',
+            message: 'LiteRT load failed: @error'
+                .trParams({'error': '$fallbackError'}),
           );
         }
       }
@@ -302,7 +313,8 @@ class InferenceEngine {
         return LoadResult(
           success: false,
           message:
-              'This vision model is incompatible with the LiteRT engine (expected 1 signature, found multiple). Please try a standard GGUF model or a text-only LiteRT model instead.',
+              'This vision model is incompatible with the LiteRT engine (expected 1 signature, found multiple). Please try a standard GGUF model or a text-only LiteRT model instead.'
+                  .tr,
         );
       }
       rethrow;
@@ -362,11 +374,13 @@ class InferenceEngine {
 
     if (_controller == null) throw Exception('No model loaded');
     if (imagePath != null && imagePath.isNotEmpty && !_ggufVisionLoaded) {
-      return 'This model can\'t read images. Load a vision model (one marked '
-          'Vision in Models) to ask about photos.';
+      return "This model can't read images. Load a vision model (one marked "
+              'Vision in Models) to ask about photos.'
+          .tr;
     }
     if (audioPath != null && audioPath.isNotEmpty) {
-      return 'GGUF audio input is not available in this build yet. Text files can be read when their content is attached, but audio needs a model/runtime path that supports audio input.';
+      return 'GGUF audio input is not available in this build yet. Text files can be read when their content is attached, but audio needs a model/runtime path that supports audio input.'
+          .tr;
     }
 
     final completer = Completer<String>();
@@ -461,7 +475,7 @@ class InferenceEngine {
       },
       onError: (error) {
         print('[Inference] Stream error: $error');
-        finish('ERROR: Generation failed — $error');
+        finish('ERROR: Generation failed — @error'.trParams({'error': '$error'}));
       },
     );
 
@@ -469,7 +483,8 @@ class InferenceEngine {
     _idleTimer = Timer(const Duration(seconds: 60), () {
       if (tokenCount == 0) {
         finish(
-            'ERROR: Model did not respond. Try a smaller model or shorter conversation.');
+            'ERROR: Model did not respond. Try a smaller model or shorter conversation.'
+                .tr);
       }
     });
 
@@ -478,7 +493,7 @@ class InferenceEngine {
       if (!completed) {
         final partial = buffer.toString();
         finish(partial.isEmpty
-            ? 'ERROR: Generation timed out.'
+            ? 'ERROR: Generation timed out.'.tr
             : '$partial$_timeLimitNote');
       }
     });
@@ -583,13 +598,14 @@ class InferenceEngine {
         },
         onError: (error) {
           print('[Inference] LiteRT-LM multimodal stream error: $error');
-          finish('ERROR: LiteRT-LM multimodal generation failed - $error');
+          finish('ERROR: LiteRT-LM multimodal generation failed - @error'
+              .trParams({'error': '$error'}));
         },
       );
 
       _idleTimer = Timer(const Duration(seconds: 90), () {
         if (tokenCount == 0) {
-          finish('ERROR: LiteRT-LM multimodal model did not respond.');
+          finish('ERROR: LiteRT-LM multimodal model did not respond.'.tr);
         }
       });
 
@@ -597,7 +613,7 @@ class InferenceEngine {
         if (!completed) {
           final partial = buffer.toString();
           finish(partial.isEmpty
-              ? 'ERROR: LiteRT-LM multimodal generation timed out.'
+              ? 'ERROR: LiteRT-LM multimodal generation timed out.'.tr
               : '$partial$_timeLimitNote');
         }
       });
@@ -641,13 +657,14 @@ class InferenceEngine {
       },
       onError: (error) {
         print('[Inference] LiteRT-LM stream error: $error');
-        finish('ERROR: LiteRT-LM generation failed - $error');
+        finish('ERROR: LiteRT-LM generation failed - @error'
+            .trParams({'error': '$error'}));
       },
     );
 
     _idleTimer = Timer(const Duration(seconds: 60), () {
       if (tokenCount == 0) {
-        finish('ERROR: LiteRT-LM model did not respond. Try a smaller model.');
+        finish('ERROR: LiteRT-LM model did not respond. Try a smaller model.'.tr);
       }
     });
 
@@ -655,7 +672,7 @@ class InferenceEngine {
       if (!completed) {
         final partial = buffer.toString();
         finish(partial.isEmpty
-            ? 'ERROR: LiteRT-LM generation timed out.'
+            ? 'ERROR: LiteRT-LM generation timed out.'.tr
             : '$partial$_timeLimitNote');
       }
     });
@@ -785,8 +802,8 @@ class InferenceEngine {
   static Duration _hardTimeout(int maxTokens, {int minSeconds = 180}) =>
       Duration(seconds: maxTokens > minSeconds ? maxTokens : minSeconds);
 
-  static const _timeLimitNote =
-      '\n\n⚠️ Stopped: this reply hit the time limit for one response.';
+  static String get _timeLimitNote =>
+      '\n\n⚠️ ${'Stopped: this reply hit the time limit for one response.'.tr}';
 
   String _runtimeFor(String modelPath, String? modelRuntime) {
     final runtime = modelRuntime?.toLowerCase();

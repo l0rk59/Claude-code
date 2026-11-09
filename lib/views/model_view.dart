@@ -317,7 +317,8 @@ class ModelView extends GetView<ModelController> {
                 final eta = dp.eta;
                 final meta = [
                   if (dp.status.value.isNotEmpty)
-                    dp.status.value.replaceAll(RegExp(r'\.+$'), ''),
+                    DownloadService.statusLabel(dp.status.value)
+                        .replaceAll(RegExp(r'\.+$'), ''),
                   '${pct.toStringAsFixed(0)}%',
                   if (dp.bytesPerSecond.value > 0)
                     DownloadService.formatSpeed(dp.bytesPerSecond.value),
@@ -518,7 +519,7 @@ class ModelView extends GetView<ModelController> {
                             style: t.bodyStrong),
                         const SizedBox(height: 2),
                         Text(
-                          '${controller.importStatus.value} ${controller.importFileName.value}',
+                          '${DownloadService.statusLabel(controller.importStatus.value)} ${controller.importFileName.value}',
                           style: t.small,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

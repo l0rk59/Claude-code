@@ -512,7 +512,7 @@ class ModelController extends GetxController {
     try {
       isImporting.value = true;
       importFileName.value = model.filename;
-      importStatus.value = 'Starting download...'.tr;
+      importStatus.value = 'Starting download...';
       importCopiedBytes.value = 0;
       importTotalBytes.value = 0;
       importBytesPerSecond.value = 0;
@@ -559,7 +559,7 @@ class ModelController extends GetxController {
       }
       externalDownloadId.value = null;
       isImporting.value = false;
-      importStatus.value = 'Download cancelled'.tr;
+      importStatus.value = 'Download cancelled';
     }
   }
 
@@ -764,7 +764,7 @@ class ModelController extends GetxController {
         mmprojPath: mmprojPath,
       );
       if (_inference.isModelLoaded.value) {
-        final fallbackToText = result.toLowerCase().contains('text-only');
+        final fallbackToText = _inference.lastLoadVisionDisabled;
         _inference.isVisionLoaded.value = isLiteRt
             ? (!fallbackToText && model != null && isVisionModel(model))
             : _inference.ggufVisionLoaded;
@@ -1219,7 +1219,7 @@ class ModelController extends GetxController {
 
         isImporting.value = true;
         importFileName.value = filename;
-        importStatus.value = 'Copying to app storage...'.tr;
+        importStatus.value = 'Copying to app storage...';
         importCopiedBytes.value = 0;
         importTotalBytes.value = totalBytes;
         importBytesPerSecond.value = 0;
@@ -1237,7 +1237,7 @@ class ModelController extends GetxController {
 
         await refreshDownloaded();
         modelScope.value = 'local';
-        importStatus.value = 'Import complete'.tr;
+        importStatus.value = 'Import complete';
         showToast('Import Successful'.tr,
             'Model @name imported.'.trParams({'name': filename}),
             tone: ToastTone.success);
@@ -1265,7 +1265,7 @@ class ModelController extends GetxController {
     try {
       isImporting.value = true;
       importFileName.value = '';
-      importStatus.value = 'Select a model file...'.tr;
+      importStatus.value = 'Select a model file...';
       importCopiedBytes.value = 0;
       importTotalBytes.value = 0;
       importBytesPerSecond.value = 0;
@@ -1351,7 +1351,7 @@ class ModelController extends GetxController {
     try {
       for (final file in files) {
         importFileName.value = file.name;
-        importStatus.value = 'Copying to app storage...'.tr;
+        importStatus.value = 'Copying to app storage...';
         importCopiedBytes.value = 0;
         importTotalBytes.value = file.size;
         importBytesPerSecond.value = 0;
