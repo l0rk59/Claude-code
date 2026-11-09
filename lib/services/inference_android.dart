@@ -338,6 +338,9 @@ class InferenceEngine {
         visionBackend: enableVision ? LiteLmBackend.cpu : null,
         audioBackend: null,
         maxNumTokens: contextSize,
+        // Multi-token prediction: Google recommends it on the GPU. Models
+        // without it run as before.
+        speculativeDecoding: backend == LiteLmBackend.gpu ? 'adaptive' : null,
       ),
     );
   }

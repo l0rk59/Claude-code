@@ -28,5 +28,10 @@
         <uses-native-library
             android:name="libOpenCL-pixel.so"
             android:required="false" />
+        <!-- LiteRT-LM 0.19's GPU backend also needs this one (Google's
+             Android setup guide). -->
+        <uses-native-library
+            android:name="libvndksupport.so"
+            android:required="false" />
     </application>
 </manifest>

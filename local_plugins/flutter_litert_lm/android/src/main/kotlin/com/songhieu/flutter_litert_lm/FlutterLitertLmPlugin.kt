@@ -10,6 +10,8 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
+import com.google.ai.edge.litertlm.SpeculativeDecodingConfig
+import com.google.ai.edge.litertlm.SpeculativeDecodingMode
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -83,21 +85,35 @@ class FlutterLitertLmPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
                 val visionBackendName = call.argument<String>("visionBackend")
                 val audioBackendName = call.argument<String>("audioBackend")
                 val maxNumTokens = call.argument<Int>("maxNumTokens")
+                val speculative = parseSpeculativeMode(
+                    call.argument<String>("speculativeDecoding"))
 
                 val backend = parseBackend(backendName)
                 val visionBackend = visionBackendName?.let { parseBackend(it) }
                 val audioBackend = audioBackendName?.let { parseBackend(it) }
-                val configBuilder = EngineConfig(
+                fun config(mode: SpeculativeDecodingMode?) = EngineConfig(
                     modelPath = modelPath,
                     backend = backend,
                     cacheDir = cacheDir ?: context.cacheDir.absolutePath,
                     visionBackend = visionBackend,
                     audioBackend = audioBackend,
                     maxNumTokens = maxNumTokens,
+                    speculativeDecodingConfig =
+                        mode?.let { SpeculativeDecodingConfig(it) },
                 )
 
-                val engine = Engine(configBuilder)
-                engine.initialize()
+                // Multi-token prediction is new: if the engine won't start
+                // with it, start it without rather than failing the load.
+                val engine = try {
+                    Engine(config(speculative)).also { it.initialize() }
+                } catch (e: Exception) {
+                    if (speculative == null ||
+                        speculative == SpeculativeDecodingMode.OFF) throw e
+                    android.util.Log.w(
+                        "FlutterLitertLm",
+                        "Engine failed with speculative decoding; retrying without", e)
+                    Engine(config(null)).also { it.initialize() }
+                }
 
                 val engineId = UUID.randomUUID().toString()
                 engines[engineId] = engine
@@ -288,6 +304,14 @@ class FlutterLitertLmPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         "npu" -> Backend.NPU(context.applicationInfo.nativeLibraryDir)
         else -> Backend.CPU()
     }
+
+    private fun parseSpeculativeMode(name: String?): SpeculativeDecodingMode? =
+        when (name?.lowercase()) {
+            "on" -> SpeculativeDecodingMode.ON
+            "adaptive" -> SpeculativeDecodingMode.ADAPTIVE
+            "off" -> SpeculativeDecodingMode.OFF
+            else -> null
+        }
 
     private fun parseConversationConfig(map: Map<String, Any>): ConversationConfig {
         val systemInstruction = map["systemInstruction"] as? String

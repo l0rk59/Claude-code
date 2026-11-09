@@ -35,6 +35,12 @@ plugins {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+        // LiteRT-LM 0.18+ is compiled with Kotlin 2.4, one version past what
+        // the app's Kotlin 2.2 reads. Moving the whole app to Kotlin 2.3
+        // breaks plugins still on the old kotlinOptions DSL, so only this
+        // plugin skips the check; it uses plain classes, enums and data
+        // classes from the library.
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
 
@@ -83,7 +89,7 @@ android {
 
 dependencies {
     // LiteRT-LM Android SDK
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.12.0")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.19.1")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")

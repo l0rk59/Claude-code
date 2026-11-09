@@ -24,6 +24,12 @@ class LiteLmEngineConfig {
   /// The maximum number of tokens (KV cache size).
   final int? maxNumTokens;
 
+  /// Multi-token prediction (speculative decoding): 'off', 'on' or
+  /// 'adaptive'. Null keeps the runtime's default. Google recommends it on
+  /// the GPU; models without prediction heads just ignore it. If the engine
+  /// can't start with it, the plugin retries without.
+  final String? speculativeDecoding;
+
   const LiteLmEngineConfig({
     required this.modelPath,
     this.backend = LiteLmBackend.cpu,
@@ -31,12 +37,15 @@ class LiteLmEngineConfig {
     this.visionBackend,
     this.audioBackend,
     this.maxNumTokens,
+    this.speculativeDecoding,
   });
 
   Map<String, dynamic> toMap() => {
         'modelPath': modelPath,
         'backend': backend.name,
         if (cacheDir != null) 'cacheDir': cacheDir,
+        if (speculativeDecoding != null)
+          'speculativeDecoding': speculativeDecoding,
         if (visionBackend != null) 'visionBackend': visionBackend!.name,
         if (audioBackend != null) 'audioBackend': audioBackend!.name,
         if (maxNumTokens != null) 'maxNumTokens': maxNumTokens,
