@@ -22,6 +22,10 @@ class AiModel {
   final bool isImported;
   final bool isCustom;
 
+  /// Superseded by a newer model: hidden from Browse, but still recognised
+  /// (name, vision file) when it is already on the phone.
+  final bool isLegacy;
+
   /// GGUF vision models ship a separate projector ("mmproj") file that
   /// turns images into tokens. Empty for text-only models.
   final String mmprojFilename;
@@ -44,6 +48,7 @@ class AiModel {
     this.isVision = false,
     this.isImported = false,
     this.isCustom = false,
+    this.isLegacy = false,
     this.mmprojFilename = '',
     this.mmprojUrl = '',
     this.recommendedFor = const {},
@@ -60,6 +65,7 @@ class AiModel {
         isVision: map['vision'] == 'true',
         isImported: map['imported'] == 'true',
         isCustom: map['custom'] == 'true',
+        isLegacy: map['legacy'] == 'true',
         mmprojFilename: map['mmproj_filename'] ?? '',
         mmprojUrl: map['mmproj_url'] ?? '',
         recommendedFor: (map['recommended'] ?? '')
@@ -80,6 +86,7 @@ class AiModel {
         if (isVision) 'vision': 'true',
         if (isImported) 'imported': 'true',
         if (isCustom) 'custom': 'true',
+        if (isLegacy) 'legacy': 'true',
         if (mmprojFilename.isNotEmpty) 'mmproj_filename': mmprojFilename,
         if (mmprojUrl.isNotEmpty) 'mmproj_url': mmprojUrl,
         if (recommendedFor.isNotEmpty) 'recommended': recommendedFor.join(','),
@@ -105,6 +112,7 @@ class AiModel {
     bool? isVision,
     bool? isImported,
     bool? isCustom,
+    bool? isLegacy,
     String? mmprojFilename,
     String? mmprojUrl,
     Set<String>? recommendedFor,
@@ -120,6 +128,7 @@ class AiModel {
       isVision: isVision ?? this.isVision,
       isImported: isImported ?? this.isImported,
       isCustom: isCustom ?? this.isCustom,
+      isLegacy: isLegacy ?? this.isLegacy,
       mmprojFilename: mmprojFilename ?? this.mmprojFilename,
       mmprojUrl: mmprojUrl ?? this.mmprojUrl,
       recommendedFor: recommendedFor ?? this.recommendedFor,

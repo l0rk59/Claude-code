@@ -78,8 +78,12 @@ class ModelController extends GetxController {
 
   List<AiModel> get displayedModels {
     // Loading a model doesn't move it: the list keeps its normal order and
-    // the loaded model is marked in place.
-    final models = [...availableModels];
+    // the loaded model is marked in place. Superseded models only show once
+    // they are on the phone.
+    final models = [
+      for (final m in availableModels)
+        if (!m.isLegacy || isDownloaded(m.filename)) m,
+    ];
     models.sort((a, b) {
       final aDownloaded = isDownloaded(a.filename);
       final bDownloaded = isDownloaded(b.filename);

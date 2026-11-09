@@ -121,8 +121,31 @@ class AppConstants {
       'runtime': 'litert',
     },
     {
+      'name': 'Qwen 3.5 0.8B (LiteRT-LM)',
+      'filename': 'Qwen3.5-0.8B_int8_gpu_composite_v0190.litertlm',
+      'url':
+          'https://huggingface.co/litert-community/Qwen3.5-0.8B/resolve/main/Qwen3.5-0.8B_int8_gpu_composite_v0190.litertlm',
+      'size': '888 MB',
+      'description':
+          'Qwen 3.5 on the LiteRT engine — fast on the GPU, fits any phone',
+      'template': 'litert',
+      'runtime': 'litert',
+    },
+    {
+      'name': 'LFM3 1.7B (LiteRT-LM)',
+      'filename': 'LFM3-1.7B_mixed_int4_ekv4096.litertlm',
+      'url':
+          'https://huggingface.co/litert-community/LFM3-1.7B-LiteRT/resolve/main/LFM3-1.7B_mixed_int4_ekv4096.litertlm',
+      'size': '1.44 GB',
+      'description':
+          "Liquid AI's newest compact model — quick replies, 4K context",
+      'template': 'litert',
+      'runtime': 'litert',
+    },
+    {
       'name': 'Qwen 2.5 1.5B Instruct (LiteRT-LM)',
       'filename': 'Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
+      'legacy': 'true',
       'url':
           'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
       'size': '1.49 GB',
@@ -184,8 +207,86 @@ class AppConstants {
       'template': 'gemma',
     },
     {
+      'name': 'Qwen 3.5 0.8B (Q4_K_M)',
+      'filename': 'qwen3.5-0.8b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf',
+      'size': '533 MB + 205 MB vision',
+      'description':
+          'Tiny and fast, and it reads images too — runs on almost any phone',
+      'template': 'chatml',
+      'vision': 'true',
+      'mmproj_filename': 'qwen3.5-0.8b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'Qwen 3.5 2B (Q4_K_M)',
+      'filename': 'qwen3.5-2b-q4_k_m.gguf',
+      'recommended': 'general',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf',
+      'size': '1.28 GB + 668 MB vision',
+      'description':
+          'Best balance of speed and quality, with image understanding',
+      'template': 'chatml',
+      'vision': 'true',
+      'mmproj_filename': 'qwen3.5-2b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'Qwen 3.5 4B (Q4_K_M)',
+      'filename': 'qwen3.5-4b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf',
+      'size': '2.74 GB + 672 MB vision',
+      'description':
+          'The smartest small Qwen, with image understanding — needs ~5 GB free RAM',
+      'template': 'chatml',
+      'vision': 'true',
+      'mmproj_filename': 'qwen3.5-4b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'LFM2.5-VL 3B (Q4_K_M)',
+      'filename': 'lfm2.5-vl-3b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/LiquidAI/LFM2.5-VL-3B-GGUF/resolve/main/LFM2.5-VL-3B-Q4_K_M.gguf',
+      'size': '1.67 GB + 583 MB vision',
+      'description':
+          "Liquid AI's larger vision model — sharper image understanding",
+      'template': 'chatml',
+      'vision': 'true',
+      'mmproj_filename': 'lfm2.5-vl-3b-mmproj-q8_0.gguf',
+      'mmproj_url':
+          'https://huggingface.co/LiquidAI/LFM2.5-VL-3B-GGUF/resolve/main/mmproj-LFM2.5-VL-3B-Q8_0.gguf',
+    },
+    {
+      'name': 'LFM2.5 2.6B (Q4_K_M)',
+      'filename': 'lfm2.5-2.6b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/resolve/main/LFM2.5-2.6B-Q4_K_M.gguf',
+      'size': '1.67 GB',
+      'description':
+          "Liquid AI's 2.6B model, built for on-device assistants",
+      'template': 'chatml',
+    },
+    {
+      'name': 'Phi-4 Mini Instruct (Q4_K_M)',
+      'filename': 'phi-4-mini-instruct-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf',
+      'size': '2.49 GB',
+      'description':
+          "Microsoft's compact reasoning model — strong at math and logic",
+      'template': 'phi',
+    },
+    {
       'name': 'Qwen2.5-3B Instruct (Q4_K_M)',
       'filename': 'qwen2.5-3b-instruct-q4_k_m.gguf',
+      'legacy': 'true',
       'url':
           'https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/main/Qwen2.5-3B-Instruct-Q4_K_M.gguf',
       'size': '2.1 GB',
@@ -195,7 +296,6 @@ class AppConstants {
     {
       'name': 'LFM2.5 1.2B Instruct (Q4_K_M)',
       'filename': 'lfm2.5-1.2b-instruct-q4_k_m.gguf',
-      'recommended': 'general',
       'url':
           'https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/resolve/main/LFM2.5-1.2B-Instruct-Q4_K_M.gguf',
       'size': '731 MB',
@@ -220,6 +320,7 @@ class AppConstants {
     {
       'name': 'Qwen2-VL-2B Instruct (Q4_K_M)',
       'filename': 'qwen2-vl-2b-instruct-q4_k_m.gguf',
+      'legacy': 'true',
       'url':
           'https://huggingface.co/ggml-org/Qwen2-VL-2B-Instruct-GGUF/resolve/main/Qwen2-VL-2B-Instruct-Q4_K_M.gguf',
       'size': '986 MB + 710 MB vision',
@@ -263,6 +364,7 @@ class AppConstants {
     {
       'name': 'Phi-3.5 Mini Instruct (Q4_K_M)',
       'filename': 'phi-3.5-mini-instruct-q4_k_m.gguf',
+      'legacy': 'true',
       'url':
           'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
       'size': '2.2 GB',
@@ -318,6 +420,7 @@ class AppConstants {
     {
       'name': 'Llama-3.2-1B Instruct (Q4_K_M)',
       'filename': 'llama-3.2-1b-instruct-q4_k_m.gguf',
+      'legacy': 'true',
       'url':
           'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf',
       'size': '0.8 GB',

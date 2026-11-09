@@ -1203,6 +1203,29 @@ const Map<String, String> fr = {
       "Génération d'images photoréaliste polyvalente",
   'Highly versatile Anime / Stylized image generator':
       "Générateur d'images anime / stylisées très polyvalent",
+  // ── Model catalog: 2026 additions ─────────────────────────────────────
+  'Qwen 3.5 on the LiteRT engine — fast on the GPU, fits any phone':
+      'Qwen 3.5 sur le moteur LiteRT — rapide sur le GPU, tient sur tous les '
+          'téléphones',
+  "Liquid AI's newest compact model — quick replies, 4K context":
+      'Le dernier modèle compact de Liquid AI — réponses rapides, contexte '
+          'de 4K',
+  'Tiny and fast, and it reads images too — runs on almost any phone':
+      'Minuscule et rapide, et il lit aussi les images — tourne sur presque '
+          'tous les téléphones',
+  'Best balance of speed and quality, with image understanding':
+      'Meilleur équilibre vitesse/qualité, avec compréhension des images',
+  'The smartest small Qwen, with image understanding — needs ~5 GB free RAM':
+      'Le plus intelligent des petits Qwen, avec compréhension des images — '
+          'demande ~5 Go de RAM libre',
+  "Liquid AI's larger vision model — sharper image understanding":
+      'Le plus grand modèle de vision de Liquid AI — compréhension des '
+          'images plus fine',
+  "Liquid AI's 2.6B model, built for on-device assistants":
+      'Le modèle 2,6B de Liquid AI, conçu pour les assistants embarqués',
+  "Microsoft's compact reasoning model — strong at math and logic":
+      'Modèle de raisonnement compact de Microsoft — fort en maths et en '
+          'logique',
 };
 
 /// Download statuses the Android code reports in English (shown through
