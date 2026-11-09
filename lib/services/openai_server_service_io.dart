@@ -41,7 +41,7 @@ class OpenAiServerService {
   }) async {
     if (_server != null) return;
     if (allowNetwork && (apiKey == null || apiKey.trim().isEmpty)) {
-      throw ArgumentError('An API key is required for network access.');
+      throw ArgumentError('An API key is required for network access.'.tr);
     }
     updateApiKey(apiKey);
     _onLog = onLog;

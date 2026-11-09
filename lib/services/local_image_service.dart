@@ -138,10 +138,11 @@ class LocalImageService extends GetxService {
 
   Future<String> loadModel(String modelPath,
       {String? modelName, String? taesdPath}) async {
-    if (isLoadingModel.value) return 'ERROR: Model is already loading.';
+    if (isLoadingModel.value) return 'ERROR: Model is already loading.'.tr;
     if (_nativeJobRunning) {
       return 'ERROR: An image is still generating. Wait for it to finish, '
-          'then load the model.';
+              'then load the model.'
+          .tr;
     }
 
     try {
@@ -192,11 +193,11 @@ class LocalImageService extends GetxService {
             await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
             await _hive.setSetting(
                 AppConstants.keyImageModelName, loadedModelName.value);
-            return 'Image model loaded successfully.';
+            return 'Image model loaded successfully.'.tr;
           } else {
             isModelLoaded.value = false;
             isLoadingModel.value = false;
-            return 'Failed to load CoreML model.';
+            return 'Failed to load CoreML model.'.tr;
           }
         } else {
           print('[LocalImageService] Using standard Metal C++ backend...');
@@ -209,7 +210,7 @@ class LocalImageService extends GetxService {
               'Image model load failed on iOS',
               details: 'path=$modelPath',
             );
-            return 'Failed to load model on iOS backend.';
+            return 'Failed to load model on iOS backend.'.tr;
           }
 
           currentBackend.value = Backend.vulkan; // Standard GPU rendering
@@ -220,7 +221,7 @@ class LocalImageService extends GetxService {
           await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
           await _hive.setSetting(
               AppConstants.keyImageModelName, loadedModelName.value);
-          return 'Image model loaded successfully.';
+          return 'Image model loaded successfully.'.tr;
         }
       }
 
@@ -306,7 +307,7 @@ class LocalImageService extends GetxService {
             AppConstants.keyImageGenBackend, currentBackend.value.index);
         await _hive.setSetting(AppConstants.keyImageGenQuantization,
             currentQuantization.value.index);
-        return 'Image model loaded successfully.';
+        return 'Image model loaded successfully.'.tr;
       }
 
       isModelLoaded.value = false;
@@ -316,13 +317,15 @@ class LocalImageService extends GetxService {
         details:
             'All backend candidates failed. model=${modelName ?? modelPath.split('/').last}, vendor=$vendor, sizeMb=$modelSizeMb',
       );
-      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: All backend candidates failed.';
+      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
+          .trParams({'error': 'All backend candidates failed.'});
     } catch (e) {
       isModelLoaded.value = false;
       isLoadingModel.value = false;
       Get.find<AppLogService>().error('Image model load exception',
           details: 'model=${modelName ?? modelPath.split('/').last}, error=$e');
-      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: $e';
+      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
+          .trParams({'error': '$e'});
     }
   }
 
@@ -331,8 +334,8 @@ class LocalImageService extends GetxService {
     // context (GBs) and can crash, so wait until the job has finished.
     if (_nativeJobRunning) {
       showToast(
-        'Image still generating',
-        'Wait for the current image to finish, then unload the model.',
+        'Image still generating'.tr,
+        'Wait for the current image to finish, then unload the model.'.tr,
         tone: ToastTone.warning,
       );
       return;
@@ -397,7 +400,8 @@ class LocalImageService extends GetxService {
     lastFailureReason = null;
     if (_nativeJobRunning) {
       lastFailureReason = 'The previous image is still finishing in the '
-          'background. Try again in a few seconds.';
+              'background. Try again in a few seconds.'
+          .tr;
       return null;
     }
     final jobId = ++_jobId;

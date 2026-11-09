@@ -10,13 +10,13 @@ import 'package:privatelm/services/cloud_service.dart';
 import 'package:privatelm/services/hive_service.dart';
 
 String _chunk(String token, {String? finish}) => 'data: ${jsonEncode({
-          'choices': [
-            {
-              'delta': {'content': token},
-              'finish_reason': finish,
-            }
-          ]
-        })}\n\n';
+      'choices': [
+        {
+          'delta': {'content': token},
+          'finish_reason': finish,
+        }
+      ]
+    })}\n\n';
 
 void main() {
   late Directory dir;
@@ -75,7 +75,8 @@ void main() {
     expect(tokens.join(), 'Hello world');
   });
 
-  test('an error event mid-stream is reported, not shown as a reply', () async {
+  test('an error event mid-stream is reported, not shown as a reply',
+      () async {
     respond = (res) async {
       res.write(_chunk('Partial '));
       res.write('data: ${jsonEncode({

@@ -149,8 +149,9 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
       availableUpdate.value = newer ? release : null;
       state.value = UpdateState.idle;
       if (manual && !newer) {
-        showToast('You\'re up to date',
-            'PrivateLM ${currentVersion.value} is the latest version.',
+        showToast("You're up to date".tr,
+            'PrivateLM @version is the latest version.'
+                .trParams({'version': currentVersion.value}),
             tone: ToastTone.success);
       }
       return availableUpdate.value;
@@ -158,8 +159,8 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
       debugPrint('Update check failed: $e');
       state.value = UpdateState.idle;
       if (manual) {
-        showToast('Couldn\'t check for updates',
-            'Check your connection and try again.',
+        showToast("Couldn't check for updates".tr,
+            'Check your connection and try again.'.tr,
             tone: ToastTone.error);
       }
       return null;
@@ -254,7 +255,7 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
       });
       _downloadId = id?.toInt();
     } catch (e) {
-      _fail('Couldn\'t start the download.');
+      _fail("Couldn't start the download.".tr);
     }
   }
 
@@ -285,7 +286,7 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
       unawaited(_installDownloaded(filename));
     } else if (status.startsWith('Update failed')) {
       _downloadId = null;
-      _fail('The download failed. Try again.');
+      _fail('The download failed. Try again.'.tr);
     } else if (status == 'Update cancelled') {
       _downloadId = null;
       if (state.value == UpdateState.downloading) {
@@ -296,7 +297,7 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
 
   Future<void> _installDownloaded(String filename) async {
     final dir = await _updatesDir();
-    if (dir == null) return _fail('Update folder unavailable.');
+    if (dir == null) return _fail('Update folder unavailable.'.tr);
     await _install('${dir.path}/$filename');
   }
 
@@ -314,7 +315,7 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
       }
       state.value = UpdateState.idle;
     } catch (e) {
-      _fail('Couldn\'t open the installer.');
+      _fail("Couldn't open the installer.".tr);
     }
   }
 

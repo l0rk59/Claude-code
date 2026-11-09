@@ -22,7 +22,7 @@ class ExecutionService extends GetxService {
       if (command.isEmpty) {
         return {
           'type': 'msg',
-          'display': 'Received empty command.',
+          'display': 'Received empty command.'.tr,
         };
       }
 
@@ -32,7 +32,7 @@ class ExecutionService extends GetxService {
       return {
         'type': 'cmd',
         'command': command,
-        'display': '⚡ Executed: `$command`',
+        'display': '⚡ ${'Executed: @command'.trParams({'command': '`$command`'})}',
         'cmdResult': result,
       };
     }
@@ -77,6 +77,7 @@ class ExecutionService extends GetxService {
   Future<String> _runCommand(String command) async {
     // Command execution is currently disabled.
     // To enable, integrate with a shell/process executor.
-    return 'Command execution is not available. Command: $command';
+    return 'Command execution is not available. Command: @command'
+        .trParams({'command': command});
   }
 }

@@ -107,7 +107,8 @@ class CloudService extends GetxService {
     void Function(String token)? onToken,
   }) async {
     if (!isConfigured) {
-      return 'ERROR: No API key configured for $_provider. Go to Settings.';
+      return 'ERROR: No API key configured for @provider. Go to Settings.'
+          .trParams({'provider': _provider});
     }
 
     try {
@@ -153,11 +154,13 @@ class CloudService extends GetxService {
       }
     } on TimeoutException {
       Get.find<AppLogService>().warning('Cloud API request timed out');
-      return "ERROR: $_providerLabel didn't respond in time. Check your "
-          'connection and try again.';
+      return "ERROR: @provider didn't respond in time. Check your "
+              'connection and try again.'
+          .trParams({'provider': _providerLabel});
     } catch (e) {
       Get.find<AppLogService>().error('Cloud API request failed', details: e);
-      return 'ERROR: Cloud API request failed — $e';
+      return 'ERROR: Cloud API request failed — @error'
+          .trParams({'error': '$e'});
     }
   }
 
@@ -262,7 +265,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: OpenAI returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'OpenAI',
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -331,7 +338,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: Anthropic returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'Anthropic',
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -386,7 +397,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: Google returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'Google',
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -427,7 +442,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: Kimi returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'Kimi',
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -476,7 +495,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: NVIDIA NIM returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'NVIDIA NIM',
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -568,7 +591,11 @@ class CloudService extends GetxService {
     );
 
     if (response.statusCode != 200) {
-      return 'ERROR: $providerLabel returned ${response.statusCode} — ${response.body}';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': providerLabel,
+        'code': '${response.statusCode}',
+        'body': response.body
+      });
     }
 
     final data = jsonDecode(response.body);
@@ -606,7 +633,11 @@ class CloudService extends GetxService {
       final response = await client.send(request).timeout(_connectTimeout);
       if (response.statusCode != 200) {
         final body = await response.stream.bytesToString();
-        return 'ERROR: $providerLabel returned ${response.statusCode} — $body';
+        return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': providerLabel,
+        'code': '${response.statusCode}',
+        'body': body
+      });
       }
 
       final buffer = StringBuffer();
@@ -663,15 +694,17 @@ class CloudService extends GetxService {
 
       final text = buffer.toString();
       if (streamError != null) {
+        final params = {'provider': providerLabel, 'error': streamError};
         return text.isEmpty
-            ? 'ERROR: $providerLabel returned an error — $streamError'
-            : '$text\n\n⚠️ $providerLabel stopped with an error: $streamError';
+            ? 'ERROR: @provider returned an error — @error'.trParams(params)
+            : '$text\n\n⚠️ ${'@provider stopped with an error: @error'.trParams(params)}';
       }
       if (text.isEmpty) {
-        return 'ERROR: $providerLabel returned an empty response.';
+        return 'ERROR: @provider returned an empty response.'
+            .trParams({'provider': providerLabel});
       }
       if (!finished) {
-        return '$text\n\n⚠️ The response was cut off before it finished.';
+        return '$text\n\n⚠️ ${'The response was cut off before it finished.'.tr}';
       }
       return text;
     } finally {
@@ -716,7 +749,7 @@ class CloudService extends GetxService {
     // Extract the latest user prompt for the image generation
     final userMessages = messages.where((m) => m['role'] == 'user').toList();
     if (userMessages.isEmpty) {
-      return 'ERROR: No user prompt found for image generation.';
+      return 'ERROR: No user prompt found for image generation.'.tr;
     }
 
     final prompt = userMessages.last['content'] ?? '';
@@ -738,7 +771,11 @@ class CloudService extends GetxService {
         await response.stream.bytesToString().timeout(_responseTimeout);
 
     if (response.statusCode != 200) {
-      return 'ERROR: Stability AI returned ${response.statusCode} — $responseBody';
+      return 'ERROR: @provider returned @code — @body'.trParams({
+        'provider': 'Stability AI',
+        'code': '${response.statusCode}',
+        'body': responseBody
+      });
     }
 
     final data = jsonDecode(responseBody);
@@ -747,6 +784,6 @@ class CloudService extends GetxService {
       return '[IMAGE_BASE64]$base64Image';
     }
 
-    return 'ERROR: No image generated.';
+    return 'ERROR: No image generated.'.tr;
   }
 }

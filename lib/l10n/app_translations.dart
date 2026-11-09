@@ -1,6 +1,4 @@
-import 'dart:ui' show PlatformDispatcher;
-
-import 'package:flutter/widgets.dart' show Locale;
+import 'package:flutter/widgets.dart' show Locale, WidgetsBinding;
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -32,7 +30,7 @@ class AppTranslations extends Translations {
   /// The locale for a saved language choice ('system', 'en' or 'fr').
   static Locale localeFor(String language) {
     final code = language == system
-        ? PlatformDispatcher.instance.locale.languageCode
+        ? WidgetsBinding.instance.platformDispatcher.locale.languageCode
         : language;
     return code == 'fr' ? french : english;
   }

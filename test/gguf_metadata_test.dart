@@ -118,14 +118,11 @@ void main() {
     expect(fit, isNotNull);
     expect(fit! % 512, 0);
     expect(fit, lessThan(32768));
-    expect(
-        info.estimateBytes(fit), lessThanOrEqualTo(at32k - 200 * 1024 * 1024));
+    expect(info.estimateBytes(fit), lessThanOrEqualTo(at32k - 200 * 1024 * 1024));
   });
 
   test('returns null for non-GGUF or incomplete files', () async {
-    expect(
-        await readGgufInfo(
-            await write(Uint8List.fromList(utf8.encode('nope')))),
+    expect(await readGgufInfo(await write(Uint8List.fromList(utf8.encode('nope')))),
         isNull);
     final truncated = qwenLike().sublist(0, 2000);
     expect(await readGgufInfo(await write(truncated)), isNull);

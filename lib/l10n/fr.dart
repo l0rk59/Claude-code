@@ -1068,6 +1068,141 @@ const Map<String, String> fr = {
       'Les puces Google Tensor ont un bug connu avec la quantification Q4_K_M '
           'qui produit des réponses vides ou incohérentes. Utilisez plutôt des '
           'modèles Q4_0 ou Q5_K_M.',
+  // ── Image generation, updates and cloud errors ────────────────────────
+  'Image generation running': "Génération d'image en cours",
+  'Progress updates for local image generation':
+      "Progression de la génération d'images locale",
+  'You can leave the app. We will notify you when it finishes.':
+      "Vous pouvez quitter l'app. Vous serez averti à la fin.",
+  '@time elapsed': '@time écoulé',
+  'Working': 'En cours',
+  'Finishing image': "Finalisation de l'image",
+  'Decoding image...': "Décodage de l'image...",
+  'Image ready': 'Image prête',
+  'Generation finished in @time.': 'Génération terminée en @time.',
+  'Image generation failed': "Échec de la génération d'image",
+  'Open PrivateLM to check the error and try again.':
+      "Ouvrez PrivateLM pour voir l'erreur et réessayer.",
+  'ERROR: An image is still generating. Wait for it to finish, then load the model.':
+      'ERREUR : une image est encore en cours de génération. Attendez la fin, '
+          'puis chargez le modèle.',
+  'Image model loaded successfully.': "Modèle d'image chargé.",
+  'Failed to load CoreML model.': 'Échec du chargement du modèle CoreML.',
+  'Failed to load model on iOS backend.':
+      'Échec du chargement du modèle avec le moteur iOS.',
+  'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error':
+      'Impossible de charger ce modèle. Essayez CyberRealistic, Realistic '
+          'Vision ou AbsoluteReality : ils fonctionnent bien sur la plupart '
+          'des appareils.\n\nDétail technique : @error',
+  'Image still generating': 'Image en cours de génération',
+  'Wait for the current image to finish, then unload the model.':
+      "Attendez la fin de l'image en cours, puis déchargez le modèle.",
+  'The previous image is still finishing in the background. Try again in a few seconds.':
+      "L'image précédente se termine encore en arrière-plan. Réessayez dans "
+          'quelques secondes.',
+  "You're up to date": 'Vous êtes à jour',
+  'PrivateLM @version is the latest version.':
+      'PrivateLM @version est la dernière version.',
+  "Couldn't check for updates": 'Impossible de vérifier les mises à jour',
+  'Check your connection and try again.':
+      'Vérifiez votre connexion et réessayez.',
+  "Couldn't start the download.": 'Impossible de lancer le téléchargement.',
+  'The download failed. Try again.': 'Le téléchargement a échoué. Réessayez.',
+  'Update folder unavailable.': 'Dossier de mise à jour indisponible.',
+  "Couldn't open the installer.": "Impossible d'ouvrir l'installateur.",
+  'ERROR: No API key configured for @provider. Go to Settings.':
+      'ERREUR : aucune clé API configurée pour @provider. Allez dans les '
+          'Paramètres.',
+  "ERROR: @provider didn't respond in time. Check your connection and try again.":
+      "ERREUR : @provider n'a pas répondu à temps. Vérifiez votre connexion "
+          'et réessayez.',
+  'ERROR: Cloud API request failed — @error':
+      "ERREUR : échec de la requête à l'API cloud — @error",
+  'ERROR: @provider returned @code — @body':
+      'ERREUR : @provider a renvoyé @code — @body',
+  'ERROR: @provider returned an error — @error':
+      'ERREUR : @provider a renvoyé une erreur — @error',
+  '@provider stopped with an error: @error':
+      "@provider s'est arrêté sur une erreur : @error",
+  'ERROR: @provider returned an empty response.':
+      'ERREUR : @provider a renvoyé une réponse vide.',
+  'The response was cut off before it finished.':
+      'La réponse a été coupée avant la fin.',
+  'ERROR: No user prompt found for image generation.':
+      "ERREUR : aucun prompt trouvé pour la génération d'image.",
+  'ERROR: No image generated.': 'ERREUR : aucune image générée.',
+  'Received empty command.': 'Commande vide reçue.',
+  'Executed: @command': 'Exécuté : @command',
+  'Command execution is not available. Command: @command':
+      "L'exécution de commandes n'est pas disponible. Commande : @command",
+  'An API key is required for network access.':
+      "Une clé API est obligatoire pour l'accès réseau.",
+
+  // ── Model catalog descriptions ────────────────────────────────────────
+  'Smallest LiteRT-LM general-purpose chat model for low-RAM phones':
+      'Le plus petit modèle de chat LiteRT-LM polyvalent, pour les téléphones '
+          'avec peu de RAM',
+  'Balanced LiteRT-LM chat model with int8 quantization':
+      'Modèle de chat LiteRT-LM équilibré, quantifié en int8',
+  'Reasoning-focused LiteRT-LM model with int8 quantization':
+      'Modèle LiteRT-LM orienté raisonnement, quantifié en int8',
+  'Strong general chat LiteRT-LM model from Google Gemma':
+      'Solide modèle de chat LiteRT-LM polyvalent, de Google Gemma',
+  'Highest quality LiteRT-LM option; needs about 5 GB RAM':
+      'Option LiteRT-LM de la meilleure qualité ; demande environ 5 Go de RAM',
+  'Moonshot AI (Kimi) — 3B active MoE, high quality':
+      'Moonshot AI (Kimi) — MoE 3B actifs, haute qualité',
+  'Google Gemma 4 MoE, 4B active — too big for one phone: run it as a Phone cluster master with workers (~11 GB free across devices)':
+      'Google Gemma 4 MoE, 4B actifs — trop gros pour un seul téléphone : '
+          'lancez-le depuis un principal du Cluster de téléphones avec des '
+          'auxiliaires (~11 Go libres au total)',
+  'Best balance of speed and quality for mobile':
+      'Meilleur équilibre vitesse/qualité sur mobile',
+  "Liquid AI's fast on-device model — quick replies on mid-range phones":
+      'Modèle embarqué rapide de Liquid AI — réponses vives sur les '
+          'téléphones milieu de gamme',
+  "Liquid AI's small vision model — fast, light enough for the GPU on most phones":
+      'Petit modèle de vision de Liquid AI — rapide, assez léger pour le GPU '
+          'de la plupart des téléphones',
+  'Small vision model — describe photos, read text in images':
+      'Petit modèle de vision — décrit les photos, lit le texte des images',
+  'Uncensored Gemma 4 with image understanding — smallest quant, needs ~4 GB free RAM':
+      'Gemma 4 non censuré avec compréhension des images — plus petite '
+          'quantification, demande ~4 Go de RAM libre',
+  "Google's multimodal Gemma — stronger image understanding, needs ~4 GB free RAM":
+      'Gemma multimodal de Google — meilleure compréhension des images, '
+          'demande ~4 Go de RAM libre',
+  "Microsoft's compact reasoning model":
+      'Modèle de raisonnement compact de Microsoft',
+  "Google's newer compact chat model — fast, small, and capable":
+      'Le nouveau modèle de chat compact de Google — rapide, petit et '
+          'efficace',
+  '🔓 Abliterated — Permanently uncensored, very smart':
+      '🔓 Abliterated — définitivement non censuré, très intelligent',
+  'Ultra-compact and unrestricted assistant':
+      'Assistant ultra-compact et sans restriction',
+  'Uncensored Dolphin 3.0 — Fast and unrestricted':
+      'Dolphin 3.0 non censuré — rapide et sans restriction',
+  'Uncensored Llama 3.2 3B — Smarter and unrestricted':
+      'Llama 3.2 3B non censuré — plus intelligent et sans restriction',
+  'Ultra-lightweight text model': 'Modèle de texte ultra-léger',
+  'Extremely fast 4-step local image generation':
+      "Génération d'images locale ultra-rapide en 4 étapes",
+  'Photorealistic, uncensored local image generation — FP16 for mobile':
+      "Génération d'images locale photoréaliste et non censurée — FP16 pour "
+          'mobile',
+  'Optimized for Apple devices with M-series chips or 8GB+ RAM':
+      'Optimisé pour les appareils Apple à puce série M ou avec 8 Go de RAM '
+          'ou plus',
+  'Compressed 6-bit model optimized for Apple devices with 4GB/6GB RAM':
+      'Modèle compressé 6 bits optimisé pour les appareils Apple avec 4 ou '
+          '6 Go de RAM',
+  'Highly popular photorealistic portrait and scene model':
+      'Modèle photoréaliste très populaire pour les portraits et les scènes',
+  'Photorealistic general-purpose image generation':
+      "Génération d'images photoréaliste polyvalente",
+  'Highly versatile Anime / Stylized image generator':
+      "Générateur d'images anime / stylisées très polyvalent",
 };
 
 /// Download statuses the Android code reports in English (shown through
