@@ -28,6 +28,14 @@ plugins {
     id("kotlin-android")
 }
 
+// compilerOptions replaces android { kotlinOptions { } }, which Kotlin 2.3
+// rejects in .kts scripts.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
+
 android {
     namespace = "com.write4me.llama_flutter_android"
     
@@ -37,10 +45,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = "11"
     }
 
     sourceSets {

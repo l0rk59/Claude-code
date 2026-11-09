@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
@@ -31,6 +32,14 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.firebase.crashlytics")
 }
 
+// compilerOptions replaces android { kotlinOptions { } }, which Kotlin 2.3
+// rejects in .kts scripts.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 android {
     namespace = "com.orailnoor.privatelm"
     compileSdk = flutter.compileSdkVersion
@@ -48,10 +57,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {

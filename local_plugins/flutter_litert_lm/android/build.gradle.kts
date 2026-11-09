@@ -4,7 +4,8 @@ group = "com.songhieu.flutter_litert_lm"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    val kotlinVersion = "2.2.20"
+    // LiteRT-LM 0.18+ is compiled with Kotlin 2.4, which needs a 2.3+ compiler.
+    val kotlinVersion = "2.3.21"
     repositories {
         google()
         mavenCentral()
@@ -35,12 +36,6 @@ plugins {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-        // LiteRT-LM 0.18+ is compiled with Kotlin 2.4, one version past what
-        // the app's Kotlin 2.2 reads. Moving the whole app to Kotlin 2.3
-        // breaks plugins still on the old kotlinOptions DSL, so only this
-        // plugin skips the check; it uses plain classes, enums and data
-        // classes from the library.
-        freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
 
