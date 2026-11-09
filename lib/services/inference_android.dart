@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_litert_lm/flutter_litert_lm.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 
+import 'sampling_presets.dart';
+
 /// Whether the current platform supports local inference.
 bool get supportsLocalInference => Platform.isAndroid || Platform.isIOS;
 
@@ -145,22 +147,22 @@ class InferenceEngine {
     }
 
     // ── Thread Tuning ──
+    // CPU inference runs best on the fast cores only: a thread on an
+    // efficiency core holds every step back. Fall back to the RAM tier when
+    // the cores can't be read.
     int threads;
     if (gpuLayers > 0) {
-      threads = deviceTier == 'ultra'
-          ? 4
-          : deviceTier == 'high'
-              ? 4
-              : 4;
+      threads = 4;
     } else {
-      threads = deviceTier == 'ultra'
-          ? 6
-          : deviceTier == 'high'
-              ? 5
-              : deviceTier == 'mid'
-                  ? 4
-                  : 3;
+      threads = performanceCoreCount() ??
+          switch (deviceTier) {
+            'ultra' => 6,
+            'high' => 5,
+            'mid' => 4,
+            _ => 3,
+          };
     }
+    print('[Inference] Threads: $threads');
 
     // Google Tensor SoC (Pixel 6/7/8) has known Q4_K_M dequant bugs
     // that corrupt logits at >1 thread on Gemma models. Force single-threaded
@@ -412,6 +414,7 @@ class InferenceEngine {
     };
 
     // ── Use generateChat() for native template handling ──
+    final preset = SamplingPreset.forModel(modelName);
     Stream<String>? stream;
     try {
       final messages = _buildChatMessages(
@@ -422,10 +425,11 @@ class InferenceEngine {
         template: null,
         maxTokens: maxTokens,
         temperature: temperature,
-        topP: 0.9,
-        topK: 40,
-        minP: 0.05,
-        repeatPenalty: 1.1,
+        topP: preset.topP,
+        topK: preset.topK,
+        minP: preset.minP,
+        repeatPenalty: preset.repeatPenalty,
+        presencePenalty: preset.presencePenalty,
         repeatLastN: 64,
       );
       print('[Inference] generateChat() started (${messages.length} messages)');
@@ -441,10 +445,11 @@ class InferenceEngine {
         prompt: fullPrompt,
         maxTokens: maxTokens,
         temperature: temperature,
-        topP: 0.9,
-        topK: 40,
-        minP: 0.05,
-        repeatPenalty: 1.1,
+        topP: preset.topP,
+        topK: preset.topK,
+        minP: preset.minP,
+        repeatPenalty: preset.repeatPenalty,
+        presencePenalty: preset.presencePenalty,
         repeatLastN: 64,
       );
     }
@@ -998,5 +1003,43 @@ class InferenceEngine {
     buf.write(
         '<|start_header_id|>user<|end_header_id|>\n\n$msg<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n');
     return buf.toString();
+  }
+}
+
+/// ARM efficiency cores ("CPU part" in /proc/cpuinfo): Cortex-A53, A35,
+/// A55, A510, A520.
+const _efficiencyCoreParts = {'0xd03', '0xd04', '0xd05', '0xd46', '0xd80'};
+
+/// Threads for CPU inference: the cores that aren't efficiency cores,
+/// between 2 and 6. Null when the CPU can't be read.
+int? performanceCoreCount({String? cpuinfo, List<int>? maxFreqs}) {
+  int clamp(int n) => n.clamp(2, 6).toInt();
+  try {
+    cpuinfo ??= File('/proc/cpuinfo').readAsStringSync();
+    final parts = RegExp(r'^CPU part\s*:\s*(0x[0-9a-fA-F]+)', multiLine: true)
+        .allMatches(cpuinfo)
+        .map((m) => m[1]!.toLowerCase())
+        .toList();
+    if (parts.length >= 2) {
+      final fast = parts.where((p) => !_efficiencyCoreParts.contains(p));
+      // Only efficiency cores (budget phones): use up to four of them.
+      return clamp(fast.isEmpty ? parts.length.clamp(2, 4) : fast.length);
+    }
+  } catch (_) {}
+  // No core types listed: keep the cores within 75% of the fastest clock.
+  try {
+    maxFreqs ??= [
+      for (final dir in Directory('/sys/devices/system/cpu').listSync())
+        if (RegExp(r'/cpu\d+$').hasMatch(dir.path) &&
+            File('${dir.path}/cpufreq/cpuinfo_max_freq').existsSync())
+          int.parse(File('${dir.path}/cpufreq/cpuinfo_max_freq')
+              .readAsStringSync()
+              .trim()),
+    ];
+    if (maxFreqs.length < 2) return null;
+    final top = maxFreqs.reduce((a, b) => a > b ? a : b);
+    return clamp(maxFreqs.where((f) => f >= top * 0.75).length);
+  } catch (_) {
+    return null;
   }
 }

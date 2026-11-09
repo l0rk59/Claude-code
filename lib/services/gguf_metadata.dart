@@ -34,15 +34,13 @@ class GgufInfo {
   int get _headDimV =>
       valueLength ?? (headCount > 0 ? embeddingLength ~/ headCount : 0);
 
-  /// Bytes of KV cache for [contextTokens] (f16 K and V, as llama.cpp uses
-  /// by default).
+  /// Bytes of KV cache for [contextTokens]. The app asks llama.cpp for an
+  /// 8-bit (q8_0) cache: 34 bytes per block of 32 values, about half of
+  /// F16. Models that can't use it fall back to F16 (rare).
   int kvCacheBytes(int contextTokens) {
-    const bytesPerElement = 2;
-    return layers *
-        contextTokens *
-        headCountKv *
-        (_headDimK + _headDimV) *
-        bytesPerElement;
+    final elements =
+        layers * contextTokens * headCountKv * (_headDimK + _headDimV);
+    return elements * 34 ~/ 32;
   }
 
   /// Working memory beyond weights + KV cache: compute buffers, GPU driver

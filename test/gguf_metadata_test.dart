@@ -103,11 +103,12 @@ void main() {
     expect(info.headCountKv, 2);
   });
 
-  test('KV cache follows llama.cpp f16 sizing', () async {
+  test('KV cache follows llama.cpp q8_0 sizing', () async {
     final info = (await readGgufInfo(await write(qwenLike())))!;
-    // 28 layers * 4096 ctx * 2 kv heads * (128 + 128) * 2 bytes = 112 MiB
-    expect(info.kvCacheBytes(4096), 28 * 4096 * 2 * 256 * 2);
-    expect(info.kvCacheBytes(4096), 112 * 1024 * 1024);
+    // 28 layers * 4096 ctx * 2 kv heads * (128 + 128) values, 34 bytes per
+    // 32 values = 59.5 MiB (F16 would be 112 MiB).
+    expect(info.kvCacheBytes(4096), 28 * 4096 * 2 * 256 * 34 ~/ 32);
+    expect(info.kvCacheBytes(4096), (59.5 * 1024 * 1024).round());
   });
 
   test('suggests a smaller context when the requested one does not fit',

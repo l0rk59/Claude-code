@@ -1059,8 +1059,6 @@ const Map<String, String> fr = {
           'pour reprendre.',
   'Q4_K_M (safe default) · Q5_K_M for quality':
       'Q4_K_M (choix sûr) · Q5_K_M pour la qualité',
-  'Q4_K_M (recommended) · Q4_0_4_8 on X Elite':
-      'Q4_K_M (recommandé) · Q4_0_4_8 sur X Elite',
   'Q4_K_M (recommended)': 'Q4_K_M (recommandé)',
   'Q4_0 or Q5_K_M · AVOID Q4_K_M': 'Q4_0 ou Q5_K_M · ÉVITER Q4_K_M',
   'Q4_K_M (universal default)': 'Q4_K_M (choix universel)',

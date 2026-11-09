@@ -839,8 +839,20 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeLoadMo
     // over Wi-Fi to a worker in cluster mode.
     ctx_params.op_offload = n_gpu_layers != 0 && !has_cluster;
 
-    // Create context (using new API)
+    // An 8-bit KV cache takes about half the memory of the default F16 one,
+    // with no measurable quality loss, so longer chats fit in RAM. It needs
+    // flash attention, which llama.cpp then turns on. Some models (head
+    // sizes) or GPUs can't use it: fall back to the F16 cache.
+    ctx_params.type_k = GGML_TYPE_Q8_0;
+    ctx_params.type_v = GGML_TYPE_Q8_0;
+    ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
     g_ctx = llama_init_from_model(g_model, ctx_params);
+    if (!g_ctx) {
+        LOGI("8-bit KV cache unavailable for this model/device; using F16");
+        ctx_params.type_k = GGML_TYPE_F16;
+        ctx_params.type_v = GGML_TYPE_F16;
+        g_ctx = llama_init_from_model(g_model, ctx_params);
+    }
     if (!g_ctx) {
         llama_model_free(g_model);
         g_model = nullptr;

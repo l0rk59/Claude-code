@@ -45,7 +45,7 @@ extension SocFamilyExt on SocFamily {
       case SocFamily.apple:
         return 'Q4_K_M (safe default) · Q5_K_M for quality'.tr;
       case SocFamily.snapdragon:
-        return 'Q4_K_M (recommended) · Q4_0_4_8 on X Elite'.tr;
+        return 'Q4_K_M (recommended)'.tr;
       case SocFamily.mediatek:
         return 'Q4_K_M (recommended)'.tr;
       case SocFamily.exynos:

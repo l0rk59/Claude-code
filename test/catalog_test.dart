@@ -3,7 +3,7 @@ import 'package:privatelm/core/constants.dart';
 import 'package:privatelm/models/ai_model.dart';
 
 void main() {
-  final catalog = AppConstants.availableModels;
+  const catalog = AppConstants.availableModels;
 
   test('every model has a unique file name', () {
     final names = catalog.map((m) => m['filename']!.toLowerCase()).toList();
