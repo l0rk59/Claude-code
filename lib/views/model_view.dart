@@ -41,7 +41,7 @@ class ModelView extends GetView<ModelController> {
       backgroundColor: t.bg,
       appBar: appScreenBar(
         context,
-        title: 'Models',
+        title: 'Models'.tr,
         actions: [
           Obx(() {
             if (controller.modelScope.value == 'online') {
@@ -49,7 +49,7 @@ class ModelView extends GetView<ModelController> {
             }
             return _TextAction(
               icon: Icons.add_rounded,
-              label: 'Import',
+              label: 'Import'.tr,
               color: t.accent,
               onTap: controller.isImporting.value
                   ? null
@@ -92,10 +92,10 @@ class ModelView extends GetView<ModelController> {
 
   Widget _buildScopeToggle(BuildContext context) {
     return Obx(() => AppSegmented<String>(
-          items: const [
-            ('local', 'My models'),
-            ('browse', 'Browse'),
-            ('online', 'Cloud'),
+          items: [
+            ('local', 'My models'.tr),
+            ('browse', 'Browse'.tr),
+            ('online', 'Cloud'.tr),
           ],
           selected: controller.modelScope.value,
           onChanged: (value) => controller.modelScope.value = value,
@@ -108,7 +108,7 @@ class ModelView extends GetView<ModelController> {
       final busy =
           controller.isImporting.value || inference.isLoadingModel.value;
       return PillButton(
-        label: 'Import file',
+        label: 'Import file'.tr,
         icon: Icons.file_upload_outlined,
         onPressed: busy ? null : () => _showImportSheet(context),
       );
@@ -117,10 +117,10 @@ class ModelView extends GetView<ModelController> {
 
   Widget _buildLocalFilterChips(BuildContext context) {
     final labels = [
-      ('general', 'Chat'),
-      ('image', 'Image'),
-      ('uncensored', 'Uncensored'),
-      ('vision', 'Vision'),
+      ('general', 'Chat'.tr),
+      ('image', 'Image'.tr),
+      ('uncensored', 'Uncensored'.tr),
+      ('vision', 'Vision'.tr),
       if (ModelController.supportsAppleNpu) ('npu', 'Apple NPU'),
     ];
     return Obx(() {
@@ -140,13 +140,13 @@ class ModelView extends GetView<ModelController> {
   void _showImportSheet(BuildContext context) {
     showAppSheet<void>(
       context,
-      title: 'Import model',
-      subtitle: 'Add .gguf, .litertlm or .safetensors files from your phone.',
+      title: 'Import model'.tr,
+      subtitle: 'Add .gguf, .litertlm or .safetensors files from your phone.'.tr,
       builder: (ctx) => AppGroup(dividerIndent: 60, children: [
         AppRow(
           icon: Icons.insert_drive_file_outlined,
-          title: 'Import file',
-          subtitle: 'Choose a single model file',
+          title: 'Import file'.tr,
+          subtitle: 'Choose a single model file'.tr,
           chevron: true,
           onTap: () {
             Navigator.pop(ctx);
@@ -156,8 +156,8 @@ class ModelView extends GetView<ModelController> {
         if (controller.supportsFolderImport)
           AppRow(
             icon: Icons.folder_open_rounded,
-            title: 'Import from folder',
-            subtitle: 'Scan a folder and pick the models to add',
+            title: 'Import from folder'.tr,
+            subtitle: 'Scan a folder and pick the models to add'.tr,
             chevron: true,
             onTap: () {
               Navigator.pop(ctx);
@@ -172,15 +172,17 @@ class ModelView extends GetView<ModelController> {
     final files = await controller.pickModelFolder();
     if (files == null || !context.mounted) return;
     if (files.isEmpty) {
-      showToast('No models found',
-          'That folder has no .gguf, .litertlm or .safetensors files.',
+      showToast('No models found'.tr,
+          'That folder has no .gguf, .litertlm or .safetensors files.'.tr,
           tone: ToastTone.warning);
       return;
     }
     final chosen = await showAppSheet<List<FolderModelFile>>(
       context,
-      title: 'Models in folder',
-      subtitle: '${files.length} ${files.length == 1 ? 'file' : 'files'} found',
+      title: 'Models in folder'.tr,
+      subtitle: files.length == 1
+          ? '1 file found'.tr
+          : '@count files found'.trParams({'count': '${files.length}'}),
       builder: (_) => _FolderImportList(files: files, controller: controller),
     );
     if (chosen != null && chosen.isNotEmpty) {
@@ -191,11 +193,11 @@ class ModelView extends GetView<ModelController> {
   Widget _buildEmptyLibrary(BuildContext context) {
     return EmptyState(
       icon: Icons.download_rounded,
-      title: 'No models on this phone yet',
-      message: 'Download one from Browse, or import a model file.',
+      title: 'No models on this phone yet'.tr,
+      message: 'Download one from Browse, or import a model file.'.tr,
       action: Wrap(spacing: 8, children: [
         PillButton(
-          label: 'Browse models',
+          label: 'Browse models'.tr,
           primary: true,
           onPressed: () => controller.modelScope.value = 'browse',
         ),
@@ -225,15 +227,18 @@ class ModelView extends GetView<ModelController> {
       final IconData icon;
       if (localImage.isModelLoaded.value) {
         name = localImage.loadedModelName.value;
-        meta =
-            'Loaded · Image generation · ${localImage.isUsingGpu.value ? 'GPU accelerated' : 'CPU'}';
+        meta = localImage.isUsingGpu.value
+            ? 'Loaded · Image generation · GPU accelerated'.tr
+            : 'Loaded · Image generation · CPU'.tr;
         icon = Icons.image_outlined;
       } else if (inference.isModelLoaded.value) {
         name = inference.loadedModelName.value;
         final gpu = inference.gpuName.value;
         meta = inference.isGpuAccelerated.value
-            ? 'Loaded · GPU${gpu.isEmpty ? '' : ' · $gpu'}'
-            : 'Loaded · CPU';
+            ? (gpu.isEmpty
+                ? 'Loaded · GPU'.tr
+                : 'Loaded · GPU · @gpu'.trParams({'gpu': gpu}))
+            : 'Loaded · CPU'.tr;
         icon = Icons.memory_rounded;
       } else {
         return const SizedBox.shrink();
@@ -247,7 +252,7 @@ class ModelView extends GetView<ModelController> {
           meta: meta,
           dot: t.green,
           action: PillButton(
-            label: 'Unload',
+            label: 'Unload'.tr,
             onPressed: busy ? null : () => controller.unloadModel(),
           ),
         ),
@@ -273,8 +278,12 @@ class ModelView extends GetView<ModelController> {
               .firstWhereOrNull((x) => x.filename == name);
           final owner = controller.availableModels
               .firstWhereOrNull((x) => x.mmprojFilename == name);
-          return 'Saving to Downloads · '
-              '${m?.name ?? (owner != null ? 'Vision file · ${owner.name}' : name)}';
+          return 'Saving to Downloads · @name'.trParams({
+            'name': m?.name ??
+                (owner != null
+                    ? 'Vision file · @name'.trParams({'name': owner.name})
+                    : name)
+          });
         }
         final model = controller.availableModels
             .firstWhereOrNull((m) => m.filename == filename);
@@ -282,9 +291,11 @@ class ModelView extends GetView<ModelController> {
         final owner = controller.availableModels
             .firstWhereOrNull((m) => m.mmprojFilename == filename);
         // Lead with "Vision file" so it stays visible when the name is cut off.
-        if (owner != null) return 'Vision file · ${owner.name}';
+        if (owner != null) {
+          return 'Vision file · @name'.trParams({'name': owner.name});
+        }
         if (filename.toLowerCase().startsWith('taesd')) {
-          return 'Image decoder (TAESD)';
+          return 'Image decoder (TAESD)'.tr;
         }
         return filename;
       }
@@ -311,7 +322,8 @@ class ModelView extends GetView<ModelController> {
                   if (dp.bytesPerSecond.value > 0)
                     DownloadService.formatSpeed(dp.bytesPerSecond.value),
                   if (eta != null && eta > Duration.zero)
-                    '${DownloadService.formatDuration(eta)} left',
+                    '@time left'.trParams(
+                        {'time': DownloadService.formatDuration(eta)}),
                 ].join(' · ');
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(14, 11, 6, 11),
@@ -344,8 +356,8 @@ class ModelView extends GetView<ModelController> {
                     if (!dp.filename.startsWith('save:'))
                       IconButton(
                         tooltip: controller.canPauseDownloads
-                            ? 'Pause download'
-                            : 'Cancel download',
+                            ? 'Pause download'.tr
+                            : 'Cancel download'.tr,
                         onPressed: () {
                           final external =
                               controller.externalDownloadId.value != null &&
@@ -388,11 +400,11 @@ class ModelView extends GetView<ModelController> {
 
     return _ActiveCard(
       icon: Icons.cloud_outlined,
-      title: hasSelectedModel ? model : 'No online model selected',
-      meta: 'Cloud · $providerName',
+      title: hasSelectedModel ? model : 'No online model selected'.tr,
+      meta: 'Cloud · @provider'.trParams({'provider': providerName}),
       dot: hasSelectedModel ? t.accent : t.faint,
       action: PillButton(
-        label: 'Change',
+        label: 'Change'.tr,
         onPressed: provider == null
             ? null
             : () {
@@ -440,7 +452,7 @@ class ModelView extends GetView<ModelController> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Loading into memory',
+                child: Text('Loading into memory'.tr,
                     style: t.caption.copyWith(color: t.text)),
               ),
               if (progress > 0)
@@ -502,7 +514,7 @@ class ModelView extends GetView<ModelController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(isDownload ? 'Downloading' : 'Importing',
+                        Text(isDownload ? 'Downloading'.tr : 'Importing'.tr,
                             style: t.bodyStrong),
                         const SizedBox(height: 2),
                         Text(
@@ -517,7 +529,7 @@ class ModelView extends GetView<ModelController> {
                   if (controller.externalDownloadId.value != null)
                     _IconAction(
                       icon: Icons.close_rounded,
-                      tooltip: 'Cancel download',
+                      tooltip: 'Cancel download'.tr,
                       destructive: true,
                       onPressed: controller.cancelExternalDownload,
                     ),
@@ -538,10 +550,15 @@ class ModelView extends GetView<ModelController> {
                     Text(
                       [
                         '${percent.toStringAsFixed(0)}%',
-                        '${DownloadService.formatWholeMb(copied)} of ${DownloadService.formatWholeMb(total)}',
+                        '@done of @total'.trParams({
+                          'done': DownloadService.formatWholeMb(copied),
+                          'total': DownloadService.formatWholeMb(total)
+                        }),
                         DownloadService.formatSpeed(
                             controller.importBytesPerSecond.value),
-                        '${DownloadService.formatWholeMb(remaining)} left',
+                        '@time left'.trParams({
+                          'time': DownloadService.formatWholeMb(remaining)
+                        }),
                       ].join(' · '),
                       style: t.small.copyWith(fontFeatures: _tabular),
                     ),
@@ -563,8 +580,8 @@ class ModelView extends GetView<ModelController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SectionHeader('Providers',
-              padding: EdgeInsets.fromLTRB(4, 20, 4, 8)),
+          SectionHeader('Providers'.tr,
+              padding: const EdgeInsets.fromLTRB(4, 20, 4, 8)),
           AppGroup(
             dividerIndent: 64,
             children: [
@@ -572,8 +589,8 @@ class ModelView extends GetView<ModelController> {
                 _buildOnlineProviderRow(context, cloud, provider),
             ],
           ),
-          const SectionFootnote(
-              'Tap a provider to choose a model. Keys are stored on this device.'),
+          SectionFootnote(
+              'Tap a provider to choose a model. Keys are stored on this device.'.tr),
         ],
       );
     });
@@ -596,10 +613,10 @@ class ModelView extends GetView<ModelController> {
     final meta = hasSelectedModel
         ? model
         : canUse
-            ? 'No model selected'
+            ? 'No model selected'.tr
             : cloud.statusLabel(provider.id) == 'Needs Key'
-                ? 'Needs API key'
-                : cloud.statusLabel(provider.id);
+                ? 'Needs API key'.tr
+                : cloud.statusLabel(provider.id).tr;
 
     return InkWell(
       onTap: () => isCustom
@@ -632,7 +649,7 @@ class ModelView extends GetView<ModelController> {
                           ),
                           if (isActive && hasSelectedModel) ...[
                             const SizedBox(width: 8),
-                            AppTag('Active', color: t.accent),
+                            AppTag('Active'.tr, color: t.accent),
                           ],
                         ],
                       ),
@@ -658,7 +675,7 @@ class ModelView extends GetView<ModelController> {
                 const SizedBox(width: 4),
                 _IconAction(
                   icon: Icons.more_horiz_rounded,
-                  tooltip: 'Provider settings',
+                  tooltip: 'Provider settings'.tr,
                   onPressed: () =>
                       _showProviderActionsSheet(context, cloud, provider),
                 ),
@@ -747,7 +764,7 @@ class ModelView extends GetView<ModelController> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        model.isEmpty ? provider.description : model,
+                        model.isEmpty ? provider.description.tr : model,
                         style: t.caption,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -764,8 +781,8 @@ class ModelView extends GetView<ModelController> {
                 if (!isCustom)
                   AppRow(
                     icon: Icons.key_outlined,
-                    title: configured ? 'Update API key' : 'Add API key',
-                    subtitle: 'Required before selecting live models',
+                    title: configured ? 'Update API key'.tr : 'Add API key'.tr,
+                    subtitle: 'Required before selecting live models'.tr,
                     chevron: true,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -780,10 +797,10 @@ class ModelView extends GetView<ModelController> {
                 AppRow(
                   icon:
                       isCustom ? Icons.tune_rounded : Icons.smart_toy_outlined,
-                  title: isCustom ? 'Configure and select' : 'Select model',
+                  title: isCustom ? 'Configure and select'.tr : 'Select model'.tr,
                   subtitle: isCustom
-                      ? 'Set base URL, key, and model ID'
-                      : 'Search provider models or enter a model ID',
+                      ? 'Set base URL, key, and model ID'.tr
+                      : 'Search provider models or enter a model ID'.tr,
                   chevron: true,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -814,8 +831,8 @@ class ModelView extends GetView<ModelController> {
 
     showAppSheet<void>(
       context,
-      title: '${provider.name} API key',
-      subtitle: 'Save the key to verify it and load live models.',
+      title: '@provider API key'.trParams({'provider': provider.name}),
+      subtitle: 'Save the key to verify it and load live models.'.tr,
       builder: (ctx) {
         final t = AppTokens.of(ctx);
         return Column(
@@ -831,10 +848,11 @@ class ModelView extends GetView<ModelController> {
                 style: t.mono.copyWith(fontSize: 14),
                 decoration: _sheetInput(
                   ctx,
-                  hint: 'Paste ${provider.name} key',
+                  hint: 'Paste @provider key'
+                      .trParams({'provider': provider.name}),
                   prefix: Icon(Icons.key_outlined, size: 18, color: t.muted),
                   suffix: IconButton(
-                    tooltip: obscureKey.value ? 'Show API key' : 'Hide API key',
+                    tooltip: obscureKey.value ? 'Show API key'.tr : 'Hide API key'.tr,
                     onPressed: () => obscureKey.value = !obscureKey.value,
                     icon: Icon(
                       obscureKey.value
@@ -862,12 +880,12 @@ class ModelView extends GetView<ModelController> {
               children: [
                 Expanded(
                   child: TonalButton.neutral(ctx,
-                      label: 'Cancel', onTap: () => Navigator.pop(ctx)),
+                      label: 'Cancel'.tr, onTap: () => Navigator.pop(ctx)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Obx(() => PrimaryButton(
-                        label: isVerifying.value ? 'Verifying' : 'Save key',
+                        label: isVerifying.value ? 'Verifying'.tr : 'Save key'.tr,
                         busy: isVerifying.value,
                         onPressed: () async {
                           final value = keyController.text.trim();
@@ -904,9 +922,9 @@ class ModelView extends GetView<ModelController> {
     final obscureCustomKey = true.obs;
     showAppSheet<void>(
       context,
-      title: 'Custom provider',
+      title: 'Custom provider'.tr,
       subtitle:
-          'Use any OpenAI-compatible endpoint. Enter the base URL without /chat/completions.',
+          'Use any OpenAI-compatible endpoint. Enter the base URL without /chat/completions.'.tr,
       builder: (ctx) {
         final t = AppTokens.of(ctx);
         return Column(
@@ -920,7 +938,7 @@ class ModelView extends GetView<ModelController> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: AppField(
-                  label: 'Saved provider',
+                  label: 'Saved provider'.tr,
                   child: Row(
                     children: [
                       Expanded(
@@ -935,7 +953,7 @@ class ModelView extends GetView<ModelController> {
                               color: t.muted, size: 20),
                           style: t.body,
                           decoration:
-                              _sheetInput(ctx, hint: 'Choose a provider'),
+                              _sheetInput(ctx, hint: 'Choose a provider'.tr),
                           items: [
                             for (var i = 0; i < profiles.length; i++)
                               DropdownMenuItem(
@@ -943,7 +961,7 @@ class ModelView extends GetView<ModelController> {
                                 child: Text(
                                   profiles[i]['name']?.isNotEmpty == true
                                       ? profiles[i]['name']!
-                                      : profiles[i]['baseUrl'] ?? 'Custom API',
+                                      : profiles[i]['baseUrl'] ?? 'Custom API'.tr,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -958,7 +976,7 @@ class ModelView extends GetView<ModelController> {
                       const SizedBox(width: 8),
                       _SquareIconButton(
                         icon: Icons.add_rounded,
-                        tooltip: 'Add another provider',
+                        tooltip: 'Add another provider'.tr,
                         onTap: cloud.beginNewCustomProfile,
                       ),
                     ],
@@ -975,16 +993,16 @@ class ModelView extends GetView<ModelController> {
               );
             }),
             AppField(
-              label: 'Provider name',
+              label: 'Provider name'.tr,
               child: TextField(
                 controller: cloud.customNameController,
                 style: t.body,
-                decoration: _sheetInput(ctx, hint: 'My endpoint'),
+                decoration: _sheetInput(ctx, hint: 'My endpoint'.tr),
               ),
             ),
             const SizedBox(height: 14),
             AppField(
-              label: 'Base URL',
+              label: 'Base URL'.tr,
               child: TextField(
                 controller: cloud.customBaseUrlController,
                 keyboardType: TextInputType.url,
@@ -995,7 +1013,7 @@ class ModelView extends GetView<ModelController> {
             ),
             const SizedBox(height: 14),
             AppField(
-              label: 'API key',
+              label: 'API key'.tr,
               child: Obx(
                 () => TextField(
                   controller: cloud.customApiKeyController,
@@ -1005,11 +1023,11 @@ class ModelView extends GetView<ModelController> {
                   style: t.mono.copyWith(fontSize: 14),
                   decoration: _sheetInput(
                     ctx,
-                    hint: 'Optional for local servers',
+                    hint: 'Optional for local servers'.tr,
                     suffix: IconButton(
                       tooltip: obscureCustomKey.value
-                          ? 'Show API key'
-                          : 'Hide API key',
+                          ? 'Show API key'.tr
+                          : 'Hide API key'.tr,
                       onPressed: () =>
                           obscureCustomKey.value = !obscureCustomKey.value,
                       icon: Icon(
@@ -1026,17 +1044,17 @@ class ModelView extends GetView<ModelController> {
             ),
             const SizedBox(height: 14),
             AppField(
-              label: 'Model ID',
+              label: 'Model ID'.tr,
               child: TextField(
                 controller: cloud.customModelController,
                 autocorrect: false,
                 style: t.body,
-                decoration: _sheetInput(ctx, hint: 'e.g. llama-3.1-8b'),
+                decoration: _sheetInput(ctx, hint: 'e.g. llama-3.1-8b'.tr),
               ),
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              label: 'Save and select',
+              label: 'Save and select'.tr,
               onPressed: () async {
                 final nav = Navigator.of(ctx);
                 await cloud.saveCustomProvider();
@@ -1049,8 +1067,8 @@ class ModelView extends GetView<ModelController> {
             Center(
               child: Obx(() => _TextAction(
                     label: cloud.customProfileIndex >= 0
-                        ? 'Remove selected provider'
-                        : 'Clear form',
+                        ? 'Remove selected provider'.tr
+                        : 'Clear form'.tr,
                     color: t.red,
                     onTap: () async {
                       await cloud.clearCustomProvider();
@@ -1088,7 +1106,7 @@ class ModelView extends GetView<ModelController> {
 
     showAppSheet<void>(
       context,
-      title: 'Select ${provider.name} model',
+      title: 'Select @provider model'.trParams({'provider': provider.name}),
       scrollable: false,
       builder: (ctx) {
         final t = AppTokens.of(ctx);
@@ -1159,7 +1177,7 @@ class ModelView extends GetView<ModelController> {
                   style: t.body,
                   decoration: _sheetInput(
                     ctx,
-                    hint: 'Search models',
+                    hint: 'Search models'.tr,
                     prefix:
                         Icon(Icons.search_rounded, size: 20, color: t.muted),
                   ),
@@ -1171,7 +1189,10 @@ class ModelView extends GetView<ModelController> {
                       child: Padding(
                         padding: const EdgeInsets.only(left: 2),
                         child: Text(
-                          '${models.length} models · ${cloud.fetchedLabel(provider.id)}',
+                          '@count models · @fetched'.trParams({
+                            'count': '${models.length}',
+                            'fetched': cloud.fetchedLabel(provider.id)
+                          }),
                           style: t.small.copyWith(fontFeatures: _tabular),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1184,8 +1205,9 @@ class ModelView extends GetView<ModelController> {
                             ? Icons.check_circle_rounded
                             : Icons.local_offer_outlined,
                         label: freeModelCount == 0
-                            ? 'Free'
-                            : 'Free first ($freeModelCount)',
+                            ? 'Free'.tr
+                            : 'Free first (@count)'
+                                .trParams({'count': '$freeModelCount'}),
                         color: freeFirst ? t.accent : null,
                         onTap: freeModelCount == 0
                             ? null
@@ -1193,7 +1215,7 @@ class ModelView extends GetView<ModelController> {
                       ),
                     _TextAction(
                       icon: Icons.refresh_rounded,
-                      label: 'Refresh',
+                      label: 'Refresh'.tr,
                       busy: isLoading,
                       onTap: isLoading || !canFetch
                           ? null
@@ -1210,7 +1232,7 @@ class ModelView extends GetView<ModelController> {
                 const SizedBox(height: 12),
                 TonalButton.neutral(
                   ctx,
-                  label: 'Use a custom model ID',
+                  label: 'Use a custom model ID'.tr,
                   onTap: () =>
                       _showCustomModelIdDialog(context, cloud, provider),
                 ),
@@ -1226,13 +1248,13 @@ class ModelView extends GetView<ModelController> {
     BuildContext context,
     CloudProviderInfo provider,
   ) {
-    return const Center(
+    return Center(
       child: SingleChildScrollView(
         child: EmptyState(
           icon: Icons.inbox_outlined,
-          title: 'No models loaded',
+          title: 'No models loaded'.tr,
           message:
-              'Add an API key to update the live list, or use a custom model ID.',
+              'Add an API key to update the live list, or use a custom model ID.'.tr,
         ),
       ),
     );
@@ -1247,8 +1269,8 @@ class ModelView extends GetView<ModelController> {
         TextEditingController(text: cloud.activeModelFor(provider.id));
     showAppSheet<void>(
       context,
-      title: 'Custom ${provider.name} model',
-      subtitle: 'Enter the exact model ID the provider expects.',
+      title: 'Custom @provider model'.trParams({'provider': provider.name}),
+      subtitle: 'Enter the exact model ID the provider expects.'.tr,
       builder: (ctx) {
         final t = AppTokens.of(ctx);
         return Column(
@@ -1256,7 +1278,7 @@ class ModelView extends GetView<ModelController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppField(
-              label: 'Model ID',
+              label: 'Model ID'.tr,
               child: TextField(
                 controller: textController,
                 autofocus: true,
@@ -1270,12 +1292,12 @@ class ModelView extends GetView<ModelController> {
               children: [
                 Expanded(
                   child: TonalButton.neutral(ctx,
-                      label: 'Cancel', onTap: () => Navigator.pop(ctx)),
+                      label: 'Cancel'.tr, onTap: () => Navigator.pop(ctx)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: PrimaryButton(
-                    label: 'Select',
+                    label: 'Select'.tr,
                     onPressed: () async {
                       final value = textController.text.trim();
                       if (value.isEmpty) return;
@@ -1361,7 +1383,7 @@ class ModelView extends GetView<ModelController> {
               ),
               for (final tag in tags) ...[
                 const SizedBox(width: 6),
-                AppTag(tag == 'FREE' ? 'Free' : tag),
+                AppTag(tag == 'FREE' ? 'Free'.tr : tag),
               ],
               const SizedBox(width: 10),
               if (isActive)
@@ -1371,7 +1393,7 @@ class ModelView extends GetView<ModelController> {
                 )
               else
                 PillButton(
-                  label: canUse ? 'Select' : 'Add key',
+                  label: canUse ? 'Select'.tr : 'Add key'.tr,
                   onPressed: select,
                 ),
             ],
@@ -1397,16 +1419,16 @@ class ModelView extends GetView<ModelController> {
         : controller.localFilter.value;
     return [
       if (model.recommendedFor.contains(filter))
-        AppTag('Recommended',
+        AppTag('Recommended'.tr,
             icon: Icons.star_rounded, color: AppTokens.of(context).accent),
       if (controller.isVisionModel(model))
-        const AppTag('Vision', icon: Icons.visibility_outlined),
+        AppTag('Vision'.tr, icon: Icons.visibility_outlined),
       if (controller.isImageModel(model))
-        const AppTag('Image', icon: Icons.image_outlined),
+        AppTag('Image'.tr, icon: Icons.image_outlined),
       if (controller.isNpuModel(model)) const AppTag('NPU'),
-      if (controller.isUncensoredModel(model)) const AppTag('Uncensored'),
-      if (model.isImported) const AppTag('Imported'),
-      if (model.isCustom) const AppTag('Custom'),
+      if (controller.isUncensoredModel(model)) AppTag('Uncensored'.tr),
+      if (model.isImported) AppTag('Imported'.tr),
+      if (model.isCustom) AppTag('Custom'.tr),
     ];
   }
 
@@ -1414,10 +1436,11 @@ class ModelView extends GetView<ModelController> {
       {bool isToDownloadsFolder = false}) {
     showAppSheet<void>(
       context,
-      title: isToDownloadsFolder ? 'Save to Downloads' : 'Download model',
+      title: isToDownloadsFolder ? 'Save to Downloads'.tr : 'Download model'.tr,
       subtitle: isToDownloadsFolder
-          ? 'Save ${model.name} to your phone\'s public Downloads folder.'
-          : 'Download ${model.name} for use in the app.',
+          ? "Save @name to your phone's public Downloads folder."
+              .trParams({'name': model.name})
+          : 'Download @name for use in the app.'.trParams({'name': model.name}),
       builder: (ctx) {
         final t = AppTokens.of(ctx);
         return Column(
@@ -1435,7 +1458,7 @@ class ModelView extends GetView<ModelController> {
                 children: [
                   Icon(Icons.sd_storage_outlined, size: 18, color: t.muted),
                   const SizedBox(width: 10),
-                  Expanded(child: Text('Size', style: t.body)),
+                  Expanded(child: Text('Size'.tr, style: t.body)),
                   Text(
                     controller.modelSizeLabel(model),
                     style: t.bodyStrong.copyWith(fontFeatures: _tabular),
@@ -1445,7 +1468,7 @@ class ModelView extends GetView<ModelController> {
             ),
             const SizedBox(height: 12),
             AppNotice(
-              'Wi-Fi is recommended. Keep the app open while it downloads.',
+              'Wi-Fi is recommended. Keep the app open while it downloads.'.tr,
               icon: Icons.wifi_rounded,
               color: t.orange,
             ),
@@ -1454,12 +1477,12 @@ class ModelView extends GetView<ModelController> {
               children: [
                 Expanded(
                   child: TonalButton.neutral(ctx,
-                      label: 'Cancel', onTap: () => Navigator.of(ctx).pop()),
+                      label: 'Cancel'.tr, onTap: () => Navigator.of(ctx).pop()),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: PrimaryButton(
-                    label: isToDownloadsFolder ? 'Save' : 'Download',
+                    label: isToDownloadsFolder ? 'Save'.tr : 'Download'.tr,
                     onPressed: () {
                       Navigator.of(ctx).pop();
                       if (isToDownloadsFolder) {
@@ -1482,9 +1505,10 @@ class ModelView extends GetView<ModelController> {
       BuildContext context, String filename) async {
     final confirmed = await confirmSheet(
       context,
-      title: 'Delete model?',
-      message: '$filename will be permanently removed from this device.',
-      confirmLabel: 'Delete',
+      title: 'Delete model?'.tr,
+      message: '@name will be permanently removed from this device.'
+          .trParams({'name': filename}),
+      confirmLabel: 'Delete'.tr,
       destructive: true,
     );
     if (confirmed) await controller.deleteModel(filename);
@@ -1534,16 +1558,16 @@ class ModelView extends GetView<ModelController> {
       } else if (isDownloaded) {
         if (isThisModelLoading) {
           primaryAction = Text(
-              isThisImageModelLoading ? 'Loading…' : '$loadPercent%',
+              isThisImageModelLoading ? 'Loading…'.tr : '$loadPercent%',
               style: t.small.copyWith(
                   color: t.accent,
                   fontWeight: FontWeight.w600,
                   fontFeatures: _tabular));
         } else if (isActive) {
-          primaryAction = AppTag('Loaded', color: t.green);
+          primaryAction = AppTag('Loaded'.tr, color: t.green);
         } else if (library) {
           primaryAction = _SoftButton(
-            label: 'Load',
+            label: 'Load'.tr,
             onPressed: disableActions
                 ? null
                 : () => controller.loadModel(actualFilename),
@@ -1552,13 +1576,13 @@ class ModelView extends GetView<ModelController> {
           primaryAction = Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.check_rounded, size: 15, color: t.muted),
             const SizedBox(width: 4),
-            Text('On phone', style: t.small),
+            Text('On phone'.tr, style: t.small),
           ]);
         }
       } else {
         primaryAction = _RoundIconButton(
           icon: Icons.arrow_downward_rounded,
-          tooltip: 'Download',
+          tooltip: 'Download'.tr,
           onPressed:
               disableActions ? null : () => _confirmDownload(context, model),
         );
@@ -1573,15 +1597,15 @@ class ModelView extends GetView<ModelController> {
           (
             Icons.save_alt_rounded,
             model.hasVisionProjector
-                ? 'Save to Downloads folder (with vision file)'
-                : 'Save to Downloads folder',
+                ? 'Save to Downloads folder (with vision file)'.tr
+                : 'Save to Downloads folder'.tr,
             false,
             () => controller.saveToDownloads(model),
           ),
         if (!isCurrentlyDownloading && isDownloaded && !isActive)
           (
             Icons.delete_outline_rounded,
-            'Delete model',
+            'Delete model'.tr,
             true,
             () => _confirmDeleteModel(context, actualFilename),
           ),
@@ -1590,14 +1614,14 @@ class ModelView extends GetView<ModelController> {
             model.url.trim().isNotEmpty)
           (
             Icons.save_alt_rounded,
-            'Save to phone Downloads folder',
+            'Save to phone Downloads folder'.tr,
             false,
             () => _confirmDownload(context, model, isToDownloadsFolder: true),
           ),
         if (!isCurrentlyDownloading && !isDownloaded && model.isCustom)
           (
             Icons.playlist_remove_rounded,
-            'Remove from list',
+            'Remove from list'.tr,
             true,
             () => _confirmRemoveCustom(context, model),
           ),
@@ -1618,8 +1642,8 @@ class ModelView extends GetView<ModelController> {
         if (runtime == 'LiteRT') 'LiteRT',
         if (variant != null) variant,
         if (!library && controller.isVisionModel(model) && filter != 'vision')
-          'Vision',
-        if (model.isImported) 'Imported',
+          'Vision'.tr,
+        if (model.isImported) 'Imported'.tr,
       ].join(' · ');
       void openDetails() => _showModelDetails(
           context, model, subtitle, secondary, disableActions, primaryAction,
@@ -1662,7 +1686,7 @@ class ModelView extends GetView<ModelController> {
                             ),
                             if (uncensored) ...[
                               const SizedBox(width: 8),
-                              AppTag('Uncensored', color: t.orange),
+                              AppTag('Uncensored'.tr, color: t.orange),
                             ],
                           ]),
                           const SizedBox(height: 3),
@@ -1672,7 +1696,7 @@ class ModelView extends GetView<ModelController> {
                                 TextSpan(children: [
                                   if (recommended && !isActive)
                                     TextSpan(
-                                      text: '★ Recommended · ',
+                                      text: '★ Recommended · '.tr,
                                       style: TextStyle(
                                           color: t.accent,
                                           fontWeight: FontWeight.w600),
@@ -1708,7 +1732,7 @@ class ModelView extends GetView<ModelController> {
 
   _TextAction _sortAction() => _TextAction(
         icon: Icons.swap_vert_rounded,
-        label: controller.sortSmallestFirst.value ? 'By size' : 'By name',
+        label: controller.sortSmallestFirst.value ? 'By size'.tr : 'By name'.tr,
         onTap: controller.toggleSort,
       );
 
@@ -1746,13 +1770,14 @@ class ModelView extends GetView<ModelController> {
         child: Row(children: [
           Expanded(
               child:
-                  Text('On this phone · ${models.length}', style: t.caption)),
+                  Text('On this phone · @count'.trParams({'count': '${models.length}'}),
+                      style: t.caption)),
           _sortAction(),
         ]),
       ),
-      ...group('Chat', chat),
-      ...group('Vision', vision),
-      ...group('Image', image),
+      ...group('Chat'.tr, chat),
+      ...group('Vision'.tr, vision),
+      ...group('Image'.tr, image),
     ];
   }
 
@@ -1761,14 +1786,14 @@ class ModelView extends GetView<ModelController> {
     final models = controller.filteredDisplayedModels;
     if (models.isEmpty) {
       return [
-        const EmptyState(
+        EmptyState(
             icon: Icons.search_off_rounded,
-            title: 'No models here yet',
-            message: 'Try another type.'),
+            title: 'No models here yet'.tr,
+            message: 'Try another type.'.tr),
       ];
     }
     return [
-      SectionHeader('All ${models.length}',
+      SectionHeader('All @count'.trParams({'count': '${models.length}'}),
           padding: const EdgeInsets.fromLTRB(4, 20, 0, 8),
           trailing: _sortAction()),
       AppGroup(children: [
@@ -1779,6 +1804,7 @@ class ModelView extends GetView<ModelController> {
 
   // ── Featured picks ────────────────────────────────────────────────────
 
+  /// English; shown with .tr.
   static const _pitch = {
     'general': 'Best for chat',
     'vision': 'Understands photos',
@@ -1799,7 +1825,7 @@ class ModelView extends GetView<ModelController> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-        child: Text('Recommended', style: t.label),
+        child: Text('Recommended'.tr, style: t.label),
       ),
       SizedBox(
         height: 172,
@@ -1833,7 +1859,7 @@ class ModelView extends GetView<ModelController> {
       } else {
         action = _RoundIconButton(
           icon: Icons.arrow_downward_rounded,
-          tooltip: 'Download',
+          tooltip: 'Download'.tr,
           onPressed: busy ? null : () => _confirmDownload(context, model),
         );
       }
@@ -1863,7 +1889,7 @@ class ModelView extends GetView<ModelController> {
                       overflow: TextOverflow.ellipsis,
                       style: t.bodyStrong.copyWith(height: 1.25)),
                   const SizedBox(height: 2),
-                  Text(_pitch[type]!, style: t.small),
+                  Text(_pitch[type]!.tr, style: t.small),
                   const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
@@ -1949,7 +1975,8 @@ class ModelView extends GetView<ModelController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (model.description.trim().isNotEmpty)
-              Text(model.description, style: t.body.copyWith(color: t.muted)),
+              Text(model.description.tr,
+                  style: t.body.copyWith(color: t.muted)),
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 12),
               Wrap(spacing: 6, runSpacing: 6, children: tags),
@@ -1957,7 +1984,7 @@ class ModelView extends GetView<ModelController> {
             if (onLoad != null) ...[
               const SizedBox(height: 18),
               PrimaryButton(
-                label: 'Load model',
+                label: 'Load model'.tr,
                 icon: Icons.play_arrow_rounded,
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -1968,7 +1995,7 @@ class ModelView extends GetView<ModelController> {
             if (!downloaded && !disabled) ...[
               const SizedBox(height: 18),
               PrimaryButton(
-                label: 'Download',
+                label: 'Download'.tr,
                 icon: Icons.arrow_downward_rounded,
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -2019,16 +2046,20 @@ class ModelView extends GetView<ModelController> {
           children: [
             AppNotice(
               downloading
-                  ? 'Downloading the vision file… images will work once it finishes.'
-                  : 'Supports images. Download its vision file'
-                      '${size.isEmpty ? '' : ' ($size)'} to use them; '
-                      'text chat works without it.',
+                  ? 'Downloading the vision file… images will work once it finishes.'.tr
+                  : size.isEmpty
+                      ? 'Supports images. Download its vision file to use '
+                              'them; text chat works without it.'
+                          .tr
+                      : 'Supports images. Download its vision file (@size) '
+                              'to use them; text chat works without it.'
+                          .trParams({'size': size}),
               icon: Icons.visibility_outlined,
             ),
             if (!downloading) ...[
               const SizedBox(height: 10),
               PillButton(
-                label: 'Download vision file',
+                label: 'Download vision file'.tr,
                 icon: Icons.download_rounded,
                 primary: true,
                 onPressed: () => controller.downloadVisionFile(model),
@@ -2043,10 +2074,11 @@ class ModelView extends GetView<ModelController> {
   Future<void> _confirmRemoveCustom(BuildContext context, AiModel model) async {
     final confirmed = await confirmSheet(
       context,
-      title: 'Remove from list?',
-      message: '${model.name} will be removed from your models. You can add it '
-          'again later with the correct URL.',
-      confirmLabel: 'Remove',
+      title: 'Remove from list?'.tr,
+      message: '@name will be removed from your models. You can add it '
+              'again later with the correct URL.'
+          .trParams({'name': model.name}),
+      confirmLabel: 'Remove'.tr,
       destructive: true,
     );
     if (confirmed) await controller.removeCustomModel(model);
@@ -2372,8 +2404,10 @@ class _FolderImportListState extends State<_FolderImportList> {
   bool _imported(FolderModelFile f) => widget.controller.isDownloaded(f.name);
 
   static String _size(int bytes) => bytes >= 1024 * 1024 * 1024
-      ? '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB'
-      : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+      ? '@size GB'.trParams(
+          {'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)})
+      : '@size MB'
+          .trParams({'size': (bytes / (1024 * 1024)).toStringAsFixed(1)});
 
   @override
   Widget build(BuildContext context) {
@@ -2387,7 +2421,7 @@ class _FolderImportListState extends State<_FolderImportList> {
           AppRow(
             title: f.name,
             subtitle: _imported(f)
-                ? '${_size(f.size)} · Already in the app'
+                ? '@size · Already in the app'.trParams({'size': _size(f.size)})
                 : _size(f.size),
             trailing: Checkbox(
               value: _imported(f) ? true : _selected.contains(f.uri),
@@ -2410,13 +2444,14 @@ class _FolderImportListState extends State<_FolderImportList> {
       const SizedBox(height: 16),
       PrimaryButton(
         label: picked.isEmpty
-            ? 'Nothing selected'
-            : 'Import ${picked.length} · ${_size(total)}',
+            ? 'Nothing selected'.tr
+            : 'Import @count · @size'.trParams(
+                {'count': '${picked.length}', 'size': _size(total)}),
         icon: Icons.download_rounded,
         onPressed: picked.isEmpty ? null : () => Navigator.pop(context, picked),
       ),
       const SizedBox(height: 8),
-      Text('Files are copied into app storage, so make sure there is room.',
+      Text('Files are copied into app storage, so make sure there is room.'.tr,
           textAlign: TextAlign.center, style: t.small),
     ]);
   }

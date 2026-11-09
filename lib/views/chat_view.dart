@@ -112,7 +112,7 @@ class ChatView extends GetView<ChatController> {
       titleSpacing: 0,
       leadingWidth: 52,
       leading: IconButton(
-        tooltip: 'Chats',
+        tooltip: 'Chats'.tr,
         onPressed: () {
           FocusManager.instance.primaryFocus?.unfocus();
           Get.find<HomeController>().openSidebar();
@@ -137,7 +137,7 @@ class ChatView extends GetView<ChatController> {
         final info = _modelInfo(context);
         final title =
             controller.sessions.firstWhereOrNull((s) => s.id == sid)?.title ??
-                'Chat';
+                'Chat'.tr;
         // Title + model line; tapping opens the model sheet.
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -186,7 +186,8 @@ class ChatView extends GetView<ChatController> {
           if (usage == null) return const SizedBox.shrink();
           final warn = usage.pct >= 0.75;
           return IconButton(
-            tooltip: 'Context ${(usage.pct * 100).round()}% used',
+            tooltip: 'Context @percent% used'
+                .trParams({'percent': '${(usage.pct * 100).round()}'}),
             onPressed: () => _showModelSheet(context),
             icon: SizedBox(
               width: 18,
@@ -208,7 +209,7 @@ class ChatView extends GetView<ChatController> {
           // empty sessions.
           if (controller.messages.isEmpty) return const SizedBox(width: 8);
           return IconButton(
-              tooltip: 'New chat',
+              tooltip: 'New chat'.tr,
               icon: Icon(Icons.edit_square,
                   size: 20, color: isDark ? Colors.white : Colors.black),
               onPressed: () {
@@ -235,15 +236,15 @@ class ChatView extends GetView<ChatController> {
     if (settings.inferenceMode.value != 'local') {
       final m = settings.selectedCloudModelName;
       return (
-        name: m.isEmpty ? 'No model selected' : m,
-        meta: 'Cloud · ${providerLabel(settings)}',
+        name: m.isEmpty ? 'No model selected'.tr : m,
+        meta: 'Cloud · @provider'.trParams({'provider': providerLabel(settings)}),
         dot: _appleBlue(context),
         canUnload: false,
       );
     }
     if (inf.isLoadingModel.value) {
       return (
-        name: 'Loading model…',
+        name: 'Loading model…'.tr,
         meta: '${(inf.modelLoadProgress.value * 100).round()}%',
         dot: orange,
         canUnload: false,
@@ -253,7 +254,7 @@ class ChatView extends GetView<ChatController> {
       return (
         name: pretty(inf.loadedModelName.value),
         meta: [
-          'Ready',
+          'Ready'.tr,
           Get.isRegistered<ClusterService>()
               ? Get.find<ClusterService>().splitSummary ??
                   (inf.isGpuAccelerated.value ? 'GPU' : 'CPU')
@@ -268,15 +269,17 @@ class ChatView extends GetView<ChatController> {
       final b = img.currentBackend.value;
       return (
         name: pretty(img.loadedModelName.value),
-        meta:
-            'Ready · Image generation · ${b == Backend.cpu ? 'CPU' : b.displayName.split(' ').first}',
+        meta: 'Ready · Image generation · @backend'.trParams({
+          'backend':
+              b == Backend.cpu ? 'CPU' : b.displayName.split(' ').first
+        }),
         dot: green,
         canUnload: true,
       );
     }
     return (
-      name: 'No model loaded',
-      meta: 'Load a model to continue this chat',
+      name: 'No model loaded'.tr,
+      meta: 'Load a model to continue this chat'.tr,
       dot: orange,
       canUnload: false,
     );
@@ -335,7 +338,7 @@ class ChatView extends GetView<ChatController> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text('Model',
+                Text('Model'.tr,
                     style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -366,13 +369,17 @@ class ChatView extends GetView<ChatController> {
                   const SizedBox(height: 22),
                   Row(children: [
                     Expanded(
-                      child: Text('Context',
+                      child: Text('Context'.tr,
                           style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: muted)),
                     ),
-                    Text('${_fmtK(usage.used)} / ${_fmtK(usage.total)} tokens',
+                    Text(
+                        '@used / @total tokens'.trParams({
+                          'used': _fmtK(usage.used),
+                          'total': _fmtK(usage.total)
+                        }),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             color: warn ? const Color(0xFFFF9500) : muted,
@@ -394,14 +401,14 @@ class ChatView extends GetView<ChatController> {
                   ),
                   if (warn) ...[
                     const SizedBox(height: 8),
-                    Text('Almost full. Start a new chat for best results.',
+                    Text('Almost full. Start a new chat for best results.'.tr,
                         style: GoogleFonts.inter(fontSize: 12.5, color: muted)),
                   ],
                 ],
                 const SizedBox(height: 24),
                 Row(children: [
                   Expanded(
-                    child: TonalButton.neutral(ctx, label: 'Switch model',
+                    child: TonalButton.neutral(ctx, label: 'Switch model'.tr,
                         onTap: () {
                       Navigator.pop(ctx);
                       Get.find<HomeController>().changeTab(1);
@@ -410,7 +417,7 @@ class ChatView extends GetView<ChatController> {
                   if (info.canUnload) ...[
                     const SizedBox(width: 10),
                     Expanded(
-                      child: TonalButton.destructive(ctx, label: 'Unload',
+                      child: TonalButton.destructive(ctx, label: 'Unload'.tr,
                           onTap: () {
                         Navigator.pop(ctx);
                         Get.find<ModelController>().unloadModel();
@@ -438,7 +445,7 @@ class ChatView extends GetView<ChatController> {
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             Expanded(
-              child: Text('Loading model',
+              child: Text('Loading model'.tr,
                   style: GoogleFonts.inter(
                       fontSize: 12.5,
                       color: Theme.of(context).hintColor,
@@ -539,9 +546,9 @@ class ChatView extends GetView<ChatController> {
   Widget _typingHint(BuildContext context, bool isDark,
       {String? attachmentType}) {
     final msg = attachmentType == 'image'
-        ? 'Reading image…'
+        ? 'Reading image…'.tr
         : attachmentType == 'audio'
-            ? 'Listening to audio…'
+            ? 'Listening to audio…'.tr
             : null;
     if (msg == null) return _TypingDots(isDark: isDark);
     return Row(mainAxisSize: MainAxisSize.min, children: [
@@ -601,7 +608,7 @@ class ChatView extends GetView<ChatController> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const _PulsingDot(),
                     const SizedBox(width: 8),
-                    Text('Listening… tap mic to stop',
+                    Text('Listening… tap mic to stop'.tr,
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             color: const Color(0xFFFF3B30),
@@ -619,7 +626,7 @@ class ChatView extends GetView<ChatController> {
               }
               final steps = settings.imageSteps.value;
               final size = settings.imageGenSize.value;
-              final sizeLabel = size == 0 ? 'Auto' : '${size}px';
+              final sizeLabel = size == 0 ? 'Auto'.tr : '${size}px';
               final backend = localImage.currentBackend.value;
               final backendLabel = backend == Backend.cpu
                   ? 'CPU'
@@ -653,7 +660,16 @@ class ChatView extends GetView<ChatController> {
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                'Image gen · $steps ${steps == 1 ? "step" : "steps"} · $sizeLabel · $backendLabel',
+                                'Image gen · @steps · @size · @backend'
+                                    .trParams({
+                                  'steps': steps == 1
+                                      ? '@count step'
+                                          .trParams({'count': '$steps'})
+                                      : '@count steps'
+                                          .trParams({'count': '$steps'}),
+                                  'size': sizeLabel,
+                                  'backend': backendLabel,
+                                }),
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
@@ -725,7 +741,10 @@ class ChatView extends GetView<ChatController> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Batch complete! (${controller.lastBatchImagesBase64.length} images)',
+                        'Batch complete! (@count images)'.trParams({
+                          'count':
+                              '${controller.lastBatchImagesBase64.length}'
+                        }),
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -739,7 +758,7 @@ class ChatView extends GetView<ChatController> {
                         minimumSize: const Size(0, 32),
                         foregroundColor: Theme.of(context).hintColor,
                       ),
-                      child: const Text('Dismiss'),
+                      child: Text('Dismiss'.tr),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
@@ -750,7 +769,7 @@ class ChatView extends GetView<ChatController> {
                         minimumSize: const Size(0, 32),
                       ),
                       icon: const Icon(Icons.download_rounded, size: 16),
-                      label: const Text('Save All'),
+                      label: Text('Save All'.tr),
                     ),
                   ],
                 ),
@@ -777,7 +796,8 @@ class ChatView extends GetView<ChatController> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '${controller.batchPrompts.length}/20 batch prompts',
+                        '@count/20 batch prompts'.trParams(
+                            {'count': '${controller.batchPrompts.length}'}),
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -791,7 +811,7 @@ class ChatView extends GetView<ChatController> {
                         minimumSize: const Size(0, 32),
                         foregroundColor: Colors.redAccent,
                       ),
-                      child: const Text('Clear'),
+                      child: Text('Clear'.tr),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
@@ -803,7 +823,7 @@ class ChatView extends GetView<ChatController> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         minimumSize: const Size(0, 32),
                       ),
-                      child: const Text('Start Batch'),
+                      child: Text('Start Batch'.tr),
                     ),
                   ],
                 ),
@@ -889,10 +909,10 @@ class ChatView extends GetView<ChatController> {
                                 color: isDark ? Colors.white : Colors.black),
                             decoration: InputDecoration(
                               hintText: !noModel
-                                  ? 'Ask anything'
+                                  ? 'Ask anything'.tr
                                   : loadingModel
-                                      ? 'Loading model…'
-                                      : 'Load a model to start chatting',
+                                      ? 'Loading model…'.tr
+                                      : 'Load a model to start chatting'.tr,
                               hintStyle: GoogleFonts.inter(
                                   fontSize: 15,
                                   color: Theme.of(context).hintColor),
@@ -943,26 +963,26 @@ class ChatView extends GetView<ChatController> {
                             testPrompts.shuffle();
                             controller.batchPrompts.clear();
                             controller.batchPrompts.addAll(testPrompts);
-                            showToast('Test mode',
-                                'Added 15 test prompts to the batch.',
+                            showToast('Test mode'.tr,
+                                'Added 15 test prompts to the batch.'.tr,
                                 tone: ToastTone.success);
                           },
                           onTap: () async {
                             final text = controller.textController.text.trim();
                             if (text.isEmpty) return;
                             if (controller.batchPrompts.length >= 20) {
-                              showToast('Batch limit',
-                                  'You can add up to 20 prompts per batch.',
+                              showToast('Batch limit'.tr,
+                                  'You can add up to 20 prompts per batch.'.tr,
                                   tone: ToastTone.warning);
                               return;
                             }
                             if (!controller.batchModeAccepted.value) {
                               final accepted = await confirmSheet(
                                 context,
-                                title: 'Batch generation',
+                                title: 'Batch generation'.tr,
                                 message:
-                                    'Generating multiple images back-to-back is demanding. Your device may get warm and use more battery.',
-                                confirmLabel: 'Continue',
+                                    'Generating multiple images back-to-back is demanding. Your device may get warm and use more battery.'.tr,
+                                confirmLabel: 'Continue'.tr,
                               );
                               if (!accepted) return;
                               controller.acceptBatchMode();
@@ -1178,19 +1198,19 @@ class _AttachButton extends StatelessWidget {
     final items = [
       (
         icon: Icons.photo_camera_outlined,
-        label: 'Camera',
+        label: 'Camera'.tr,
         enabled: allowMedia,
         onTap: onCamera,
       ),
       (
         icon: Icons.photo_outlined,
-        label: 'Photos',
+        label: 'Photos'.tr,
         enabled: allowMedia,
         onTap: onImage,
       ),
       (
         icon: Icons.attach_file_rounded,
-        label: 'Files',
+        label: 'Files'.tr,
         enabled: true,
         onTap: onFile,
       ),
@@ -1199,7 +1219,7 @@ class _AttachButton extends StatelessWidget {
     showGeneralDialog(
       context: ctx,
       barrierDismissible: true,
-      barrierLabel: 'Close',
+      barrierLabel: 'Close'.tr,
       barrierColor: Colors.black.withValues(alpha: dark ? 0.35 : 0.12),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (dialogCtx, _, __) {
@@ -1269,7 +1289,7 @@ class _AttachButton extends StatelessWidget {
                                             letterSpacing: -0.2,
                                             color: fg)),
                                     if (!it.enabled)
-                                      Text('Needs a vision model',
+                                      Text('Needs a vision model'.tr,
                                           style: GoogleFonts.inter(
                                               fontSize: 12, color: muted)),
                                   ]),
@@ -1413,10 +1433,15 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
 
   String _fmtEta(int seconds) {
     if (seconds <= 0) return '';
-    if (seconds < 60) return '~$seconds s remaining';
+    if (seconds < 60) {
+      return '~@seconds s remaining'.trParams({'seconds': '$seconds'});
+    }
     final m = seconds ~/ 60;
     final s = seconds % 60;
-    return s > 0 ? '~$m m $s s remaining' : '~$m m remaining';
+    return s > 0
+        ? '~@minutes m @seconds s remaining'
+            .trParams({'minutes': '$m', 'seconds': '$s'})
+        : '~@minutes m remaining'.trParams({'minutes': '$m'});
   }
 
   String _fmtElapsed(int seconds) {
@@ -1442,7 +1467,7 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
       ),
       child: Text(
         isCpu
-            ? 'CPU · Slow'
+            ? 'CPU · Slow'.tr
             : backend == Backend.metal
                 ? 'APPLE NPU'
                 : backend.displayName.split(' ').first.toUpperCase(),
@@ -1500,7 +1525,7 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
               dots,
               const SizedBox(height: 10),
               Text(
-                isDone ? 'Decoding image' : 'Generating image',
+                isDone ? 'Decoding image'.tr : 'Generating image'.tr,
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: Theme.of(context).hintColor,
@@ -1533,8 +1558,12 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                 // Percentage + steps / decoding message
                 Text(
                   isDone
-                      ? 'VAE decode in progress…'
-                      : '${(pct * 100).toStringAsFixed(0)}% · Step $step of $total',
+                      ? 'VAE decode in progress…'.tr
+                      : '@percent% · Step @step of @total'.trParams({
+                          'percent': (pct * 100).toStringAsFixed(0),
+                          'step': '$step',
+                          'total': '$total'
+                        }),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: Theme.of(context).hintColor.withValues(alpha: 0.6),
@@ -1547,7 +1576,8 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                 // Elapsed time
                 const SizedBox(height: 3),
                 Text(
-                  'Elapsed: ${_fmtElapsed(_elapsedSeconds)}',
+                  'Elapsed: @time'
+                      .trParams({'time': _fmtElapsed(_elapsedSeconds)}),
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     color: Theme.of(context).hintColor.withValues(alpha: 0.45),
@@ -1583,7 +1613,7 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                             size: 12, color: Color(0xFFFF3B30)),
                         const SizedBox(width: 4),
                         Text(
-                          'Cancel',
+                          'Cancel'.tr,
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             color: const Color(0xFFFF3B30),

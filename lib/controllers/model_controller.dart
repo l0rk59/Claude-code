@@ -401,15 +401,17 @@ class ModelController extends GetxController {
 
   String _formatModelSize(String filename) {
     final bytes = fileSizes[filename] ?? 0;
-    if (bytes <= 0) return 'Local File';
+    if (bytes <= 0) return 'Local File'.tr;
     return DownloadService.formatBytes(bytes);
   }
 
   Future<void> downloadModel(AiModel model) async {
     if (externalDownloadId.value != null &&
         importFileName.value == model.filename) {
-      showToast('Already downloading',
-          'This model is downloading to your Downloads folder. Wait for it to finish first.',
+      showToast(
+          'Already downloading'.tr,
+          'This model is downloading to your Downloads folder. Wait for it to finish first.'
+              .tr,
           tone: ToastTone.warning);
       return;
     }
@@ -428,7 +430,7 @@ class ModelController extends GetxController {
       await refreshDownloaded();
     } catch (e) {
       Get.find<AppLogService>().error('Model download failed', details: e);
-      showToast('Download Failed', '$e', tone: ToastTone.error);
+      showToast('Download Failed'.tr, '$e', tone: ToastTone.error);
     }
   }
 
@@ -450,17 +452,20 @@ class ModelController extends GetxController {
         if (result != null) saved.add(result);
       } on PlatformException catch (e) {
         Get.find<AppLogService>().error('Save to Downloads failed', details: e);
-        showToast('Not saved', e.message ?? 'Could not save $name.',
+        showToast('Not saved'.tr,
+            e.message ?? 'Could not save @name.'.trParams({'name': name}),
             tone: ToastTone.error);
         return;
       }
     }
     if (saved.isNotEmpty) {
       showToast(
-        'Saved to Downloads',
+        'Saved to Downloads'.tr,
         saved.length == 1
-            ? '${saved.first} is in your Downloads folder.'
-            : '${saved.length} files (model + vision file) are in your Downloads folder.',
+            ? '@name is in your Downloads folder.'
+                .trParams({'name': saved.first})
+            : '@count files (model + vision file) are in your Downloads folder.'
+                .trParams({'count': '${saved.length}'}),
         tone: ToastTone.success,
       );
     }
@@ -479,15 +484,17 @@ class ModelController extends GetxController {
 
   Future<void> downloadModelToDownloads(AiModel model) async {
     if (model.url.trim().isEmpty) {
-      showToast('Download Unavailable', 'This model has no download URL.',
+      showToast(
+          'Download Unavailable'.tr, 'This model has no download URL.'.tr,
           tone: ToastTone.warning);
       return;
     }
 
     if (!Platform.isAndroid) {
       showToast(
-        'Android Only',
-        'Use the app download button or import a local model on this platform.',
+        'Android Only'.tr,
+        'Use the app download button or import a local model on this platform.'
+            .tr,
         tone: ToastTone.info,
       );
       return;
@@ -496,8 +503,8 @@ class ModelController extends GetxController {
     // Both downloads report progress under the same filename; running them
     // together mixes up their progress.
     if (isDownloadingModel(model.filename)) {
-      showToast('Already downloading',
-          'Wait for the in-app download of this model to finish first.',
+      showToast('Already downloading'.tr,
+          'Wait for the in-app download of this model to finish first.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -505,7 +512,7 @@ class ModelController extends GetxController {
     try {
       isImporting.value = true;
       importFileName.value = model.filename;
-      importStatus.value = 'Starting download...';
+      importStatus.value = 'Starting download...'.tr;
       importCopiedBytes.value = 0;
       importTotalBytes.value = 0;
       importBytesPerSecond.value = 0;
@@ -518,8 +525,9 @@ class ModelController extends GetxController {
       externalDownloadId.value = result?['downloadId'] as int?;
       final filename = result?['filename'] as String? ?? model.filename;
       showToast(
-        'Download Started',
-        '$filename is downloading to your Downloads folder.',
+        'Download Started'.tr,
+        '@name is downloading to your Downloads folder.'
+            .trParams({'name': filename}),
         tone: ToastTone.info,
       );
     } on PlatformException catch (e) {
@@ -529,13 +537,14 @@ class ModelController extends GetxController {
         'Download to Downloads failed',
         details: '${e.code}: ${e.message}',
       );
-      showToast('Download Failed', e.message ?? e.code, tone: ToastTone.error);
+      showToast('Download Failed'.tr, e.message ?? e.code,
+          tone: ToastTone.error);
     } catch (e) {
       isImporting.value = false;
       externalDownloadId.value = null;
       Get.find<AppLogService>()
           .error('Download to Downloads failed', details: e);
-      showToast('Download Failed', '$e', tone: ToastTone.error);
+      showToast('Download Failed'.tr, '$e', tone: ToastTone.error);
     }
   }
 
@@ -550,7 +559,7 @@ class ModelController extends GetxController {
       }
       externalDownloadId.value = null;
       isImporting.value = false;
-      importStatus.value = 'Download cancelled';
+      importStatus.value = 'Download cancelled'.tr;
     }
   }
 
@@ -597,7 +606,7 @@ class ModelController extends GetxController {
 
   Future<void> loadModel(String filename) async {
     if (_inference.isLoadingModel.value) {
-      showToast('Model Loading', 'Another model is already loading.',
+      showToast('Model Loading'.tr, 'Another model is already loading.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -606,8 +615,9 @@ class ModelController extends GetxController {
         availableModels.firstWhereOrNull((m) => m.filename == filename);
     if (_isAuxiliaryImageFile(filename)) {
       showToast(
-        'Helper File',
-        '$filename is a helper file used by another model and cannot be loaded on its own.',
+        'Helper File'.tr,
+        '@name is a helper file used by another model and cannot be loaded on its own.'
+            .trParams({'name': filename}),
         tone: ToastTone.info,
       );
       return;
@@ -624,8 +634,9 @@ class ModelController extends GetxController {
         details: '$filename is $actual, expected about ${model.size}',
       );
       showToast(
-        'Incomplete Model File',
-        '$filename is only $actual. Delete it and download again.',
+        'Incomplete Model File'.tr,
+        '@name is only @size. Delete it and download again.'
+            .trParams({'name': filename, 'size': actual}),
         tone: ToastTone.error,
         duration: const Duration(seconds: 6),
       );
@@ -638,8 +649,9 @@ class ModelController extends GetxController {
         details: '$filename failed safetensors header validation',
       );
       showToast(
-        'Corrupt Model File',
-        '$filename did not download correctly. Delete it and download again.',
+        'Corrupt Model File'.tr,
+        '@name did not download correctly. Delete it and download again.'
+            .trParams({'name': filename}),
         tone: ToastTone.error,
         duration: const Duration(seconds: 6),
       );
@@ -651,8 +663,9 @@ class ModelController extends GetxController {
         details: '$filename failed LiteRT file validation; size=$fileBytes',
       );
       showToast(
-        'Corrupt Model File',
-        '$filename is not a valid LiteRT-LM file. Delete it and download again.',
+        'Corrupt Model File'.tr,
+        '@name is not a valid LiteRT-LM file. Delete it and download again.'
+            .trParams({'name': filename}),
         tone: ToastTone.error,
         duration: const Duration(seconds: 6),
       );
@@ -720,7 +733,7 @@ class ModelController extends GetxController {
 
       final isError = !_localImage.isModelLoaded.value;
       showToast(
-        isError ? 'Model Not Loaded' : 'Image Model',
+        isError ? 'Model Not Loaded'.tr : 'Image Model'.tr,
         result,
         tone: isError ? ToastTone.warning : ToastTone.success,
         duration:
@@ -735,8 +748,8 @@ class ModelController extends GetxController {
         if (await _download.isModelDownloaded(model.mmprojFilename)) {
           mmprojPath = await _download.modelPath(model.mmprojFilename);
         } else {
-          visionNote = ' Vision file is still downloading, so images will '
-              'work after you reload the model.';
+          visionNote = ' ${'Vision file is still downloading, so images will '
+                  'work after you reload the model.'.tr}';
           if (model.mmprojUrl.isNotEmpty &&
               !_download.activeDownloads.containsKey(model.mmprojFilename)) {
             unawaited(_downloadVisionFile(model));
@@ -756,13 +769,13 @@ class ModelController extends GetxController {
             ? (!fallbackToText && model != null && isVisionModel(model))
             : _inference.ggufVisionLoaded;
         if (visionNote.isNotEmpty) {
-          showToast('Model Loaded', '$result$visionNote',
+          showToast('Model Loaded'.tr, '$result$visionNote',
               tone: ToastTone.info, duration: const Duration(seconds: 5));
           await _settings.setInferenceMode('local');
           return;
         }
         await _settings.setInferenceMode('local');
-        showToast('Model Loaded', result, tone: ToastTone.success);
+        showToast('Model Loaded'.tr, result, tone: ToastTone.success);
       } else {
         _showLoadFailedSheet(filename, result);
       }
@@ -885,11 +898,11 @@ class ModelController extends GetxController {
         measuredBytes > 0 ? measuredBytes + loadedBytes : measuredBytes;
     final modelLabel = fileBytes > 0
         ? DownloadService.formatWholeMb(fileBytes)
-        : 'Unknown size';
+        : 'Unknown size'.tr;
     final ramLabel = availableBytes > 0
         ? '${hasLoadedModel && loadedBytes > 0 ? '~' : ''}'
             '${DownloadService.formatWholeMb(availableBytes)}'
-        : 'Unknown';
+        : 'Unknown'.tr;
     final lower = filename.toLowerCase();
 
     // For GGUF, estimate real usage from the file's header: weights plus the
@@ -916,27 +929,35 @@ class ModelController extends GetxController {
     final String warning;
     if (gguf != null && !fits) {
       warning = fittingContext != null
-          ? 'This probably won\'t fit in free memory at a context of '
-              '$contextTokens tokens. A context of $fittingContext tokens '
-              'should fit.'
+          ? "This probably won't fit in free memory at a context of "
+                  '@context tokens. A context of @fitting tokens '
+                  'should fit.'
+              .trParams({
+              'context': '$contextTokens',
+              'fitting': '$fittingContext'
+            })
           : 'This model is probably too large for the free memory on this '
-              'phone, even with a small context. Try a smaller model.';
+                  'phone, even with a small context. Try a smaller model.'
+              .tr;
     } else if (isCriticallyLow) {
       warning =
-          'Available RAM is lower than recommended. This can crash the app if Android cannot reserve enough memory.';
+          'Available RAM is lower than recommended. This can crash the app if Android cannot reserve enough memory.'
+              .tr;
     } else if (isLargeForRam || isLowRam || isLiteRt) {
       warning =
-          'This can crash the app if Android cannot reserve enough memory for the model.';
+          'This can crash the app if Android cannot reserve enough memory for the model.'
+              .tr;
     } else {
-      warning = 'Loading local models can use more memory than the file size.';
+      warning =
+          'Loading local models can use more memory than the file size.'.tr;
     }
     final runtimeLabel = isLiteRt
         ? 'LiteRT-LM'
         : lower.endsWith('.gguf')
             ? 'GGUF'
             : lower.endsWith('.safetensors')
-                ? 'Image model'
-                : 'Local model';
+                ? 'Image model'.tr
+                : 'Local model'.tr;
 
     final warningSerious = (gguf != null && !fits) ||
         isCriticallyLow ||
@@ -951,12 +972,12 @@ class ModelController extends GetxController {
     final result = await showAppSheet<_ModelLoadAction>(
       sheetContext,
       title: isSameModelLoaded
-          ? 'Reload model?'
+          ? 'Reload model?'.tr
           : hasLoadedModel
-              ? 'Switch model?'
+              ? 'Switch model?'.tr
               : isCriticallyLow
-                  ? 'Restart recommended'
-                  : 'Load model?',
+                  ? 'Restart recommended'.tr
+                  : 'Load model?'.tr,
       subtitle: filename,
       builder: (ctx) {
         final t = AppTokens.of(ctx);
@@ -968,20 +989,24 @@ class ModelController extends GetxController {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppGroup(children: [
-              _detailRow(ctx, 'Runtime', runtimeLabel),
+              _detailRow(ctx, 'Runtime'.tr, runtimeLabel),
               _detailRow(
                   ctx,
-                  hasLoadedModel ? 'Available after unload' : 'Available RAM',
+                  hasLoadedModel
+                      ? 'Available after unload'.tr
+                      : 'Available RAM'.tr,
                   ramLabel),
-              _detailRow(ctx, 'Model size', modelLabel),
+              _detailRow(ctx, 'Model size'.tr, modelLabel),
               if (gguf != null && estimatedBytes != null)
                 _detailRow(
                   ctx,
-                  'Estimated memory',
+                  'Estimated memory'.tr,
                   DownloadService.formatWholeMb(estimatedBytes),
-                  note: 'Context '
-                      '${DownloadService.formatWholeMb(gguf.kvCacheBytes(contextTokens))} '
-                      'for $contextTokens tokens',
+                  note: 'Context @size for @count tokens'.trParams({
+                    'size': DownloadService.formatWholeMb(
+                        gguf.kvCacheBytes(contextTokens)),
+                    'count': '$contextTokens'
+                  }),
                 ),
             ]),
             if (hasLoadedModel) ...[
@@ -989,8 +1014,10 @@ class ModelController extends GetxController {
               AppNotice(
                 isSameModelLoaded
                     ? 'This model is already loaded. It will be unloaded and '
-                        'loaded again.'
-                    : '$loadedName is loaded. It will be unloaded first.',
+                            'loaded again.'
+                        .tr
+                    : '@name is loaded. It will be unloaded first.'
+                        .trParams({'name': loadedName}),
                 icon: Icons.memory_rounded,
               ),
             ],
@@ -1009,21 +1036,21 @@ class ModelController extends GetxController {
                 Expanded(
                   child: TonalButton.neutral(
                     ctx,
-                    label: 'Cancel',
+                    label: 'Cancel'.tr,
                     onTap: () => pop(_ModelLoadAction.cancel),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: PrimaryButton(
-                    label: 'Unload & continue',
+                    label: 'Unload & continue'.tr,
                     onPressed: () => pop(_ModelLoadAction.unloadAndContinue),
                   ),
                 ),
               ])
             else ...[
               PrimaryButton(
-                label: 'Continue',
+                label: 'Continue'.tr,
                 onPressed: () async {
                   await _refreshAvailableRamGb();
                   pop(_ModelLoadAction.continueLoad);
@@ -1033,7 +1060,8 @@ class ModelController extends GetxController {
                 const SizedBox(height: 10),
                 TonalButton.neutral(
                   ctx,
-                  label: 'Load with $fittingContext tokens',
+                  label: 'Load with @count tokens'
+                      .trParams({'count': '$fittingContext'}),
                   onTap: () async {
                     await _settings.setContextSize(fittingContext);
                     pop(_ModelLoadAction.continueLoad);
@@ -1044,7 +1072,7 @@ class ModelController extends GetxController {
                 const SizedBox(height: 10),
                 TonalButton.neutral(
                   ctx,
-                  label: 'Restart app',
+                  label: 'Restart app'.tr,
                   onTap: () async {
                     pop(_ModelLoadAction.cancel);
                     try {
@@ -1058,7 +1086,7 @@ class ModelController extends GetxController {
               const SizedBox(height: 10),
               TonalButton.neutral(
                 ctx,
-                label: 'Cancel',
+                label: 'Cancel'.tr,
                 onTap: () => pop(_ModelLoadAction.cancel),
               ),
             ],
@@ -1080,18 +1108,19 @@ class ModelController extends GetxController {
         false;
     if (accepted) return true;
 
-    final modeLabel = mode == 'gpu_fast' ? 'GPU Fast' : 'Auto Fast';
+    final modeLabel = mode == 'gpu_fast' ? 'GPU fast'.tr : 'Auto fast'.tr;
     final context = Get.context;
     final confirmed = context == null
         ? false
         : await confirmSheet(
             context,
-            title: '$modeLabel LiteRT speed',
+            title: '@mode LiteRT speed'.trParams({'mode': modeLabel}),
             message:
                 'GPU can make LiteRT models much faster, closer to Edge Gallery speed. '
-                'On some phones GPU/OpenCL can crash the app while loading. '
-                'If that happens, Auto Fast will use CPU on the next load.',
-            confirmLabel: 'Continue',
+                        'On some phones GPU/OpenCL can crash the app while loading. '
+                        'If that happens, Auto Fast will use CPU on the next load.'
+                    .tr,
+            confirmLabel: 'Continue'.tr,
           );
 
     if (confirmed == true) {
@@ -1120,7 +1149,7 @@ class ModelController extends GetxController {
 
   Future<void> importModelFromStorage() async {
     if (isImporting.value) {
-      showToast('Import in Progress', 'Wait for the current import to finish.',
+      showToast('Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -1146,8 +1175,8 @@ class ModelController extends GetxController {
         if (!lower.endsWith('.gguf') &&
             !lower.endsWith('.litertlm') &&
             !lower.endsWith('.safetensors')) {
-          showToast('Unsupported Model',
-              'Only .gguf, .litertlm, and .safetensors files can be imported.',
+          showToast('Unsupported Model'.tr,
+              'Only .gguf, .litertlm, and .safetensors files can be imported.'.tr,
               tone: ToastTone.warning);
           return;
         }
@@ -1159,7 +1188,7 @@ class ModelController extends GetxController {
                 ? 0
                 : await file.length();
         if (totalBytes <= 0) {
-          showToast('Import Failed', 'The selected file is empty.',
+          showToast('Import Failed'.tr, 'The selected file is empty.'.tr,
               tone: ToastTone.error);
           return;
         }
@@ -1167,8 +1196,8 @@ class ModelController extends GetxController {
         final sourceStream = picked.readStream ?? file?.openRead();
         if (sourceStream == null) {
           showToast(
-            'Import Failed',
-            'Unable to read the selected file. Try selecting it from local storage.',
+            'Import Failed'.tr,
+            'Unable to read the selected file. Try selecting it from local storage.'.tr,
             tone: ToastTone.error,
           );
           return;
@@ -1190,7 +1219,7 @@ class ModelController extends GetxController {
 
         isImporting.value = true;
         importFileName.value = filename;
-        importStatus.value = 'Copying to app storage...';
+        importStatus.value = 'Copying to app storage...'.tr;
         importCopiedBytes.value = 0;
         importTotalBytes.value = totalBytes;
         importBytesPerSecond.value = 0;
@@ -1208,8 +1237,9 @@ class ModelController extends GetxController {
 
         await refreshDownloaded();
         modelScope.value = 'local';
-        importStatus.value = 'Import complete';
-        showToast('Import Successful', 'Model $filename imported.',
+        importStatus.value = 'Import complete'.tr;
+        showToast('Import Successful'.tr,
+            'Model @name imported.'.trParams({'name': filename}),
             tone: ToastTone.success);
       }
     } catch (e) {
@@ -1220,7 +1250,7 @@ class ModelController extends GetxController {
         }
       }
       Get.find<AppLogService>().error('Model import failed', details: e);
-      showToast('Import Failed', '$e', tone: ToastTone.error);
+      showToast('Import Failed'.tr, '$e', tone: ToastTone.error);
     } finally {
       isImporting.value = false;
       importFileName.value = '';
@@ -1235,7 +1265,7 @@ class ModelController extends GetxController {
     try {
       isImporting.value = true;
       importFileName.value = '';
-      importStatus.value = 'Select a model file...';
+      importStatus.value = 'Select a model file...'.tr;
       importCopiedBytes.value = 0;
       importTotalBytes.value = 0;
       importBytesPerSecond.value = 0;
@@ -1254,7 +1284,8 @@ class ModelController extends GetxController {
             await _download.getModelSize(filename);
         await refreshDownloaded();
         modelScope.value = 'local';
-        showToast('Import Successful', 'Model $filename imported.',
+        showToast('Import Successful'.tr,
+            'Model @name imported.'.trParams({'name': filename}),
             tone: ToastTone.success);
       }
     } on PlatformException catch (e) {
@@ -1262,11 +1293,11 @@ class ModelController extends GetxController {
         'Android model import failed',
         details: '${e.code}: ${e.message}',
       );
-      showToast('Import Failed', e.message ?? e.code, tone: ToastTone.error);
+      showToast('Import Failed'.tr, e.message ?? e.code, tone: ToastTone.error);
     } catch (e) {
       Get.find<AppLogService>()
           .error('Android model import failed', details: e);
-      showToast('Import Failed', '$e', tone: ToastTone.error);
+      showToast('Import Failed'.tr, '$e', tone: ToastTone.error);
     } finally {
       isImporting.value = false;
       importFileName.value = '';
@@ -1298,7 +1329,7 @@ class ModelController extends GetxController {
     } on PlatformException catch (e) {
       Get.find<AppLogService>()
           .error('Folder scan failed', details: '${e.code}: ${e.message}');
-      showToast('Couldn\'t read folder', e.message ?? e.code,
+      showToast('Couldn\'t read folder'.tr, e.message ?? e.code,
           tone: ToastTone.error);
       return null;
     }
@@ -1309,7 +1340,7 @@ class ModelController extends GetxController {
   Future<void> importFolderFiles(List<FolderModelFile> files) async {
     if (files.isEmpty) return;
     if (isImporting.value) {
-      showToast('Import in Progress', 'Wait for the current import to finish.',
+      showToast('Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -1320,7 +1351,7 @@ class ModelController extends GetxController {
     try {
       for (final file in files) {
         importFileName.value = file.name;
-        importStatus.value = 'Copying to app storage...';
+        importStatus.value = 'Copying to app storage...'.tr;
         importCopiedBytes.value = 0;
         importTotalBytes.value = file.size;
         importBytesPerSecond.value = 0;
@@ -1342,12 +1373,15 @@ class ModelController extends GetxController {
       await refreshDownloaded();
       modelScope.value = 'local';
       if (failed.isEmpty) {
-        showToast('Import Successful',
-            imported == 1 ? '1 model imported.' : '$imported models imported.',
+        showToast('Import Successful'.tr,
+            imported == 1
+                ? '1 model imported.'.tr
+                : '@count models imported.'.trParams({'count': '$imported'}),
             tone: ToastTone.success);
       } else {
-        showToast('Some imports failed',
-            '$imported imported · couldn\'t import ${failed.join(', ')}',
+        showToast('Some imports failed'.tr,
+            "@count imported · couldn't import @names"
+                .trParams({'count': '$imported', 'names': failed.join(', ')}),
             tone: ToastTone.warning);
       }
     } finally {
@@ -1392,10 +1426,11 @@ class ModelController extends GetxController {
     if (context == null) return false;
     return confirmSheet(
       context,
-      title: 'Model already exists',
+      title: 'Model already exists'.tr,
       message:
-          'A model file named "$filename" is already imported in your local app storage. Would you like to replace it?',
-      confirmLabel: 'Replace file',
+          'A model file named "@name" is already imported in your local app storage. Would you like to replace it?'
+              .trParams({'name': filename}),
+      confirmLabel: 'Replace file'.tr,
     );
   }
 
@@ -1454,11 +1489,13 @@ class ModelController extends GetxController {
     }
     if (lower.contains('unknown model architecture') ||
         lower.contains('unsupported model architecture')) {
-      return 'This GGUF uses a model architecture that is not supported by the bundled llama.cpp runtime. Update the app runtime or try a GGUF exported for a supported architecture.';
+      return 'This GGUF uses a model architecture that is not supported by the bundled llama.cpp runtime. Update the app runtime or try a GGUF exported for a supported architecture.'
+          .tr;
     }
     if (lower.contains('missing key') ||
         lower.contains('failed to load gguf split')) {
-      return 'This appears to be a split GGUF model, but one or more required model files are missing. Import every split into the same folder before loading it.';
+      return 'This appears to be a split GGUF model, but one or more required model files are missing. Import every split into the same folder before loading it.'
+          .tr;
     }
     if (lower.contains('failed to load model from buffer') ||
         lower.contains('invalid_argument') ||
@@ -1466,13 +1503,15 @@ class ModelController extends GetxController {
         lower.contains('missing or unreadable') ||
         lower.contains('incomplete') ||
         lower.contains('corrupt')) {
-      return 'The model file appears to be incomplete or corrupted. This usually happens when the download is interrupted or the file is invalid.';
+      return 'The model file appears to be incomplete or corrupted. This usually happens when the download is interrupted or the file is invalid.'
+          .tr;
     }
     if (lower.contains('out of memory') ||
         lower.contains('allocate') ||
         lower.contains('oom') ||
         lower.contains('cannot allocate')) {
-      return 'Your device ran out of memory (RAM) trying to load this model. Mobile devices have strict memory limits; try using a smaller or more highly quantized model (e.g., 1B or 3B parameters, q4_k_m quantized).';
+      return 'Your device ran out of memory (RAM) trying to load this model. Mobile devices have strict memory limits; try using a smaller or more highly quantized model (e.g., 1B or 3B parameters, q4_k_m quantized).'
+          .tr;
     }
     if (lower.contains('opencl') ||
         lower.contains('vulkan') ||
@@ -1480,16 +1519,18 @@ class ModelController extends GetxController {
         lower.contains('gpu') ||
         lower.contains('cl_') ||
         lower.contains('driver')) {
-      return 'A hardware or GPU driver error occurred while initializing the model. Try disabling GPU acceleration or switching to CPU-only inference in Settings.';
+      return 'A hardware or GPU driver error occurred while initializing the model. Try disabling GPU acceleration or switching to CPU-only inference in Settings.'
+          .tr;
     }
-    return 'The native AI engine encountered an unexpected error while loading the model. Please check the technical details below for more information.';
+    return 'The native AI engine encountered an unexpected error while loading the model. Please check the technical details below for more information.'
+        .tr;
   }
 
   void _showLoadFailedSheet(String filename, String result) {
     final friendlyMsg = _getFriendlyErrorMessage(result);
     final context = Get.context;
     if (context == null) {
-      showToast('Model load failed', friendlyMsg,
+      showToast('Model load failed'.tr, friendlyMsg,
           tone: ToastTone.error, duration: const Duration(seconds: 6));
       return;
     }
@@ -1499,7 +1540,9 @@ class ModelController extends GetxController {
     bool showDetails = false;
     showAppSheet<void>(
       context,
-      title: isCluster ? 'Phone cluster couldn\'t load' : 'Model load failed',
+      title: isCluster
+          ? "Phone cluster couldn't load".tr
+          : 'Model load failed'.tr,
       subtitle: friendlyMsg,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
@@ -1507,22 +1550,31 @@ class ModelController extends GetxController {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SectionHeader('Troubleshooting tips',
-                  padding: EdgeInsets.fromLTRB(0, 0, 0, 10)),
+              SectionHeader('Troubleshooting tips'.tr,
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 10)),
               if (isCluster) ...[
-                _buildTipRow(ctx, Icons.hub_outlined,
-                    'On each worker, open PrivateLM > Phone cluster and check that Worker is on and shows its QR code.'),
-                _buildTipRow(ctx, Icons.wifi_rounded,
-                    'Keep every device on the same Wi-Fi. iPads must keep PrivateLM open.'),
+                _buildTipRow(
+                    ctx,
+                    Icons.hub_outlined,
+                    'On each worker, open PrivateLM > Phone cluster and check that Worker is on and shows its QR code.'
+                        .tr),
+                _buildTipRow(
+                    ctx,
+                    Icons.wifi_rounded,
+                    'Keep every device on the same Wi-Fi. iPads must keep PrivateLM open.'
+                        .tr),
               ] else ...[
                 _buildTipRow(ctx, Icons.delete_outline_rounded,
-                    'Delete the model and try redownloading it completely.'),
+                    'Delete the model and try redownloading it completely.'.tr),
                 _buildTipRow(ctx, Icons.memory_rounded,
-                    'Ensure your device has at least 2-3 GB of free RAM.'),
+                    'Ensure your device has at least 2-3 GB of free RAM.'.tr),
               ],
               if (showLiteRtTip)
-                _buildTipRow(ctx, Icons.tune_rounded,
-                    'Double check if this LiteRT-LM file matches your architecture.'),
+                _buildTipRow(
+                    ctx,
+                    Icons.tune_rounded,
+                    'Double check if this LiteRT-LM file matches your architecture.'
+                        .tr),
               const SizedBox(height: 4),
               Align(
                 alignment: Alignment.centerLeft,
@@ -1537,8 +1589,8 @@ class ModelController extends GetxController {
                       children: [
                         Text(
                           showDetails
-                              ? 'Hide technical details'
-                              : 'Show technical details',
+                              ? 'Hide technical details'.tr
+                              : 'Show technical details'.tr,
                           style: t.label.copyWith(color: t.text),
                         ),
                         const SizedBox(width: 2),
@@ -1582,7 +1634,7 @@ class ModelController extends GetxController {
               ),
               const SizedBox(height: 20),
               TonalButton.neutral(ctx,
-                  label: 'Close', onTap: () => Navigator.pop(ctx)),
+                  label: 'Close'.tr, onTap: () => Navigator.pop(ctx)),
             ],
           );
         },

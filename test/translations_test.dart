@@ -50,6 +50,18 @@ void main() {
     expect(problems, isEmpty, reason: problems.join('\n'));
   });
 
+  // trParams replaces '@m' inside '@minutes' too.
+  test('no placeholder is the start of another in the same text', () {
+    final placeholder = RegExp(r'@(\w+)');
+    final problems = [
+      for (final key in fr.keys)
+        for (final a in placeholder.allMatches(key).map((m) => m[1]!).toSet())
+          for (final b in placeholder.allMatches(key).map((m) => m[1]!).toSet())
+            if (a != b && b.startsWith(a)) '"${_show(key)}": @$a and @$b',
+    ];
+    expect(problems, isEmpty, reason: problems.join('\n'));
+  });
+
   test('no French translation is left unused', () {
     final inCode = literals.map((l) => l.value).toSet();
     final unused = [
