@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
@@ -10,6 +11,7 @@ import '../services/hive_service.dart';
 import '../services/local_image_service.dart';
 import '../services/update_service.dart';
 import '../services/device_info_service.dart';
+import '../services/download_service.dart';
 import '../services/soc_family.dart' as platform_info;
 import '../ffi/sd_backend.dart';
 import '../services/cluster_service.dart';
@@ -688,7 +690,117 @@ class SettingsView extends GetView<SettingsController> {
                 .tr,
             style: t.small),
       ),
+      if (GetPlatform.isAndroid) ..._buildGgufGpuApiRows(context),
+      if (GetPlatform.isAndroid) ..._buildSpeculativeRows(context),
     ]);
+  }
+
+  /// The engine's reason for skipping the draft model, in plain words.
+  static String _draftReason(String error) {
+    if (error.contains("doesn't match")) {
+      return 'it is not from the same model family'.tr;
+    }
+    if (error.contains('not found')) return 'its file is missing'.tr;
+    if (error.contains("Couldn't")) {
+      return 'it could not be loaded (not enough memory?)'.tr;
+    }
+    return error;
+  }
+
+  /// Speculative decoding: pick a small downloaded GGUF model as the draft.
+  List<Widget> _buildSpeculativeRows(BuildContext context) {
+    final t = AppTokens.of(context);
+    final models = Get.find<ModelController>();
+    const maxDraftBytes = 1600 * 1000 * 1000;
+    final drafts = [
+      for (final f in models.downloadedFiles)
+        if (f.toLowerCase().endsWith('.gguf') &&
+            !f.toLowerCase().contains('mmproj') &&
+            (models.fileSizes[f] ?? 0) > 0 &&
+            models.fileSizes[f]! <= maxDraftBytes)
+          f,
+    ]..sort();
+    final selected = controller.speculativeDraftModel.value;
+    final error = Get.find<InferenceService>().lastDraftError.value;
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+        child: Text('Speculative decoding · experimental'.tr, style: t.label),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Text(
+            'A small model of the same family (e.g. Qwen 3.5 0.8B for Qwen 3.5 '
+                    '4B) proposes words the main model checks in one go: same '
+                    'answers, faster when it guesses well. Uses extra memory. '
+                    'GGUF models, text only.'
+                .tr,
+            style: t.small),
+      ),
+      AppRow(
+        icon: Icons.block_rounded,
+        title: 'Off'.tr,
+        selected: selected.isEmpty,
+        onTap: () => controller.setSpeculativeDraftModel(''),
+      ),
+      for (final f in drafts)
+        AppRow(
+          icon: Icons.bolt_rounded,
+          title: f,
+          subtitle: DownloadService.formatBytes(models.fileSizes[f]!),
+          selected: selected == f,
+          onTap: () => controller.setSpeculativeDraftModel(f),
+        ),
+      if (drafts.isEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Text(
+              'Download a small GGUF model (under 1.6 GB) to use it as a draft.'
+                  .tr,
+              style: t.small),
+        ),
+      if (selected.isNotEmpty && error.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: AppNotice(
+              'Not used with the current model: @reason'
+                  .trParams({'reason': _draftReason(error)}),
+              icon: Icons.info_outline_rounded),
+        ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Text('Takes effect the next time a model is loaded.'.tr,
+            style: t.small),
+      ),
+    ];
+  }
+
+  /// GPU backend for GGUF models: Vulkan, or llama.cpp's OpenCL backend
+  /// tuned for Snapdragon (Adreno) GPUs.
+  List<Widget> _buildGgufGpuApiRows(BuildContext context) {
+    final t = AppTokens.of(context);
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+        child: Text('GPU engine for GGUF models'.tr, style: t.label),
+      ),
+      AppRow(
+        icon: Icons.layers_outlined,
+        title: 'Vulkan (default)'.tr,
+        subtitle: 'Works on most recent phones'.tr,
+        selected: controller.ggufGpuApi.value == 'vulkan',
+        onTap: () => controller.setGgufGpuApi('vulkan'),
+      ),
+      AppRow(
+        icon: Icons.science_outlined,
+        title: 'OpenCL · experimental'.tr,
+        subtitle: "Qualcomm's path for Snapdragon 8 Gen 1 and later (Adreno "
+                '730+), often faster there. Falls back to the CPU if it fails.'
+            .tr,
+        selected: controller.ggufGpuApi.value == 'opencl',
+        onTap: () => controller.setGgufGpuApi('opencl'),
+      ),
+    ];
   }
 
   Widget _buildModelParametersGroup(BuildContext context) {

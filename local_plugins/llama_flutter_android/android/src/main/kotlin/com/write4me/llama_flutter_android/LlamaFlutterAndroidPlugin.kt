@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -22,6 +23,10 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
     private var currentModelPath: String? = null
     private var nativeLoadError: Throwable? = null
     private var clusterChannel: ClusterChannel? = null
+    private var engineChannel: MethodChannel? = null
+
+    /** GPU backend for GGUF models: "vulkan" (default) or "opencl". */
+    @Volatile private var gpuApi = "vulkan"
 
     companion object {
         private const val TAG = "LlamaFlutterPlugin"
@@ -37,11 +42,16 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
         flutterApi = LlamaFlutterApi(binding.binaryMessenger)
         LlamaHostApi.setUp(binding.binaryMessenger, this)
         clusterChannel = ClusterChannel(context, binding.binaryMessenger, scope)
+        engineChannel = MethodChannel(binding.binaryMessenger, "llama_flutter_android/engine").also {
+            it.setMethodCallHandler { call, result -> onEngineCall(call.method, call, result) }
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         clusterChannel?.dispose()
         clusterChannel = null
+        engineChannel?.setMethodCallHandler(null)
+        engineChannel = null
         scope.cancel()
         if (isModelLoaded.get()) {
             nativeFreeModel()
@@ -401,6 +411,47 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
         ChatTemplateManager.unregisterCustomTemplate(name)
     }
 
+    /** GPU backend choice and the speculative-decoding draft model. */
+    private fun onEngineCall(
+        method: String,
+        call: io.flutter.plugin.common.MethodCall,
+        result: MethodChannel.Result
+    ) {
+        when (method) {
+            "setGpuApi" -> {
+                gpuApi = if (call.argument<String>("api") == "opencl") "opencl" else "vulkan"
+                result.success(null)
+            }
+            "loadDraftModel" -> {
+                ensureNativeLoaded()?.let {
+                    result.error("NATIVE_LOAD", it.message, null)
+                    return
+                }
+                val path = call.argument<String>("path")
+                val threads = call.argument<Int>("threads") ?: 4
+                if (path == null) {
+                    result.error("ARGS", "path is required", null)
+                    return
+                }
+                scope.launch {
+                    val error = try {
+                        nativeLoadDraftModel(path, threads.toLong())
+                    } catch (e: Throwable) {
+                        e.message ?: "Draft model failed to load"
+                    }
+                    withContext(Dispatchers.Main) { result.success(error) }
+                }
+            }
+            "freeDraftModel" -> {
+                if (nativeLoadError == null) {
+                    try { nativeFreeDraftModel() } catch (_: Throwable) {}
+                }
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
+    }
+
     override fun detectGpu(callback: (Result<GpuInfo>) -> Unit) {
         ensureNativeLoaded()?.let {
             callback(Result.failure(it))
@@ -411,6 +462,7 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
             try {
                 // Loading the Vulkan backend initialises the driver, so skip it
                 // entirely on devices where that step itself is risky.
+                nativeSetGpuApi(gpuApi)
                 if (isGpuEligibleSoc()) {
                     nativeInitBackends(context.applicationInfo.nativeLibraryDir, true)
                 } else {
@@ -503,6 +555,15 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
         return false
     }
 
+    /**
+     * llama.cpp's OpenCL backend targets Adreno; Qualcomm documents the 750,
+     * 830 and X85, and older Adreno 6xx don't work with it.
+     */
+    private fun isOpenClGpu(gpuName: String): Boolean {
+        val adreno = Regex("adreno.*?(\\d{3})").find(gpuName.lowercase()) ?: return false
+        return adreno.groupValues[1].toInt() >= 730
+    }
+
     private fun isGpuForced(): Boolean =
         java.io.File(context.filesDir, "force_gguf_gpu").exists()
 
@@ -526,6 +587,7 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
         return when {
             !vulkanSupported -> 0
             isBlockedGpu(gpuName) && !isGpuForced() -> 0
+            gpuApi == "opencl" && !isOpenClGpu(gpuName) && !isGpuForced() -> 0
             safeRam < GB -> 0 // too little free RAM for GPU buffers + driver
             else -> 99
         }
@@ -571,5 +633,8 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
     private external fun nativeSetSystemPromptLength(length: Int)
     private external fun nativeDetectGpu(outStats: LongArray): String?
     private external fun nativeInitBackends(libDir: String, allowGpu: Boolean): Boolean
+    private external fun nativeSetGpuApi(api: String)
+    private external fun nativeLoadDraftModel(path: String, nThreads: Long): String?
+    private external fun nativeFreeDraftModel()
     // outStats[0] = vulkanApiVersion, outStats[1] = deviceLocalMemoryBytes
 }

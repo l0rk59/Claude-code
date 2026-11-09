@@ -50,6 +50,10 @@ android {
             // llama.cpp armv9 (SVE2/SME) CPU variants abort on some phones
             // (Pixel 8); the loader never picks them, so don't ship them.
             excludes += setOf("**/libggml-cpu-android_armv9*.so")
+            // llama.cpp's OpenCL backend links against a stand-in
+            // libOpenCL.so; at runtime it must use the phone's own (in
+            // /vendor, declared with <uses-native-library>), so never ship it.
+            excludes += setOf("**/libOpenCL.so")
         }
     }
 

@@ -913,12 +913,20 @@ class ModelController extends GetxController {
     // KV cache for the configured context, which file size alone ignores.
     final gguf = lower.endsWith('.gguf') ? await readGgufInfo(path) : null;
     final contextTokens = _settings.contextSize.value;
-    final estimatedBytes = gguf?.estimateBytes(contextTokens);
+    // A speculative-decoding draft model loads next to this one: count its
+    // weights (its own small KV cache fits in the estimate's margin).
+    final draftName = _settings.speculativeDraftModel.value;
+    final draftBytes =
+        gguf != null && draftName.isNotEmpty && draftName != filename
+            ? (fileSizes[draftName] ?? 0)
+            : 0;
+    final estimatedBytes =
+        gguf == null ? null : gguf.estimateBytes(contextTokens) + draftBytes;
     final fits = estimatedBytes == null ||
         availableBytes <= 0 ||
         estimatedBytes <= availableBytes;
     final fittingContext = (gguf != null && !fits && availableBytes > 0)
-        ? gguf.maxContextFitting(availableBytes)
+        ? gguf.maxContextFitting(availableBytes - draftBytes)
         : null;
 
     final hasMeasuredMemory = availableBytes > 0 && fileBytes > 0;
@@ -1012,6 +1020,10 @@ class ModelController extends GetxController {
                     'count': '$contextTokens'
                   }),
                 ),
+              if (draftBytes > 0)
+                _detailRow(ctx, 'Draft model'.tr,
+                    DownloadService.formatWholeMb(draftBytes),
+                    note: draftName),
             ]),
             if (hasLoadedModel) ...[
               const SizedBox(height: 12),

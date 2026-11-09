@@ -27,6 +27,10 @@ class InferenceService extends GetxService {
   /// The last load succeeded but dropped the vision features it was asked
   /// for (LiteRT text-only fallback).
   bool lastLoadVisionDisabled = false;
+
+  /// Why the speculative-decoding draft model couldn't be used with the
+  /// last model loaded; empty when it was used or none was picked.
+  final lastDraftError = ''.obs;
   final loadingModelName = ''.obs;
   final loadedModelName = ''.obs;
   final tokenCount = 0.obs;
@@ -162,6 +166,8 @@ class InferenceService extends GetxService {
         tryLiteRtGpu: shouldTryLiteRtGpu,
         enableLiteRtVision: enableLiteRtVision,
         allowGgufGpu: allowGgufGpu && clusterWorkers == 0,
+        ggufGpuApi: _hive.getSetting<String>(AppConstants.keyGgufGpuApi) ??
+            'vulkan',
         mmprojPath: mmprojPath,
       );
 
@@ -182,6 +188,13 @@ class InferenceService extends GetxService {
               'model=$requestedModelName, runtime=$runtime, backend=${result.backend}, message=${result.message}',
         );
         return result.message;
+      }
+
+      // Load the speculative-decoding draft while the UI still shows
+      // "loading", so no message can start before it is in place.
+      lastDraftError.value = '';
+      if (result.runtime == 'llama' && clusterWorkers == 0) {
+        await _loadDraftModel(modelPath);
       }
 
       isModelLoaded.value = result.success;
@@ -212,6 +225,7 @@ class InferenceService extends GetxService {
       if (isLiteRt) {
         await _hive.setSetting('last_loaded_context_size', finalContextSize);
       }
+
 
       if (clusterWorkers > 0) {
         final cluster = Get.find<ClusterService>();
@@ -474,6 +488,25 @@ class InferenceService extends GetxService {
     }
   }
 
+  /// Speculative decoding: loads the draft model picked in Settings next to
+  /// the GGUF model just loaded. Off, missing or mismatched drafts are
+  /// skipped; generation then works as usual.
+  Future<void> _loadDraftModel(String modelPath) async {
+    final draft =
+        _hive.getSetting<String>(AppConstants.keySpeculativeDraftModel) ?? '';
+    if (draft.isEmpty || modelPath.endsWith('/$draft')) return;
+    final draftPath =
+        '${modelPath.substring(0, modelPath.lastIndexOf('/'))}/$draft';
+    final error = await _engine!.loadDraftModel(draftPath);
+    if (error != null) {
+      Get.find<AppLogService>()
+          .warning('Draft model not used', details: '$draft: $error');
+      lastDraftError.value = error;
+    } else {
+      lastDraftError.value = '';
+    }
+  }
+
   Future<platform.LoadResult> _loadModelOnEngine({
     required String modelPath,
     required String? modelRuntime,
@@ -486,11 +519,15 @@ class InferenceService extends GetxService {
     required bool tryLiteRtGpu,
     required bool enableLiteRtVision,
     bool allowGgufGpu = false,
+    String ggufGpuApi = 'vulkan',
     String? mmprojPath,
   }) async {
     // Auto fast: if a LiteRT GPU load fails, retry this load on the CPU.
-    // Nothing is remembered — the next load tries the GPU again.
-    final fallbackToCpu = tryLiteRtGpu && liteRtPerformanceMode == 'auto_fast';
+    // The experimental OpenCL path for GGUF does the same. Nothing is
+    // remembered — the next load tries the GPU again.
+    final fallbackToCpu =
+        (tryLiteRtGpu && liteRtPerformanceMode == 'auto_fast') ||
+            (allowGgufGpu && ggufGpuApi == 'opencl');
     Future<platform.LoadResult> loadOnCpu() {
       modelLoadProgress.value = 0.0;
       return _engine!.loadModel(
@@ -503,6 +540,7 @@ class InferenceService extends GetxService {
         forceLiteRtCpu: true,
         clearLiteRtCache: true,
         enableLiteRtVision: enableLiteRtVision,
+        mmprojPath: mmprojPath,
         onProgress: (p) => modelLoadProgress.value = _normalizeProgress(p),
       );
     }
@@ -519,6 +557,7 @@ class InferenceService extends GetxService {
         clearLiteRtCache: clearLiteRtCache,
         enableLiteRtVision: enableLiteRtVision,
         allowGgufGpu: allowGgufGpu,
+        ggufGpuApi: ggufGpuApi,
         mmprojPath: mmprojPath,
         onProgress: (p) => modelLoadProgress.value = _normalizeProgress(p),
       );

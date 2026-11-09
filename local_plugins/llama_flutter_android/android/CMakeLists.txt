@@ -30,6 +30,17 @@ set(GGML_NATIVE OFF CACHE BOOL "Cross-compiling: never tune for the build host" 
 #    a coordinator spreads model layers across the workers it adds.
 option(LLAMA_ANDROID_VULKAN "Build the Vulkan GPU backend" ON)
 option(LLAMA_ANDROID_RPC "Build the RPC backend (phone cluster)" ON)
+option(LLAMA_ANDROID_OPENCL "Build the OpenCL GPU backend (Adreno)" ON)
+
+# Builds that can't download from GitHub (firewalls, CI mirrors) can point
+# LLAMA_ANDROID_FETCH_DIR at a folder with vulkan_headers/, spirv_headers/
+# and opencl_headers/ checkouts of the versions declared below.
+if(DEFINED ENV{LLAMA_ANDROID_FETCH_DIR})
+    foreach(_dep vulkan_headers spirv_headers opencl_headers)
+        string(TOUPPER ${_dep} _DEP)
+        set(FETCHCONTENT_SOURCE_DIR_${_DEP} "$ENV{LLAMA_ANDROID_FETCH_DIR}/${_dep}")
+    endforeach()
+endif()
 if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(GGML_BACKEND_DL ON CACHE BOOL "Load backends at runtime" FORCE)
     set(GGML_CPU_ALL_VARIANTS ON CACHE BOOL "Build every Arm CPU variant" FORCE)
@@ -125,6 +136,47 @@ set(CMAKE_MAKE_PROGRAM \"${CMAKE_MAKE_PROGRAM}\" CACHE FILEPATH \"\")
     endif()
     message(STATUS "glslc: ${Vulkan_GLSLC_EXECUTABLE}")
 endif()
+# OpenCL backend: Qualcomm's optimised path for Adreno GPUs (Snapdragon 8
+# Gen 2 and later), often faster there than Vulkan. Loaded at runtime only
+# when the user picks it. It links against libOpenCL.so, which phones ship
+# in /vendor (the app declares it with <uses-native-library>); a generated
+# stand-in satisfies the linker and is kept out of the APK. Embedding the
+# GPU kernels needs Python 3 on the build machine; without it the backend
+# is skipped and everything else builds as before.
+if(ANDROID_ABI STREQUAL "arm64-v8a" AND LLAMA_ANDROID_OPENCL)
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(NOT Python3_Interpreter_FOUND)
+        message(WARNING "Python 3 not found: building without the OpenCL backend")
+    else()
+        include(FetchContent)
+        FetchContent_Declare(opencl_headers
+            GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-Headers.git
+            GIT_TAG 8a97ebc88daa3495d6f57ec10bb515224400186f)  # v2025.07.22
+        FetchContent_GetProperties(opencl_headers)
+        if(NOT opencl_headers_POPULATED)
+            FetchContent_Populate(opencl_headers)
+        endif()
+
+        set(_opencl_stub "/* Link-time stand-in for the phone's libOpenCL.so. Generated. */\n")
+        foreach(_header cl.h cl_ext.h)
+            file(READ "${opencl_headers_SOURCE_DIR}/CL/${_header}" _cl_src)
+            string(REGEX MATCHALL "CL_API_CALL[ \t\r\n]+cl[A-Za-z0-9_]+" _cl_calls "${_cl_src}")
+            foreach(_call ${_cl_calls})
+                string(REGEX REPLACE "CL_API_CALL[ \t\r\n]+" "" _cl_name "${_call}")
+                string(APPEND _opencl_stub "void ${_cl_name}(void) {}\n")
+            endforeach()
+        endforeach()
+        file(WRITE "${CMAKE_BINARY_DIR}/opencl_stub.c" "${_opencl_stub}")
+        add_library(OpenCL SHARED "${CMAKE_BINARY_DIR}/opencl_stub.c")
+
+        set(OpenCL_INCLUDE_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
+        set(OpenCL_LIBRARY OpenCL CACHE STRING "" FORCE)
+        set(GGML_OPENCL ON CACHE BOOL "Enable OpenCL backend" FORCE)
+        set(GGML_OPENCL_USE_ADRENO_KERNELS ON CACHE BOOL "" FORCE)
+        set(GGML_OPENCL_EMBED_KERNELS ON CACHE BOOL "" FORCE)
+    endif()
+endif()
+
 set(GGML_OPENMP OFF CACHE BOOL "Disable OpenMP to avoid packaging libomp.so" FORCE)
 set(GGML_STATIC OFF CACHE BOOL "Build as shared library")
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
@@ -147,7 +199,7 @@ add_subdirectory(src/main/cpp/llama.cpp)
 # On Android/NDK it must explicitly link libc++ or symbols such as operator new
 # and std::runtime_error stay unresolved during the native build.
 if(ANDROID)
-    foreach(target ggml-base ggml ggml-cpu ggml-vulkan ggml-rpc llama mtmd
+    foreach(target ggml-base ggml ggml-cpu ggml-vulkan ggml-opencl ggml-rpc llama mtmd
             ggml-cpu-android_armv8.0_1 ggml-cpu-android_armv8.2_1
             ggml-cpu-android_armv8.2_2 ggml-cpu-android_armv8.6_1
             ggml-cpu-android_armv9.0_1 ggml-cpu-android_armv9.2_1

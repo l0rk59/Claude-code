@@ -76,6 +76,13 @@ class AppConstants {
 
   /// UI language: 'system' (follow the phone), 'en' or 'fr'.
   static const String keyLanguage = 'language';
+
+  /// GPU backend for GGUF models: 'vulkan' (default) or 'opencl' (Adreno,
+  /// experimental).
+  static const String keyGgufGpuApi = 'gguf_gpu_api';
+
+  /// File name of the speculative-decoding draft model ('' = off).
+  static const String keySpeculativeDraftModel = 'speculative_draft_model';
   static const String keyBatchModeWarningAccepted =
       'batch_mode_warning_accepted';
 

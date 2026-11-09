@@ -1224,6 +1224,38 @@ const Map<String, String> fr = {
   "Microsoft's compact reasoning model — strong at math and logic":
       'Modèle de raisonnement compact de Microsoft — fort en maths et en '
           'logique',
+  // ── GPU engine (GGUF) ─────────────────────────────────────────────────
+  'GPU engine for GGUF models': 'Moteur GPU pour les modèles GGUF',
+  'Vulkan (default)': 'Vulkan (par défaut)',
+  'Works on most recent phones': 'Fonctionne sur la plupart des téléphones récents',
+  'OpenCL · experimental': 'OpenCL · expérimental',
+  "Qualcomm's path for Snapdragon 8 Gen 1 and later (Adreno 730+), often faster there. Falls back to the CPU if it fails.":
+      'La voie de Qualcomm pour les Snapdragon 8 Gen 1 et plus récents '
+          '(Adreno 730+), souvent plus rapide sur ces puces. Repasse sur le '
+          "CPU en cas d'échec.",
+  // ── Speculative decoding ──────────────────────────────────────────────
+  'Speculative decoding · experimental': 'Décodage spéculatif · expérimental',
+  'A small model of the same family (e.g. Qwen 3.5 0.8B for Qwen 3.5 '
+          '4B) proposes words the main model checks in one go: same '
+          'answers, faster when it guesses well. Uses extra memory. '
+          'GGUF models, text only.':
+      'Un petit modèle de la même famille (p. ex. Qwen 3.5 0.8B pour Qwen '
+          "3.5 4B) propose des mots que le modèle principal vérifie d'un "
+          'coup : mêmes réponses, plus rapides quand il devine juste. '
+          'Utilise plus de mémoire. Modèles GGUF, texte uniquement.',
+  'Download a small GGUF model (under 1.6 GB) to use it as a draft.':
+      'Téléchargez un petit modèle GGUF (moins de 1,6 Go) pour vous en servir '
+          'comme brouillon.',
+  'Not used with the current model: @reason':
+      'Non utilisé avec le modèle actuel : @reason',
+  'Takes effect the next time a model is loaded.':
+      'Prend effet au prochain chargement de modèle.',
+  'Draft model': 'Modèle brouillon',
+  'it is not from the same model family':
+      "il n'est pas de la même famille de modèles",
+  'its file is missing': 'son fichier est introuvable',
+  'it could not be loaded (not enough memory?)':
+      "il n'a pas pu être chargé (mémoire insuffisante ?)",
 };
 
 /// Download statuses the Android code reports in English (shown through

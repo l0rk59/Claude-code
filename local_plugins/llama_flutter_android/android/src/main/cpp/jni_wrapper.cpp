@@ -39,6 +39,17 @@ static int g_n_past = 0;  // Track the number of tokens already in KV cache
 // turn reuse the cached prefix it shares with the previous prompt + reply
 // instead of re-feeding (and duplicating) the whole conversation.
 static std::vector<llama_token> g_cached_tokens;
+// Speculative decoding: an optional small "draft" model with the same
+// vocabulary proposes a few tokens; the main model checks them all in one
+// batch. Tokens are only kept when they are what the main model samples, so
+// the output is the same as without a draft, just faster when it guesses
+// well. Text turns only.
+static llama_model* g_draft_model = nullptr;
+static llama_context* g_draft_ctx = nullptr;
+static std::vector<llama_token> g_draft_cached_tokens;  // the draft's KV cache
+static constexpr int kDraftMax = 6;            // tokens proposed per step
+static constexpr float kDraftMinProb = 0.5f;   // stop proposing below this
+static void freeDraft();
 // Vision projector (mmproj) for multimodal GGUF models; null when text-only.
 static mtmd_context* g_mtmd = nullptr;
 // False after a turn that contained an image: those image embeddings aren't
@@ -60,17 +71,27 @@ static std::string g_worker_peer;
 // Backends ship as separate modules in the app's native library dir:
 //  - libggml-cpu-android_*.so, one per Arm generation. The fastest variant
 //    this CPU supports is loaded (each reports a score; 0 = unsupported).
-//  - libggml-vulkan.so, loaded only when the app explicitly allows the GPU.
-//    Merely registering it initialises Vulkan, which some drivers can't
-//    handle, so phones that aren't allowed GPU never load it at all.
+//  - libggml-vulkan.so or libggml-opencl.so (Adreno), loaded only when the
+//    app explicitly allows the GPU, and only the one the user picked.
+//    Merely registering a GPU backend initialises its driver, which some
+//    phones can't handle, so phones that aren't allowed GPU never load one.
 // ---------------------------------------------------------------------------
 static void androidLlamaLog(ggml_log_level level, const char* text, void*);
 
 static std::mutex g_backend_mutex;
 static std::string g_lib_dir;
 static bool g_cpu_backend_loaded = false;
-static bool g_gpu_backend_loaded = false;
+static bool g_gpu_backend_loaded = false;  // the selected GPU backend
 static bool g_rpc_backend_loaded = false;
+// GPU backend the user picked: "vulkan" (default) or "opencl".
+static std::string g_gpu_api = "vulkan";
+static bool g_vulkan_loaded = false;
+static bool g_opencl_loaded = false;
+
+/// ggml's registry name for the selected GPU backend.
+static const char* selectedGpuRegName() {
+    return g_gpu_api == "opencl" ? "OpenCL" : "Vulkan";
+}
 
 #ifdef LLAMA_JNI_BACKEND_DL
 // Best first. The armv9 (SVE2/SME) variants are deliberately excluded: on a
@@ -165,14 +186,21 @@ static void loadCpuBackendLocked() {
 }
 
 static bool loadGpuBackendLocked() {
-    if (g_gpu_backend_loaded) return true;
-    const std::string path = g_lib_dir + "/libggml-vulkan.so";
-    if (ggml_backend_load(path.c_str())) {
-        g_gpu_backend_loaded = true;
-        LOGI("Vulkan backend loaded");
-    } else {
-        LOGE("Vulkan backend unavailable (%s)", path.c_str());
+    const bool opencl = g_gpu_api == "opencl";
+    bool& loaded = opencl ? g_opencl_loaded : g_vulkan_loaded;
+    if (!loaded) {
+        const std::string path =
+            g_lib_dir + (opencl ? "/libggml-opencl.so" : "/libggml-vulkan.so");
+        // The OpenCL backend needs the phone's libOpenCL.so; without one,
+        // loading fails here and the app stays on the CPU.
+        if (ggml_backend_load(path.c_str())) {
+            loaded = true;
+            LOGI("%s backend loaded", selectedGpuRegName());
+        } else {
+            LOGE("%s backend unavailable (%s)", selectedGpuRegName(), path.c_str());
+        }
     }
+    g_gpu_backend_loaded = loaded;
     return g_gpu_backend_loaded;
 }
 
@@ -207,15 +235,21 @@ static bool isRpcDevice(ggml_backend_dev_t dev) {
     return name && std::strncmp(name, "RPC", 3) == 0;
 }
 
-/// First local GPU device registered by a loaded backend, or nullptr.
+/// The local GPU device of the selected backend (Vulkan or OpenCL), or
+/// nullptr. Both backends can be registered after the user switches; only
+/// the selected one is used.
 static ggml_backend_dev_t firstGpuDevice() {
+    const char* wanted = selectedGpuRegName();
     for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
         ggml_backend_dev_t dev = ggml_backend_dev_get(i);
         const auto type = ggml_backend_dev_type(dev);
-        if ((type == GGML_BACKEND_DEVICE_TYPE_GPU ||
-             type == GGML_BACKEND_DEVICE_TYPE_IGPU) && !isRpcDevice(dev)) {
-            return dev;
+        if ((type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+             type != GGML_BACKEND_DEVICE_TYPE_IGPU) || isRpcDevice(dev)) {
+            continue;
         }
+        ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(dev);
+        const char* reg_name = reg ? ggml_backend_reg_name(reg) : nullptr;
+        if (reg_name && std::strcmp(reg_name, wanted) == 0) return dev;
     }
     return nullptr;
 }
@@ -500,6 +534,18 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeInitBa
     return g_gpu_backend_loaded && firstGpuDevice() != nullptr ? JNI_TRUE : JNI_FALSE;
 }
 
+/// Picks the GPU backend ("vulkan" or "opencl") for the next GPU init.
+extern "C" JNIEXPORT void JNICALL
+Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeSetGpuApi(
+        JNIEnv* env, jobject /* this */, jstring api) {
+    const char* value = api ? env->GetStringUTFChars(api, nullptr) : nullptr;
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
+    g_gpu_api = (value && std::strcmp(value, "opencl") == 0) ? "opencl" : "vulkan";
+    g_gpu_backend_loaded = g_gpu_api == "opencl" ? g_opencl_loaded : g_vulkan_loaded;
+    if (value) env->ReleaseStringUTFChars(api, value);
+    LOGI("GPU backend selected: %s", g_gpu_api.c_str());
+}
+
 // CONT lines continue the previous message; drop them when it was DEBUG.
 static ggml_log_level g_last_log_level = GGML_LOG_LEVEL_INFO;
 
@@ -714,7 +760,7 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeDetect
         dev = firstGpuDevice();
     }
     if (!dev) {
-        LOGI("nativeDetectGpu: no Vulkan GPU device");
+        LOGI("nativeDetectGpu: no %s GPU device", selectedGpuRegName());
         return nullptr;
     }
     size_t free_mem = 0, total_mem = 0;
@@ -736,6 +782,8 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeLoadMo
         throwLoadError(env, "GGUF model path is missing");
         return;
     }
+    // A draft belongs to the main model it was checked against.
+    freeDraft();
 
     const char* model_path = env->GetStringUTFChars(path, nullptr);
     if (!model_path) {
@@ -906,6 +954,173 @@ static void freeMtmd() {
 
 /// Loads the vision projector for the current model. Returns null on
 /// success, or an error message (the text model stays loaded either way).
+// ---------------------------------------------------------------------------
+// Speculative decoding helpers
+// ---------------------------------------------------------------------------
+static void freeDraft() {
+    if (g_draft_ctx) {
+        llama_free(g_draft_ctx);
+        g_draft_ctx = nullptr;
+    }
+    if (g_draft_model) {
+        llama_model_free(g_draft_model);
+        g_draft_model = nullptr;
+    }
+    g_draft_cached_tokens.clear();
+}
+
+/// Whether the draft can stand in for the main model's tokenizer, using the
+/// same checks as llama.cpp's own speculative decoding.
+static bool vocabsCompatible(const llama_vocab* tgt, const llama_vocab* dft, std::string& why) {
+    if (llama_vocab_type(tgt) != llama_vocab_type(dft)) {
+        why = "different tokenizer types";
+        return false;
+    }
+    if (llama_vocab_get_add_bos(tgt) != llama_vocab_get_add_bos(dft) ||
+        (llama_vocab_get_add_bos(tgt) && llama_vocab_bos(tgt) != llama_vocab_bos(dft)) ||
+        llama_vocab_eos(tgt) != llama_vocab_eos(dft)) {
+        why = "different special tokens";
+        return false;
+    }
+    const int n_tgt = llama_vocab_n_tokens(tgt);
+    const int n_dft = llama_vocab_n_tokens(dft);
+    if (std::abs(n_tgt - n_dft) > 128) {
+        why = "vocabularies differ in size";
+        return false;
+    }
+    for (int i = 5; i < std::min(n_tgt, n_dft); i++) {
+        const char* a = llama_vocab_get_text(tgt, i);
+        const char* b = llama_vocab_get_text(dft, i);
+        if (!a || !b || std::strcmp(a, b) != 0) {
+            why = "vocabularies differ";
+            return false;
+        }
+    }
+    return true;
+}
+
+/// Brings the draft's KV cache to exactly [tokens], reusing the prefix it
+/// already holds. False if the draft can't follow (it is then not used).
+static bool syncDraft(const std::vector<llama_token>& tokens, llama_batch& batch) {
+    if (!g_draft_ctx) return false;
+    if ((int)tokens.size() >= (int)llama_n_ctx(g_draft_ctx)) return false;
+    size_t n_keep = 0;
+    while (n_keep < g_draft_cached_tokens.size() && n_keep < tokens.size() &&
+           g_draft_cached_tokens[n_keep] == tokens[n_keep]) {
+        n_keep++;
+    }
+    llama_memory_seq_rm(llama_get_memory(g_draft_ctx), 0, (llama_pos)n_keep, -1);
+    g_draft_cached_tokens.resize(n_keep);
+    while (g_draft_cached_tokens.size() < tokens.size()) {
+        batch.n_tokens = 0;
+        const size_t start = g_draft_cached_tokens.size();
+        const size_t count = std::min<size_t>(tokens.size() - start, 512);
+        for (size_t i = 0; i < count; i++) {
+            batch.token[batch.n_tokens] = tokens[start + i];
+            batch.pos[batch.n_tokens] = (llama_pos)(start + i);
+            batch.n_seq_id[batch.n_tokens] = 1;
+            batch.seq_id[batch.n_tokens][0] = 0;
+            batch.logits[batch.n_tokens] = false;
+            batch.n_tokens++;
+        }
+        if (llama_decode(g_draft_ctx, batch) != 0) {
+            llama_memory_seq_rm(llama_get_memory(g_draft_ctx), 0, 0, -1);
+            g_draft_cached_tokens.clear();
+            return false;
+        }
+        g_draft_cached_tokens.insert(g_draft_cached_tokens.end(),
+                                     tokens.begin() + start, tokens.begin() + start + count);
+    }
+    return true;
+}
+
+/// Feeds [last] to the draft at [pos] and proposes up to [max_tokens]
+/// greedy continuations, stopping early when the draft isn't confident.
+/// The draft's cache must hold exactly the tokens before [pos].
+static void draftTokens(llama_token last, int pos, int max_tokens, int n_vocab_tgt,
+                        std::vector<llama_token>& out, llama_batch& batch) {
+    out.clear();
+    const llama_vocab* dvocab = llama_model_get_vocab(g_draft_model);
+    const int n_vocab = llama_vocab_n_tokens(dvocab);
+    llama_token next = last;
+    for (int k = 0; k <= max_tokens; k++) {
+        batch.n_tokens = 0;
+        batch.token[0] = next;
+        batch.pos[0] = pos + k;
+        batch.n_seq_id[0] = 1;
+        batch.seq_id[0][0] = 0;
+        batch.logits[0] = true;
+        batch.n_tokens = 1;
+        if (llama_decode(g_draft_ctx, batch) != 0) return;
+        g_draft_cached_tokens.push_back(next);
+        if (k == max_tokens) return;
+
+        const float* logits = llama_get_logits_ith(g_draft_ctx, -1);
+        if (!logits) return;
+        int best = 0;
+        for (int i = 1; i < n_vocab; i++) {
+            if (logits[i] > logits[best]) best = i;
+        }
+        double sum = 0.0;
+        for (int i = 0; i < n_vocab; i++) sum += std::exp((double)(logits[i] - logits[best]));
+        if (1.0 / sum < kDraftMinProb) return;
+        if (best >= n_vocab_tgt || llama_vocab_is_eog(dvocab, best)) return;
+        out.push_back(best);
+        next = best;
+    }
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeLoadDraftModel(
+        JNIEnv* env, jobject /* this */, jstring path, jlong n_threads) {
+    freeDraft();
+    if (!g_model || !g_ctx || !g_vocab) return env->NewStringUTF("Load the main model first");
+    const std::string draft_path = jstringToStd(env, path);
+    ensureCpuBackend();
+
+    llama_model_params mparams = llama_model_default_params();
+    // The draft is small: keep it on the CPU, next to whatever the main
+    // model uses, and away from cluster workers.
+    static ggml_backend_dev_t no_gpu_devices[] = {nullptr};
+    mparams.devices = no_gpu_devices;
+    mparams.n_gpu_layers = 0;
+    g_draft_model = llama_model_load_from_file(draft_path.c_str(), mparams);
+    if (!g_draft_model) return env->NewStringUTF("Couldn't load the draft model");
+
+    std::string why;
+    if (!vocabsCompatible(g_vocab, llama_model_get_vocab(g_draft_model), why)) {
+        freeDraft();
+        return env->NewStringUTF(("Draft model doesn't match the main model: " + why).c_str());
+    }
+
+    llama_context_params cparams = llama_context_default_params();
+    cparams.n_ctx = llama_n_ctx(g_ctx);
+    cparams.n_threads = n_threads;
+    cparams.n_threads_batch = n_threads;
+    cparams.n_batch = 512;
+    cparams.type_k = GGML_TYPE_Q8_0;
+    cparams.type_v = GGML_TYPE_Q8_0;
+    cparams.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
+    g_draft_ctx = llama_init_from_model(g_draft_model, cparams);
+    if (!g_draft_ctx) {
+        cparams.type_k = GGML_TYPE_F16;
+        cparams.type_v = GGML_TYPE_F16;
+        g_draft_ctx = llama_init_from_model(g_draft_model, cparams);
+    }
+    if (!g_draft_ctx) {
+        freeDraft();
+        return env->NewStringUTF("Couldn't create the draft model's context");
+    }
+    LOGI("Draft model loaded for speculative decoding");
+    return nullptr;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeFreeDraftModel(
+        JNIEnv* /* env */, jobject /* this */) {
+    freeDraft();
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeLoadMmproj(
         JNIEnv* env, jobject /* this */, jstring path, jlong n_threads) {
@@ -1232,6 +1447,108 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeGenera
     jclass callbackClass = env->GetObjectClass(token_callback);
     jmethodID invokeMethod = env->GetMethodID(callbackClass, "invoke", "(Ljava/lang/Object;)Ljava/lang/Object;");
 
+    // Speculative decoding: text turns with a draft model, standard sampling.
+    bool speculate = g_draft_ctx && !with_image && g_cache_reusable && mirostat == 0;
+    llama_batch draft_batch = llama_batch_init(speculate ? 512 : 1, 0, 1);
+    if (speculate && !syncDraft(g_cached_tokens, draft_batch)) {
+        LOGI("Draft model couldn't follow the prompt; generating without it");
+        speculate = false;
+    }
+
+    auto emit = [&](llama_token token) {
+        char buffer[256];
+        const int32_t length = llama_token_to_piece(g_vocab, token, buffer, sizeof(buffer), 0, true);
+        const std::string piece = length > 0 ? sanitizeUTF8(buffer, length) : std::string();
+        jstring token_str = env->NewStringUTF(piece.c_str());
+        env->CallObjectMethod(g_token_callback, invokeMethod, token_str);
+        env->DeleteLocalRef(token_str);
+    };
+
+    if (speculate) {
+        LOGI("Starting speculative generation: max_tokens=%lld", max_tokens);
+        const int n_ctx_gen = llama_n_ctx(g_ctx);
+        const int n_vocab_tgt = llama_vocab_n_tokens(g_vocab);
+        int produced = 0, proposed = 0, accepted_total = 0;
+        std::vector<llama_token> draft;
+        std::vector<llama_token> sampled;
+        // [last] is sampled from the main model but not yet in its cache.
+        llama_token last = llama_sampler_sample(g_sampler, g_ctx, -1);
+        while (!g_stop_flag) {
+            if (llama_vocab_is_eog(g_vocab, last)) {
+                LOGI("EOS token detected, ending generation.");
+                break;
+            }
+            emit(last);
+            if (++produced >= max_tokens) break;
+            if (g_n_past + 1 >= n_ctx_gen) break;
+
+            // Propose, staying inside max_tokens and the context.
+            const int room = std::min<int>(
+                std::min<jlong>(kDraftMax, max_tokens - produced), n_ctx_gen - g_n_past - 2);
+            draft.clear();
+            if (room > 0 && syncDraft(g_cached_tokens, draft_batch)) {
+                draftTokens(last, g_n_past, room, n_vocab_tgt, draft, draft_batch);
+            }
+            proposed += (int)draft.size();
+
+            // Check [last, draft...] in one batch of the main model.
+            batch.n_tokens = 0;
+            for (int j = 0; j <= (int)draft.size(); j++) {
+                batch.token[batch.n_tokens] = j == 0 ? last : draft[j - 1];
+                batch.pos[batch.n_tokens] = g_n_past + j;
+                batch.n_seq_id[batch.n_tokens] = 1;
+                batch.seq_id[batch.n_tokens][0] = 0;
+                batch.logits[batch.n_tokens] = true;
+                batch.n_tokens++;
+            }
+            if (llama_decode(g_ctx, batch) != 0) {
+                LOGE("Failed to decode during speculative generation");
+                llama_memory_seq_rm(llama_get_memory(g_ctx), 0, (llama_pos)g_n_past, -1);
+                break;
+            }
+
+            // Sample each position from the main model; keep draft tokens
+            // while they match what it samples.
+            sampled.clear();
+            for (int j = 0; j <= (int)draft.size(); j++) {
+                const llama_token token = llama_sampler_sample(g_sampler, g_ctx, j);
+                sampled.push_back(token);
+                if (j == (int)draft.size() || token != draft[j]) break;
+            }
+
+            // sampled[0..n-2] equal draft tokens already in the cache;
+            // sampled[n-1] is the main model's own next token.
+            size_t keep = 0;
+            bool done = false;
+            for (size_t k = 0; k + 1 < sampled.size(); k++) {
+                if (g_stop_flag || llama_vocab_is_eog(g_vocab, sampled[k])) {
+                    done = true;
+                    break;
+                }
+                emit(sampled[k]);
+                keep++;
+                if (++produced >= max_tokens) {
+                    done = true;
+                    break;
+                }
+            }
+            accepted_total += (int)keep;
+
+            const int new_len = g_n_past + 1 + (int)keep;
+            llama_memory_seq_rm(llama_get_memory(g_ctx), 0, (llama_pos)new_len, -1);
+            g_cached_tokens.push_back(last);
+            g_cached_tokens.insert(g_cached_tokens.end(), sampled.begin(), sampled.begin() + keep);
+            g_n_past = new_len;
+            if ((int)g_draft_cached_tokens.size() > new_len) {
+                llama_memory_seq_rm(llama_get_memory(g_draft_ctx), 0, (llama_pos)new_len, -1);
+                g_draft_cached_tokens.resize(new_len);
+            }
+            if (done) break;
+            last = sampled.back();
+        }
+        LOGI("Speculative generation finished: %d tokens, %d of %d drafted tokens accepted",
+             produced, accepted_total, proposed);
+    } else {
     // Generation loop
     LOGI("Starting generation loop: max_tokens=%lld", max_tokens);
     for (int i = 0; i < max_tokens && !g_stop_flag; i++) {
@@ -1278,6 +1595,8 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeGenera
         if (g_cache_reusable) g_cached_tokens.push_back(new_token_id);
     }
     LOGI("Generation loop finished.");
+    }  // end standard generation loop
+    llama_batch_free(draft_batch);
 
     if (g_token_callback != nullptr) {
         env->DeleteGlobalRef(g_token_callback);
@@ -1308,6 +1627,7 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeFreeMo
         g_sampler = nullptr;
     }
     freeMtmd();
+    freeDraft();
     g_cache_reusable = true;
     if (g_ctx) {
         llama_free(g_ctx);
@@ -1350,6 +1670,10 @@ Java_com_write4me_llama_1flutter_1android_LlamaFlutterAndroidPlugin_nativeClearC
         g_n_past = 0;
         g_cached_tokens.clear();
         g_cache_reusable = true;
+        if (g_draft_ctx) {
+            llama_memory_seq_rm(llama_get_memory(g_draft_ctx), 0, 0, -1);
+            g_draft_cached_tokens.clear();
+        }
         LOGI("Context cleared, g_n_past reset to 0");
     } else {
         LOGE("Failed to get memory object from context");

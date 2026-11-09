@@ -74,6 +74,7 @@ class InferenceEngine {
     bool clearLiteRtCache = false,
     bool enableLiteRtVision = false,
     bool allowGgufGpu = true,
+    String ggufGpuApi = 'vulkan',
     String? mmprojPath,
     void Function(double)? onProgress,
   }) async {
@@ -113,6 +114,15 @@ class InferenceEngine {
     try {
       if (!allowGgufGpu) {
         throw StateError('GPU disabled by CPU Safe mode');
+      }
+      // Vulkan by default; OpenCL is the experimental Adreno path. Android
+      // only (iOS uses Metal); never let it block GPU detection.
+      if (Platform.isAndroid) {
+        try {
+          await LlamaEngine.setGpuApi(ggufGpuApi);
+        } catch (e) {
+          print('[Inference] GPU backend choice not applied: $e');
+        }
       }
       final gpu = await _controller!.detectGpu();
       gpuNameStr = gpu.gpuName;
@@ -751,6 +761,20 @@ class InferenceEngine {
 
   /// Reset any persistent conversation state so the next generation
   /// starts with a clean context. Essential when switching chat sessions.
+  /// Speculative decoding: a small GGUF model with the same vocabulary as
+  /// the loaded one. Returns an error message, or null when it's in use.
+  Future<String?> loadDraftModel(String path) async {
+    if (!Platform.isAndroid) return 'Speculative decoding is Android only';
+    if (_isLiteRt || _controller == null) return 'No GGUF model loaded';
+    if (!await File(path).exists()) return 'Draft model file not found';
+    try {
+      return await LlamaEngine.loadDraftModel(path,
+          threads: performanceCoreCount() ?? 4);
+    } catch (e) {
+      return '$e';
+    }
+  }
+
   Future<void> resetConversation() async {
     if (_isLiteRt) {
       try {

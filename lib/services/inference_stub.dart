@@ -34,6 +34,9 @@ class InferenceEngine {
 
   Future<void> resetConversation() async {}
 
+  Future<String?> loadDraftModel(String path) async =>
+      'Local inference is not available on this platform.';
+
   Future<LoadResult> loadModel({
     required String modelPath,
     String? modelRuntime,
@@ -45,6 +48,7 @@ class InferenceEngine {
     bool clearLiteRtCache = false,
     bool enableLiteRtVision = false,
     bool allowGgufGpu = false,
+    String ggufGpuApi = 'vulkan',
     String? mmprojPath,
     void Function(double)? onProgress,
   }) async {

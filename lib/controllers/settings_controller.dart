@@ -55,6 +55,12 @@ class SettingsController extends GetxController {
   final contextSize = 2048.obs;
   final liteRtPerformanceMode = AppConstants.defaultLiteRtPerformanceMode.obs;
 
+  /// GPU backend for GGUF models: 'vulkan' or 'opencl' (experimental).
+  final ggufGpuApi = 'vulkan'.obs;
+
+  /// Speculative decoding draft model file name ('' = off).
+  final speculativeDraftModel = ''.obs;
+
   final imageSteps = 1.obs;
   final imageGenForceCpu = AppConstants.defaultImageGenForceCpu.obs;
   final imageGenBackend = Backend.cpu.obs;
@@ -214,6 +220,12 @@ class SettingsController extends GetxController {
           defaultValue: AppConstants.defaultLiteRtPerformanceMode,
         ) ??
         AppConstants.defaultLiteRtPerformanceMode;
+    ggufGpuApi.value =
+        _hive.getSetting<String>(AppConstants.keyGgufGpuApi) == 'opencl'
+            ? 'opencl'
+            : 'vulkan';
+    speculativeDraftModel.value =
+        _hive.getSetting<String>(AppConstants.keySpeculativeDraftModel) ?? '';
     imageSteps.value = _hive.getSetting(AppConstants.keyImageSteps,
             defaultValue: AppConstants.defaultImageSteps) ??
         AppConstants.defaultImageSteps;
@@ -709,6 +721,18 @@ class SettingsController extends GetxController {
   Future<void> setContextSize(int value) async {
     contextSize.value = value;
     await _hive.setSetting(AppConstants.keyContextSize, value);
+  }
+
+  /// Applies from the next GGUF model load.
+  Future<void> setSpeculativeDraftModel(String filename) async {
+    speculativeDraftModel.value = filename;
+    await _hive.setSetting(AppConstants.keySpeculativeDraftModel, filename);
+  }
+
+  /// Applies from the next GGUF model load.
+  Future<void> setGgufGpuApi(String api) async {
+    ggufGpuApi.value = api == 'opencl' ? 'opencl' : 'vulkan';
+    await _hive.setSetting(AppConstants.keyGgufGpuApi, ggufGpuApi.value);
   }
 
   Future<void> setLiteRtPerformanceMode(String mode) async {

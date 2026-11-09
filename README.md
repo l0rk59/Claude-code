@@ -138,6 +138,13 @@ Here is how you can install the app using AltStore and AltServer:
 - Android SDK (API 26+)
 - JDK 17
 - NDK (bundled with Android SDK)
+- A recent `glslc` (Vulkan SDK or `brew install shaderc`) for the Vulkan GPU backend
+- Python 3, to embed the OpenCL (Adreno) GPU kernels; without it the app
+  builds without the OpenCL backend
+
+The native build downloads the Vulkan, SPIR-V and OpenCL headers from
+GitHub. Behind a firewall, set `LLAMA_ANDROID_FETCH_DIR` to a folder that
+holds `vulkan_headers/`, `spirv_headers/` and `opencl_headers/` checkouts.
 
 ### Android
 
