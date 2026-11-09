@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:io' show File, Platform;
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
 import 'package:sd_flutter_android/sd_flutter_android.dart';
 import '../core/constants.dart';
+import '../core/ui.dart';
 import '../ffi/sd_ffi_bindings.dart';
 import 'app_log_service.dart';
 import 'hive_service.dart';
@@ -15,6 +16,10 @@ class LocalImageService extends GetxService {
 
   final isModelLoaded = false.obs;
   final isLoadingModel = false.obs;
+
+  /// Name of the model currently being loaded (empty when idle), so the
+  /// Models screen can show progress on the right card.
+  final loadingModelName = ''.obs;
   final isGenerating = false.obs;
   final progress = 0.0.obs;
   final loadedModelName = ''.obs;
@@ -22,7 +27,7 @@ class LocalImageService extends GetxService {
   final isUsingGpu = false.obs;
   final latestLog = ''.obs;
   final currentBackend = Backend.cpu.obs;
-  final currentQuantization = QuantizationType.q4_0.obs;
+  final currentQuantization = QuantizationType.f16.obs;
 
   SdIsolateProcessor? _processor;
 
@@ -109,13 +114,16 @@ class LocalImageService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    ever<bool>(isLoadingModel, (loading) {
+      if (!loading) loadingModelName.value = '';
+    });
     // Restore saved backend / quantization preferences
     final savedBackendIndex = _hive.getSetting<int>(
         AppConstants.keyImageGenBackend,
         defaultValue: Backend.cpu.index);
     final savedQuantIndex = _hive.getSetting<int>(
         AppConstants.keyImageGenQuantization,
-        defaultValue: QuantizationType.q4_0.index);
+        defaultValue: QuantizationType.f16.index);
     if (savedBackendIndex != null &&
         savedBackendIndex >= 0 &&
         savedBackendIndex < Backend.values.length) {
@@ -126,19 +134,23 @@ class LocalImageService extends GetxService {
         savedQuantIndex < QuantizationType.values.length) {
       currentQuantization.value = QuantizationType.values[savedQuantIndex];
     }
-    // Force Q4_0 for speed — override any saved FP16 setting
-    currentQuantization.value = QuantizationType.q4_0;
   }
 
   Future<String> loadModel(String modelPath,
       {String? modelName, String? taesdPath}) async {
-    if (isLoadingModel.value) return 'ERROR: Model is already loading.';
+    if (isLoadingModel.value) return 'ERROR: Model is already loading.'.tr;
+    if (_nativeJobRunning) {
+      return 'ERROR: An image is still generating. Wait for it to finish, '
+              'then load the model.'
+          .tr;
+    }
 
     try {
       if (isModelLoaded.value) {
         await unloadModel();
       }
 
+      loadingModelName.value = modelName ?? modelPath.split('/').last;
       isLoadingModel.value = true;
       progress.value = 0.0;
 
@@ -161,6 +173,58 @@ class LocalImageService extends GetxService {
         print('[LocalImageService] File check error: $e');
       }
 
+      if (Platform.isIOS) {
+        final isCoreML = modelPath.toLowerCase().endsWith('.mlmodelc') ||
+            modelPath.toLowerCase().endsWith('.mlpackage') ||
+            modelPath.toLowerCase().endsWith('.coreml');
+
+        if (isCoreML) {
+          print('[LocalImageService] Using Apple CoreML backend...');
+          const coreMlChannel = MethodChannel('coreml_stable_diffusion');
+          final result = await coreMlChannel
+              .invokeMethod('initModel', {'path': modelPath});
+
+          if (result is String && result.contains('loaded successfully')) {
+            currentBackend.value = Backend.metal; // Show NPU on iOS UI
+            isUsingGpu.value = true;
+            isModelLoaded.value = true;
+            isLoadingModel.value = false;
+            loadedModelName.value = modelName ?? modelPath.split('/').last;
+            await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
+            await _hive.setSetting(
+                AppConstants.keyImageModelName, loadedModelName.value);
+            return 'Image model loaded successfully.'.tr;
+          } else {
+            isModelLoaded.value = false;
+            isLoadingModel.value = false;
+            return 'Failed to load CoreML model.'.tr;
+          }
+        } else {
+          print('[LocalImageService] Using standard Metal C++ backend...');
+          final modelLoaded =
+              await SdFlutterAndroid.initModel(modelPath, useGpu: true);
+          if (!modelLoaded) {
+            isModelLoaded.value = false;
+            isLoadingModel.value = false;
+            Get.find<AppLogService>().error(
+              'Image model load failed on iOS',
+              details: 'path=$modelPath',
+            );
+            return 'Failed to load model on iOS backend.'.tr;
+          }
+
+          currentBackend.value = Backend.vulkan; // Standard GPU rendering
+          isUsingGpu.value = true;
+          isModelLoaded.value = true;
+          isLoadingModel.value = false;
+          loadedModelName.value = modelName ?? modelPath.split('/').last;
+          await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
+          await _hive.setSetting(
+              AppConstants.keyImageModelName, loadedModelName.value);
+          return 'Image model loaded successfully.'.tr;
+        }
+      }
+
       String vendor = 'unknown';
       bool useGpu = true;
       if (Platform.isAndroid) {
@@ -173,8 +237,7 @@ class LocalImageService extends GetxService {
         }
       }
 
-      final forceCpu = _hive.getSetting<bool>(
-              AppConstants.keyImageGenForceCpu,
+      final forceCpu = _hive.getSetting<bool>(AppConstants.keyImageGenForceCpu,
               defaultValue: AppConstants.defaultImageGenForceCpu) ??
           AppConstants.defaultImageGenForceCpu;
       if (forceCpu) {
@@ -244,7 +307,7 @@ class LocalImageService extends GetxService {
             AppConstants.keyImageGenBackend, currentBackend.value.index);
         await _hive.setSetting(AppConstants.keyImageGenQuantization,
             currentQuantization.value.index);
-        return 'Image model loaded successfully.';
+        return 'Image model loaded successfully.'.tr;
       }
 
       isModelLoaded.value = false;
@@ -254,26 +317,49 @@ class LocalImageService extends GetxService {
         details:
             'All backend candidates failed. model=${modelName ?? modelPath.split('/').last}, vendor=$vendor, sizeMb=$modelSizeMb',
       );
-      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: All backend candidates failed.';
+      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
+          .trParams({'error': 'All backend candidates failed.'});
     } catch (e) {
       isModelLoaded.value = false;
       isLoadingModel.value = false;
       Get.find<AppLogService>().error('Image model load exception',
-          details:
-              'model=${modelName ?? modelPath.split('/').last}, error=$e');
-      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: $e';
+          details: 'model=${modelName ?? modelPath.split('/').last}, error=$e');
+      return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
+          .trParams({'error': '$e'});
     }
   }
 
   Future<void> unloadModel() async {
-    await _processor?.dispose();
-    _processor = null;
+    // Tearing down the isolate while sd.cpp is mid-render leaks the native
+    // context (GBs) and can crash, so wait until the job has finished.
+    if (_nativeJobRunning) {
+      showToast(
+        'Image still generating'.tr,
+        'Wait for the current image to finish, then unload the model.'.tr,
+        tone: ToastTone.warning,
+      );
+      return;
+    }
+    print('[LocalImageService] Unloading model...');
     isModelLoaded.value = false;
     loadedModelName.value = '';
-    gpuVendor.value = 'unknown';
-    isUsingGpu.value = false;
+    latestLog.value = '';
+    if (Platform.isIOS) {
+      if (currentBackend.value == Backend.metal) {
+        const coreMlChannel = MethodChannel('coreml_stable_diffusion');
+        await coreMlChannel.invokeMethod('unloadModel');
+      } else {
+        await SdFlutterAndroid.unloadModel();
+      }
+    } else {
+      if (_processor != null) {
+        await _processor!.dispose();
+        _processor = null;
+      }
+    }
     await _hive.setSetting(AppConstants.keyImageModelPath, '');
     await _hive.setSetting(AppConstants.keyImageModelName, '');
+    print('[LocalImageService] Model unloaded.');
   }
 
   /// Change the inference backend (CPU / Vulkan / etc).
@@ -290,7 +376,17 @@ class LocalImageService extends GetxService {
     _hive.setSetting(AppConstants.keyImageGenQuantization, type.index);
   }
 
+  // stable-diffusion.cpp can't abort a running job, so a cancelled job keeps
+  // rendering natively. Track it so its progress is ignored and a new request
+  // gets a clear message instead of a generic failure.
+  bool _nativeJobRunning = false;
+  int _jobId = 0;
+
+  /// Why the last [generateImage] call returned null, when known.
+  String? lastFailureReason;
+
   void cancelGeneration() {
+    _jobId++;
     if (isGenerating.value) {
       print('[LocalImageService] Generation cancelled by user');
       isGenerating.value = false;
@@ -301,7 +397,34 @@ class LocalImageService extends GetxService {
     required String prompt,
     void Function(int step, int totalSteps)? onProgress,
   }) async {
-    if (!isModelLoaded.value || _processor == null) return null;
+    lastFailureReason = null;
+    if (_nativeJobRunning) {
+      lastFailureReason = 'The previous image is still finishing in the '
+              'background. Try again in a few seconds.'
+          .tr;
+      return null;
+    }
+    final jobId = ++_jobId;
+    _nativeJobRunning = true;
+    try {
+      final bytes = await _generateImage(
+        prompt: prompt,
+        onProgress: (step, total) {
+          if (jobId == _jobId) onProgress?.call(step, total);
+        },
+      );
+      return jobId == _jobId ? bytes : null;
+    } finally {
+      _nativeJobRunning = false;
+    }
+  }
+
+  Future<Uint8List?> _generateImage({
+    required String prompt,
+    void Function(int step, int totalSteps)? onProgress,
+  }) async {
+    if (!isModelLoaded.value) return null;
+    if (!Platform.isIOS && _processor == null) return null;
     if (isGenerating.value) return null;
 
     isGenerating.value = true;
@@ -314,7 +437,7 @@ class LocalImageService extends GetxService {
           AppConstants.defaultImageSteps;
       final effectiveSteps = currentBackend.value == Backend.cpu
           ? requestedSteps.clamp(1, 20).toInt()
-          : requestedSteps.clamp(1, 8).toInt();
+          : requestedSteps.clamp(1, 50).toInt();
 
       int availableRamMb = 0;
       if (Platform.isAndroid) {
@@ -339,27 +462,75 @@ class LocalImageService extends GetxService {
       print(
           '[LocalImageService] generateImage start: prompt="$prompt", backend=${currentBackend.value.displayName}, size=${imageSize}x$imageSize, steps=$effectiveSteps, availableRam=${availableRamMb}MB, sizeMode=${selectedImageSize == 0 ? "auto" : "fixed"}');
 
-      // Subscribe to progress and log streams
-      progressSub = _processor!.progressStream.listen((update) {
-        print(
-            '[LocalImageService] Progress: step ${update.step}/${update.totalSteps}');
-        onProgress?.call(update.step, update.totalSteps);
-      });
-      logSub = _processor!.logStream.listen((log) {
-        print('[LocalImageService] Log [L${log.level}]: ${log.message}');
-        latestLog.value = log.message;
-      });
+      GenerationResult? result;
 
-      final result = await _processor!.generate(
-        prompt: prompt,
-        width: imageSize,
-        height: imageSize,
-        steps: effectiveSteps,
-        // Future: expose width, height, seed, cfg, negativePrompt, sampleMethod from settings
-      );
+      if (Platform.isIOS) {
+        if (currentBackend.value == Backend.metal) {
+          // CoreML Route
+          const coreMlChannel = MethodChannel('coreml_stable_diffusion');
+          coreMlChannel.setMethodCallHandler((call) async {
+            if (call.method == 'onProgress') {
+              final args = call.arguments as Map;
+              onProgress?.call((args['step'] as num).toInt(),
+                  (args['total'] as num).toInt());
+            }
+          });
 
-      await progressSub.cancel();
-      await logSub.cancel();
+          final bytes =
+              await coreMlChannel.invokeMethod<Uint8List>('generateImage', {
+            'prompt': prompt,
+            'steps': effectiveSteps,
+          });
+
+          coreMlChannel.setMethodCallHandler(null);
+
+          if (bytes != null) {
+            isGenerating.value = false;
+            return bytes; // CoreML returns PNG directly
+          } else {
+            result = GenerationResult(
+                rgbBytes: null,
+                width: imageSize,
+                height: imageSize,
+                error: 'Failed to generate on CoreML');
+          }
+        } else {
+          // Standard C++ Metal Route
+          final bytes = await SdFlutterAndroid.generateImage(
+            prompt,
+            steps: effectiveSteps,
+            onProgress: onProgress,
+          );
+          result = GenerationResult(
+            rgbBytes: bytes,
+            width: imageSize,
+            height: imageSize,
+            error: bytes == null ? 'Failed to generate on iOS' : null,
+          );
+        }
+      } else {
+        // Subscribe to progress and log streams
+        progressSub = _processor!.progressStream.listen((update) {
+          print(
+              '[LocalImageService] Progress: step ${update.step}/${update.totalSteps}');
+          onProgress?.call(update.step, update.totalSteps);
+        });
+        logSub = _processor!.logStream.listen((log) {
+          print('[LocalImageService] Log [L${log.level}]: ${log.message}');
+          latestLog.value = log.message;
+        });
+
+        result = await _processor!.generate(
+          prompt: prompt,
+          width: imageSize,
+          height: imageSize,
+          steps: effectiveSteps,
+          // Future: expose width, height, seed, cfg, negativePrompt, sampleMethod from settings
+        );
+
+        await progressSub.cancel();
+        await logSub.cancel();
+      }
 
       print(
           '[LocalImageService] Generation result: error=${result.error}, bytes=${result.rgbBytes?.length}, ${result.width}x${result.height}');
@@ -379,13 +550,28 @@ class LocalImageService extends GetxService {
       // TODO: switch to ui.decodeImageFromPixels for GPU-accelerated decode
       print(
           '[LocalImageService] Encoding ${result.width}x${result.height} RGB to PNG...');
-      final image = img.Image.fromBytes(
-        width: result.width,
-        height: result.height,
-        bytes: result.rgbBytes!.buffer,
-        numChannels: 3,
-      );
-      final pngBytes = Uint8List.fromList(img.encodePng(image));
+
+      Uint8List pngBytes;
+      if (Platform.isIOS) {
+        // iOS wrapper already returns RGB data. Wait, actually `SdIosWrapper.mm` returns raw RGB bytes.
+        // We still need to encode it to PNG.
+        final image = img.Image.fromBytes(
+          width: 512, // iOS wrapper hardcodes 512x512 currently
+          height: 512,
+          bytes: result.rgbBytes!.buffer,
+          numChannels: 3,
+        );
+        pngBytes = Uint8List.fromList(img.encodePng(image));
+      } else {
+        final image = img.Image.fromBytes(
+          width: result.width,
+          height: result.height,
+          bytes: result.rgbBytes!.buffer,
+          numChannels: 3,
+        );
+        pngBytes = Uint8List.fromList(img.encodePng(image));
+      }
+
       print('[LocalImageService] PNG encoded: ${pngBytes.length} bytes');
 
       isGenerating.value = false;

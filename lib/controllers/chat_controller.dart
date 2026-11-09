@@ -17,7 +17,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
-import '../ffi/sd_ffi_bindings.dart';
+import '../ffi/sd_backend.dart';
 import '../services/hive_service.dart';
 import '../services/inference_service.dart';
 import '../services/cloud_service.dart';

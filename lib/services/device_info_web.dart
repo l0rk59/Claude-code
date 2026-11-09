@@ -1,3 +1,5 @@
+export 'soc_family.dart';
+
 /// Web device info — no RAM detection, use generous defaults.
 Future<Map<String, dynamic>> getDeviceInfo() async {
   return {

@@ -32,11 +32,14 @@ class LoadResult {
 class InferenceEngine {
   bool get ggufVisionLoaded => false;
 
+  Future<void> resetConversation() async {}
+
   Future<LoadResult> loadModel({
     required String modelPath,
     String? modelRuntime,
     required int contextSize,
     required String deviceTier,
+    bool isTensorSoC = false,
     String liteRtPerformanceMode = 'cpu_safe',
     bool forceLiteRtCpu = true,
     bool clearLiteRtCache = false,
