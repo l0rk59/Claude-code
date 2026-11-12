@@ -88,9 +88,16 @@ class ChatBubble extends StatelessWidget {
           Container(
             constraints: BoxConstraints(maxWidth: maxW),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: _userFill(isDark),
-              borderRadius: BorderRadius.circular(20),
+            // The user's words carry the brand colours; the corner next to
+            // the screen edge is tighter, like a speech bubble's tail.
+            decoration: const BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(6),
+              ),
             ),
             child: SelectableText(
               text,
@@ -98,7 +105,7 @@ class ChatBubble extends StatelessWidget {
                 fontSize: 15.5,
                 height: 1.45,
                 letterSpacing: -0.1,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.white,
               ),
             ),
           ),
@@ -173,8 +180,7 @@ class ChatBubble extends StatelessWidget {
     final muted = Theme.of(context).hintColor;
     final base = GoogleFonts.inter(
         fontSize: 15.5, color: color, height: 1.6, letterSpacing: -0.1);
-    final codeBlockBg =
-        isDark ? const Color(0xFF161618) : AppColors.surfaceLight;
+    final codeBlockBg = isDark ? AppColors.sunkenDark : AppColors.surfaceLight;
 
     return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
       p: base,

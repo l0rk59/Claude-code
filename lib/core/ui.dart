@@ -56,7 +56,8 @@ class AppTokens {
       faint: d ? AppColors.faintDark : AppColors.faintLight,
       accent: d ? AppColors.accentDark : AppColors.accent,
       surface: d ? AppColors.surfaceDark : AppColors.surfaceLight,
-      surfacePressed: d ? AppColors.surfacePressedDark : AppColors.surfacePressedLight,
+      surfacePressed:
+          d ? AppColors.surfacePressedDark : AppColors.surfacePressedLight,
       // Tinted like the text, so fills and lines keep the violet cast.
       fill: (d ? AppColors.textDark : AppColors.indigo)
           .withValues(alpha: d ? 0.08 : 0.06),
@@ -555,10 +556,15 @@ class AppChips<T> extends StatelessWidget {
         for (final (value, label) in items) ...[
           Builder(builder: (_) {
             final on = value == selected;
+            // The chosen chip is tinted with the accent, not filled black.
+            final tint = t.accent.withValues(alpha: t.isDark ? 0.22 : 0.12);
             return Material(
-              color: on ? t.text : Colors.transparent,
+              color: on ? tint : Colors.transparent,
               shape: StadiumBorder(
-                  side: BorderSide(color: on ? t.text : t.outline)),
+                  side: BorderSide(
+                      color: on
+                          ? t.accent.withValues(alpha: 0.45)
+                          : t.outline)),
               child: InkWell(
                 customBorder: const StadiumBorder(),
                 splashFactory: NoSplash.splashFactory,
@@ -572,8 +578,9 @@ class AppChips<T> extends StatelessWidget {
                   child: Text(label,
                       style: GoogleFonts.inter(
                           fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                          color: on ? t.bg : t.text.withValues(alpha: 0.85))),
+                          fontWeight: on ? FontWeight.w600 : FontWeight.w500,
+                          color:
+                              on ? t.accent : t.text.withValues(alpha: 0.85))),
                 ),
               ),
             );
@@ -863,7 +870,7 @@ InputDecoration appInputDecoration(BuildContext context,
     suffixIcon: suffix,
     prefixIcon: prefix,
     filled: true,
-    fillColor: t.isDark ? const Color(0xFF1C1C1F) : AppColors.surfaceLight,
+    fillColor: t.isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
     hintStyle: GoogleFonts.inter(fontSize: 15, color: t.faint),
     labelStyle: GoogleFonts.inter(fontSize: 14, color: t.muted),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -1050,6 +1057,8 @@ void showToast(
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.inter(
-                fontSize: 13, height: 1.35, color: const Color(0xFFC7C7CC))),
+                fontSize: 13,
+                height: 1.35,
+                color: AppColors.textDark.withValues(alpha: 0.78))),
   );
 }

@@ -190,10 +190,11 @@ class CloudModelController extends GetxController {
   }
 
   bool isConfigured(String provider) {
+    // A custom endpoint may be a server on the user's own network (Ollama,
+    // LM Studio, llama.cpp…), which takes no key.
     if (provider == 'custom') {
       return _settings.customCloudBaseUrl.value.isNotEmpty &&
-          _settings.customCloudModel.value.isNotEmpty &&
-          _settings.customCloudKey.value.isNotEmpty;
+          _settings.customCloudModel.value.isNotEmpty;
     }
     return apiKeyFor(provider).isNotEmpty;
   }
@@ -290,8 +291,7 @@ class CloudModelController extends GetxController {
 
   bool canSelectModel(String provider) {
     if (provider == 'custom') {
-      return _settings.customCloudBaseUrl.value.isNotEmpty &&
-          _settings.customCloudKey.value.isNotEmpty;
+      return _settings.customCloudBaseUrl.value.isNotEmpty;
     }
     return apiKeyFor(provider).isNotEmpty;
   }
@@ -354,8 +354,8 @@ class CloudModelController extends GetxController {
   }
 
   String? validateCustomProvider() {
+    // The key is optional: servers on the user's own network take none.
     final baseUrl = customBaseUrlController.text.trim();
-    final apiKey = customApiKeyController.text.trim();
     final model = customModelController.text.trim();
 
     if (baseUrl.isEmpty) return 'Base URL is required.'.tr;
@@ -366,7 +366,6 @@ class CloudModelController extends GetxController {
         uri.host.isEmpty) {
       return 'Enter a valid OpenAI-compatible base URL.'.tr;
     }
-    if (apiKey.isEmpty) return 'API key is required.'.tr;
     if (model.isEmpty) return 'Model ID is required.'.tr;
     return null;
   }

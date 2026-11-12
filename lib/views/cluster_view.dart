@@ -6,6 +6,7 @@ import 'package:llama_flutter_android/llama_flutter_android.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../core/colors.dart';
 import '../core/ui.dart';
 import '../services/cluster_service.dart';
 
@@ -333,7 +334,7 @@ class _SplitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    final colors = [t.accent, t.green, t.orange, const Color(0xFFAF52DE), t.red];
+    final colors = [t.accent, t.green, t.orange, AppColors.violet, t.red];
     final total = shares.fold<double>(0, (a, s) => a + s.mb);
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -25,7 +25,7 @@ import '../core/app_platform.dart';
 import '../core/colors.dart';
 
 // ── Apple-style color helpers ──
-Color _appleBlue(BuildContext c) => Theme.of(c).brightness == Brightness.dark
+Color _accent(BuildContext c) => Theme.of(c).brightness == Brightness.dark
     ? AppColors.accentDark
     : AppColors.accent;
 
@@ -220,7 +220,7 @@ class ChatView extends GetView<ChatController> {
       return (
         name: m.isEmpty ? 'No model selected'.tr : m,
         meta: 'Cloud · @provider'.trParams({'provider': providerLabel(settings)}),
-        dot: _appleBlue(context),
+        dot: _accent(context),
         canUnload: false,
       );
     }
@@ -379,7 +379,7 @@ class ChatView extends GetView<ChatController> {
                       backgroundColor: isDark
                           ? Colors.white.withValues(alpha: 0.08)
                           : Colors.black.withValues(alpha: 0.06),
-                      color: warn ? AppColors.warning : _appleBlue(ctx),
+                      color: warn ? AppColors.warning : _accent(ctx),
                     ),
                   ),
                   if (warn) ...[
@@ -487,7 +487,7 @@ class ChatView extends GetView<ChatController> {
               child: LinearProgressIndicator(
                   value: inf.modelLoadProgress.value,
                   backgroundColor: _sep(context),
-                  color: _appleBlue(context),
+                  color: _accent(context),
                   minHeight: 3)),
         ]),
       );
@@ -808,15 +808,15 @@ class ChatView extends GetView<ChatController> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _appleBlue(context).withValues(alpha: 0.1),
+                  color: _accent(context).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color: _appleBlue(context).withValues(alpha: 0.3)),
+                      color: _accent(context).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.layers_rounded,
-                        size: 18, color: _appleBlue(context)),
+                        size: 18, color: _accent(context)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -843,7 +843,7 @@ class ChatView extends GetView<ChatController> {
                           ? null
                           : () => controller.generateBatch(),
                       style: FilledButton.styleFrom(
-                        backgroundColor: _appleBlue(context),
+                        backgroundColor: _accent(context),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         minimumSize: const Size(0, 32),
                       ),
@@ -1022,11 +1022,11 @@ class ChatView extends GetView<ChatController> {
                             height: 34,
                             decoration: BoxDecoration(
                               color:
-                                  _appleBlue(context).withValues(alpha: 0.15),
+                                  _accent(context).withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.add_rounded,
-                                size: 22, color: _appleBlue(context)),
+                                size: 22, color: _accent(context)),
                           ),
                         ),
                       );
@@ -1046,6 +1046,9 @@ class ChatView extends GetView<ChatController> {
                     final Color bgColor;
                     final IconData iconData;
                     final VoidCallback? onTap;
+                    // Ready to send: the brand gradient, not a flat fill.
+                    final sending =
+                        !loading && !listening && !noModel && hasContent;
 
                     if (loading) {
                       // AI generating → solid neutral stop
@@ -1063,8 +1066,8 @@ class ChatView extends GetView<ChatController> {
                       iconData = Icons.mic_none_rounded;
                       onTap = null;
                     } else if (hasContent) {
-                      // Has text or attachment → blue send
-                      bgColor = _appleBlue(context);
+                      // Has text or attachment → send, in the brand gradient
+                      bgColor = Colors.transparent;
                       iconData = Icons.arrow_upward_rounded;
                       onTap = controller.sendMessage;
                     } else {
@@ -1083,7 +1086,9 @@ class ChatView extends GetView<ChatController> {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                            color: bgColor, shape: BoxShape.circle),
+                            color: bgColor,
+                            gradient: sending ? AppColors.brandGradient : null,
+                            shape: BoxShape.circle),
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 180),
                           transitionBuilder: (child, anim) =>
@@ -1259,7 +1264,7 @@ class _AttachButton extends StatelessWidget {
                 width: 236,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: dark ? const Color(0xFF242427) : Colors.white,
+                  color: dark ? AppColors.elevatedDark : Colors.white,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                       color: dark
@@ -1401,7 +1406,7 @@ class _StepButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = enabled
-        ? _appleBlue(context)
+        ? _accent(context)
         : Theme.of(context).hintColor.withValues(alpha: 0.35);
     return GestureDetector(
       onTap: enabled ? onTap : null,
@@ -1572,7 +1577,7 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                     widthFactor: isDone ? 1.0 : pct,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _appleBlue(context),
+                        color: _accent(context),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),

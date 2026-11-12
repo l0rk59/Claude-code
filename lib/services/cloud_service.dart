@@ -70,7 +70,8 @@ class CloudService extends GetxService {
     if (_provider == 'custom') {
       final baseUrl =
           _hive.getSetting(AppConstants.keyCustomCloudBaseUrl) ?? '';
-      return _apiKey.isNotEmpty && _model.isNotEmpty && baseUrl.isNotEmpty;
+      // No key needed: it may be a server on the user's own network.
+      return _model.isNotEmpty && baseUrl.isNotEmpty;
     }
     return _apiKey.isNotEmpty;
   }
@@ -578,7 +579,7 @@ class CloudService extends GetxService {
     final response = await _post(
       Uri.parse(endpoint),
       headers: {
-        'Authorization': 'Bearer $_apiKey',
+        if (_apiKey.isNotEmpty) 'Authorization': 'Bearer $_apiKey',
         'Content-Type': 'application/json',
         ...extraHeaders,
       },
@@ -614,7 +615,7 @@ class CloudService extends GetxService {
   }) async {
     final request = http.Request('POST', Uri.parse(endpoint));
     request.headers.addAll({
-      'Authorization': 'Bearer $_apiKey',
+      if (_apiKey.isNotEmpty) 'Authorization': 'Bearer $_apiKey',
       'Content-Type': 'application/json',
       'Accept': 'text/event-stream',
       ...extraHeaders,

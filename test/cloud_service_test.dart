@@ -24,6 +24,8 @@ void main() {
   late CloudService cloud;
   // What the fake provider streams back for the next request.
   late Future<void> Function(HttpResponse res) respond;
+  // The Authorization header of the last request, null when it had none.
+  String? authorization;
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('cloud_test');
@@ -34,6 +36,7 @@ void main() {
 
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((req) async {
+      authorization = req.headers.value('authorization');
       await req.drain<void>();
       req.response.headers.contentType =
           ContentType('text', 'event-stream', charset: 'utf-8');
@@ -73,6 +76,29 @@ void main() {
     final tokens = <String>[];
     expect(await send(tokens), 'Hello world');
     expect(tokens.join(), 'Hello world');
+  });
+
+  test('sends the key when there is one', () async {
+    respond = (res) async {
+      res.write(_chunk('ok', finish: 'stop'));
+      res.write('data: [DONE]\n\n');
+      await res.close();
+    };
+    expect(await send([]), 'ok');
+    expect(authorization, 'Bearer test-key');
+  });
+
+  test('a custom server needs no key (a PC on the same network)', () async {
+    await Get.find<HiveService>()
+        .setSetting(AppConstants.keyCustomCloudKey, '');
+    expect(cloud.isConfigured, isTrue);
+    respond = (res) async {
+      res.write(_chunk('local', finish: 'stop'));
+      res.write('data: [DONE]\n\n');
+      await res.close();
+    };
+    expect(await send([]), 'local');
+    expect(authorization, isNull);
   });
 
   test('an error event mid-stream is reported, not shown as a reply',

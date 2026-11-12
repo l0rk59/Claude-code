@@ -898,7 +898,6 @@ const Map<String, String> fr = {
   'Base URL is required.': "L'URL de base est obligatoire.",
   'Enter a valid OpenAI-compatible base URL.':
       'Saisissez une URL de base valide compatible OpenAI.',
-  'API key is required.': 'La clé API est obligatoire.',
   'Model ID is required.': "L'ID du modèle est obligatoire.",
   'Warning: Text-Only Model': 'Attention : modèle texte uniquement',
   'The selected model (@name) might not support images. If you get an error, switch to a vision model (like Gemini, GPT-4o, or Claude 3).':
@@ -1291,6 +1290,12 @@ const Map<String, String> fr = {
   '@name is in My models once it is ready.':
       '@name apparaîtra dans Mes modèles une fois prêt.',
   'On this phone': 'Sur ce téléphone',
+  'None of these files runs comfortably on this phone.':
+      'Aucun de ces fichiers ne tourne confortablement sur ce téléphone.',
+  'All sizes · @count': 'Toutes les tailles · @count',
+  'Bigger files answer better, but need more memory and run slower.':
+      'Les gros fichiers répondent mieux, mais demandent plus de mémoire et sont plus lents.',
+  'Not set up': 'À configurer',
 };
 
 /// Download statuses the Android code reports in English (shown through

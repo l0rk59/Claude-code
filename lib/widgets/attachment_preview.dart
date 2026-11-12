@@ -230,7 +230,7 @@ class AttachmentPreview extends StatelessWidget {
   Color _colorForType(String type, bool isDark) {
     // Neutral glyphs; PDF keeps a muted red so the type still scans.
     if (type == 'pdf') {
-      return isDark ? const Color(0xFFFF6961) : AppColors.errorLight;
+      return isDark ? AppColors.errorDark : AppColors.errorLight;
     }
     return isDark
         ? Colors.white.withValues(alpha: 0.8)

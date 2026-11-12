@@ -376,7 +376,55 @@ class _RepoFilesState extends State<_RepoFiles> {
             "No file the app can download here. Models split in several parts aren't supported yet."
                 .tr,
           )
-        else
+        else ...[
+          // The file to take, so nobody has to know what "Q4_K_M" means.
+          if (!blocked && recommended != null) ...[
+            Container(
+              decoration: BoxDecoration(
+                color: t.accent.withValues(alpha: t.isDark ? 0.14 : 0.07),
+                borderRadius: BorderRadius.circular(kCardRadius),
+                border: Border.all(
+                    color: t.accent.withValues(alpha: 0.28), width: 0.8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                    child: Row(children: [
+                      Icon(Icons.auto_awesome_rounded,
+                          size: 14, color: t.accent),
+                      const SizedBox(width: 6),
+                      Text('Recommended for this phone'.tr,
+                          style: t.small.copyWith(
+                              color: t.accent, fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                  _FileRow(
+                    repo: widget.repo,
+                    file: recommended,
+                    mmproj: mmproj,
+                    fit: ModelFit.ideal,
+                    primary: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+          ] else if (!blocked) ...[
+            AppNotice(
+              'None of these files runs comfortably on this phone.'.tr,
+              icon: Icons.error_outline_rounded,
+              color: t.orange,
+            ),
+            const SizedBox(height: 14),
+          ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Text(
+                'All sizes · @count'.trParams({'count': '${models.length}'}),
+                style: t.label),
+          ),
           AppGroup(dividerIndent: 14, children: [
             for (final file in models)
               _FileRow(
@@ -384,10 +432,13 @@ class _RepoFilesState extends State<_RepoFiles> {
                 file: file,
                 mmproj: mmproj,
                 fit: modelFit(modelBytes: file.bytes, totalRamGb: ram),
-                recommended: !blocked && file == recommended,
                 blocked: blocked,
               ),
           ]),
+          SectionFootnote(
+              'Bigger files answer better, but need more memory and run slower.'
+                  .tr),
+        ],
       ],
     );
   }
@@ -399,7 +450,9 @@ class _FileRow extends StatelessWidget {
   final HfFile file;
   final HfFile? mmproj;
   final ModelFit fit;
-  final bool recommended;
+
+  /// The suggested file: its download button stands out.
+  final bool primary;
 
   /// The model can't be used (licence to accept, or unsupported): listed,
   /// but without a download button.
@@ -410,8 +463,8 @@ class _FileRow extends StatelessWidget {
     required this.file,
     required this.mmproj,
     required this.fit,
-    required this.recommended,
-    required this.blocked,
+    this.primary = false,
+    this.blocked = false,
   });
 
   Future<void> _download(BuildContext context) async {
@@ -448,19 +501,10 @@ class _FileRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Flexible(
-                  child: Text(title,
-                      style: t.bodyStrong,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ),
-                if (recommended) ...[
-                  const SizedBox(width: 8),
-                  AppTag('Recommended'.tr,
-                      color: t.accent, icon: Icons.star_rounded),
-                ],
-              ]),
+              Text(title,
+                  style: t.bodyStrong,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
               const SizedBox(height: 3),
               Text.rich(
                 TextSpan(children: [
@@ -508,7 +552,7 @@ class _FileRow extends StatelessWidget {
             return PillButton(
               label: 'Download'.tr,
               icon: Icons.download_rounded,
-              primary: recommended,
+              primary: primary,
               onPressed: () => _download(context),
             );
           }),

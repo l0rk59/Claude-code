@@ -654,7 +654,8 @@ class ModelView extends GetView<ModelController> {
         : canUse
             ? 'No model selected'.tr
             : cloud.statusLabel(provider.id) == 'Needs Key'
-                ? 'Needs API key'.tr
+                // A custom endpoint needs an address, not always a key.
+                ? (isCustom ? 'Not set up'.tr : 'Needs API key'.tr)
                 : cloud.statusLabel(provider.id).tr;
 
     return InkWell(
@@ -1904,6 +1905,7 @@ class ModelView extends GetView<ModelController> {
           Get.find<InferenceService>().isLoadingModel.value;
       final type = model.recommendedFor
           .firstWhere(_pitch.containsKey, orElse: () => 'general');
+      final fit = controller.fitOf(model);
       final Widget action;
       if (downloading) {
         action = _DownloadRing(filename: model.filename);
@@ -1946,8 +1948,28 @@ class ModelView extends GetView<ModelController> {
                   const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
-                      child: Text(controller.modelSizeLabel(model),
-                          style: t.small.copyWith(fontFeatures: _tabular)),
+                      // "Runs well · 1.28 GB": whether it suits this phone,
+                      // then the model's own size (its vision file is in
+                      // the details).
+                      child: Text.rich(
+                        TextSpan(children: [
+                          if (fit != ModelFit.unknown)
+                            TextSpan(
+                              text: '${FitBadge.label(fit)} · ',
+                              style: TextStyle(
+                                  color: FitBadge.color(fit, t),
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          TextSpan(
+                              text: controller
+                                  .modelSizeLabel(model)
+                                  .split(' + ')
+                                  .first),
+                        ]),
+                        style: t.small.copyWith(fontFeatures: _tabular),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     action,
                   ]),
