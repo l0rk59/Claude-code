@@ -1359,6 +1359,20 @@ const Map<String, String> fr = {
       'Aucun serveur de modèle ne répond à cette adresse. Vérifiez l’adresse, que le programme est lancé sur l’ordinateur et qu’il accepte les connexions du réseau.',
   'The computer runs the model and this phone only shows the conversation. Nothing leaves your network.':
       'L’ordinateur fait tourner le modèle, ce téléphone n’affiche que la conversation. Rien ne sort de votre réseau.',
+  'Measure speed': 'Mesurer la vitesse',
+  'Load a model on this phone first: the measurement runs on the model in use.':
+      'Chargez d’abord un modèle sur ce téléphone : la mesure porte sur le modèle en cours.',
+  'The loaded model writes the same short text every time, so you can compare two settings: graphics card or processor, alone or in a cluster, one model or another.':
+      'Le modèle chargé écrit chaque fois le même court texte : vous pouvez ainsi comparer deux réglages (carte graphique ou processeur, seul ou en cluster, un modèle ou un autre).',
+  "The measurement didn't finish: @error": 'La mesure n’a pas abouti : @error',
+  '@speed tokens/s': '@speed tokens/s',
+  'first word after @seconds s': 'premier mot après @seconds s',
+  'Measuring… @count of @total tokens': 'Mesure en cours… @count tokens sur @total',
+  'Measure': 'Mesurer',
+  'Measure again': 'Mesurer à nouveau',
+  'Earlier measurements': 'Mesures précédentes',
+  'For a fair measure, close the other apps and keep the phone plugged in.':
+      'Pour une mesure fiable, fermez les autres applications et laissez le téléphone branché.',
 };
 
 /// Download statuses the Android code reports in English (shown through

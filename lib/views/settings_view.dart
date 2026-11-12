@@ -15,7 +15,9 @@ import '../services/download_service.dart';
 import '../services/soc_family.dart' as platform_info;
 import '../ffi/sd_backend.dart';
 import '../services/cluster_service.dart';
+import '../services/speed_test.dart';
 import 'cluster_view.dart';
+import 'speed_test_sheet.dart';
 import 'log_view.dart';
 import '../core/haptics.dart';
 
@@ -122,6 +124,12 @@ class SettingsView extends GetView<SettingsController> {
                     : 'GPU',
                 builder: (ctx) => _buildImageGenerationGroup(ctx),
               ),
+              AppRow(
+                icon: Icons.timer_outlined,
+                title: 'Measure speed'.tr,
+                chevron: true,
+                onTap: () => _measureSpeed(context),
+              ),
               if (Get.isRegistered<ClusterService>())
                 AppRow(
                   icon: Icons.hub_outlined,
@@ -177,6 +185,32 @@ class SettingsView extends GetView<SettingsController> {
   /// Row on the main page: icon, title, current value and a chevron that
   /// opens the section on its own page. [title] is the English text; the row
   /// and the page translate it.
+  /// Opens the speed test on the model loaded on this phone.
+  void _measureSpeed(BuildContext context) {
+    final inference = Get.find<InferenceService>();
+    final hive = Get.find<HiveService>();
+    // Workers sharing the loaded model, to label the result.
+    final workers = Get.isRegistered<ClusterService>()
+        ? (Get.find<ClusterService>().split.length - 1).clamp(0, 99)
+        : 0;
+    showAppSheet<void>(
+      context,
+      title: 'Measure speed'.tr,
+      subtitle: inference.isModelLoaded.value
+          ? inference.loadedModelName.value
+          : null,
+      builder: (_) => SpeedTestSheet(
+        modelName: inference.isModelLoaded.value
+            ? inference.loadedModelName.value
+            : '',
+        history: SpeedTest.history(hive),
+        run: (onProgress) => SpeedTest.run(inference,
+            clusterWorkers: workers, onProgress: onProgress),
+        remember: (result) => SpeedTest.remember(hive, result),
+      ),
+    );
+  }
+
   Widget _navRow(
     BuildContext context, {
     required IconData icon,
