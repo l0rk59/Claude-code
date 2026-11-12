@@ -1067,6 +1067,7 @@ class ChatView extends GetView<ChatController> {
                       onTap = null;
                     } else if (hasContent) {
                       // Has text or attachment → send, in the brand gradient
+                      // (painted below instead of this colour)
                       bgColor = Colors.transparent;
                       iconData = Icons.arrow_upward_rounded;
                       onTap = controller.sendMessage;
@@ -1085,8 +1086,11 @@ class ChatView extends GetView<ChatController> {
                         margin: const EdgeInsets.symmetric(vertical: 3),
                         width: 34,
                         height: 34,
+                        // No colour with the gradient: a paint's colour
+                        // alpha also applies to its gradient, so a
+                        // transparent one would hide it.
                         decoration: BoxDecoration(
-                            color: bgColor,
+                            color: sending ? null : bgColor,
                             gradient: sending ? AppColors.brandGradient : null,
                             shape: BoxShape.circle),
                         child: AnimatedSwitcher(
