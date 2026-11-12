@@ -65,6 +65,25 @@ class LanServerFinder {
     }
   }
 
+  /// Whether [url] points at the local network (or this device) rather
+  /// than at the Internet: what is said to such a server stays at home.
+  static bool isLocal(String url) {
+    final host = Uri.tryParse(url.trim())?.host.toLowerCase() ?? '';
+    if (host.isEmpty) return false;
+    if (host == 'localhost' || host.endsWith('.local')) return true;
+    // Only a real address counts: "192.168.example.com" is a name anyone
+    // can register.
+    final address = InternetAddress.tryParse(host);
+    if (address == null || address.type != InternetAddressType.IPv4) {
+      return false;
+    }
+    final n = address.rawAddress;
+    return n[0] == 127 ||
+        n[0] == 10 ||
+        (n[0] == 192 && n[1] == 168) ||
+        (n[0] == 172 && n[1] >= 16 && n[1] <= 31);
+  }
+
   /// Reads a `/v1/models` answer. Null when it isn't one.
   static LanServer? parse(String host, int port, String body) {
     Object? data;

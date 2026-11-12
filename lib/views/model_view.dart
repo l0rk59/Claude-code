@@ -439,10 +439,16 @@ class ModelView extends GetView<ModelController> {
     final hasSelectedModel =
         cloudModels.canSelectModel(providerId) && model.isNotEmpty;
 
+    // A computer of the user's own network isn't "the cloud": say so, it
+    // is the whole point of using one.
+    final onNetwork = providerId == 'custom' &&
+        LanServerFinder.isLocal(settings.customCloudBaseUrl.value);
     return _ActiveCard(
-      icon: Icons.cloud_outlined,
+      icon: onNetwork ? Icons.laptop_mac_rounded : Icons.cloud_outlined,
       title: hasSelectedModel ? model : 'No online model selected'.tr,
-      meta: 'Cloud · @provider'.trParams({'provider': providerName}),
+      meta: onNetwork
+          ? 'Your network · @provider'.trParams({'provider': providerName})
+          : 'Cloud · @provider'.trParams({'provider': providerName}),
       dot: hasSelectedModel ? t.accent : t.faint,
       action: PillButton(
         label: 'Change'.tr,

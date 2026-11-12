@@ -102,6 +102,31 @@ void main() {
     expect(LanServerFinder.neighbours('fe80::1'), isEmpty);
   });
 
+  test('tells a computer at home from a server on the Internet', () {
+    for (final url in [
+      'http://192.168.1.20:8080/v1',
+      'http://10.0.0.5:11434/v1',
+      'http://172.16.4.2:1234/v1',
+      'http://172.31.255.1/v1',
+      'http://localhost:8080/v1',
+      'http://127.0.0.1:8080/v1',
+      'http://mon-pc.local:8080/v1',
+    ]) {
+      expect(LanServerFinder.isLocal(url), isTrue, reason: url);
+    }
+    for (final url in [
+      'https://api.openai.com/v1',
+      'https://openrouter.ai/api/v1',
+      'http://172.32.0.1/v1',
+      'http://8.8.8.8/v1',
+      'http://192.168.example.com/v1',
+      '',
+      'not a url',
+    ]) {
+      expect(LanServerFinder.isLocal(url), isFalse, reason: url);
+    }
+  });
+
   test('tries what the user typed', () async {
     final server = await _serve(_models(['m'], 'library'));
     addTearDown(() => server.close(force: true));

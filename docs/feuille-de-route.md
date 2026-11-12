@@ -91,9 +91,11 @@ Rien de ceci n'existe encore :
 1. **Les résultats du plan de test**, même partiels.
 2. **Diffusion** : pour vous seul, ou pour d'autres ? Cela décide de la clé de
    signature et du nom de l'application.
-3. **La suite** : parmi les manques de la priorité 1 « modèles puissants »,
-   lequel d'abord ? Mon conseil : les modèles en plusieurs fichiers, puis le
-   jeton Hugging Face, car ils ne demandent aucun matériel particulier.
+3. **La suite** : mon conseil est de ne pas chercher des modèles encore plus
+   gros. Les modèles en plusieurs fichiers ne concernent que ceux de plus de
+   50 Go, que trois téléphones et un portable ne porteraient pas. Ce qui
+   rendra l'ensemble plus puissant à l'usage, ce sont les outils de la
+   priorité 2 : recherche sur le Web et questions sur vos documents.
 
 ## 5. Ce que je ne peux pas faire d'ici
 

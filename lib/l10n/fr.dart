@@ -1373,6 +1373,7 @@ const Map<String, String> fr = {
   'Earlier measurements': 'Mesures précédentes',
   'For a fair measure, close the other apps and keep the phone plugged in.':
       'Pour une mesure fiable, fermez les autres applications et laissez le téléphone branché.',
+  'Your network · @provider': 'Votre réseau · @provider',
 };
 
 /// Download statuses the Android code reports in English (shown through
