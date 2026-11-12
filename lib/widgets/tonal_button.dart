@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/colors.dart';
 
 /// Tonal sheet button — equal visual weight for each choice; colour carries
 /// the meaning (neutral vs. destructive).
@@ -24,10 +25,10 @@ class TonalButton extends StatelessWidget {
     return TonalButton(
       label: label,
       onTap: onTap,
-      color: isDark ? Colors.white : const Color(0xFF0B0B0C),
+      color: isDark ? AppColors.textDark : AppColors.textLight,
       fill: isDark
-          ? Colors.white.withValues(alpha: 0.08)
-          : const Color(0xFFF2F2F4),
+          ? AppColors.textDark.withValues(alpha: 0.08)
+          : AppColors.surfacePressedLight,
     );
   }
 
@@ -38,8 +39,8 @@ class TonalButton extends StatelessWidget {
     return TonalButton(
       label: label,
       onTap: onTap,
-      color: isDark ? const Color(0xFFFF453A) : const Color(0xFFE5342B),
-      fill: (isDark ? const Color(0xFFFF453A) : const Color(0xFFFF3B30))
+      color: isDark ? AppColors.errorDark : AppColors.errorLight,
+      fill: (isDark ? AppColors.errorDark : AppColors.error)
           .withValues(alpha: isDark ? 0.16 : 0.10),
     );
   }
@@ -48,12 +49,12 @@ class TonalButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: fill,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: SizedBox(
-          height: 48,
+          height: 50,
           child: Center(
             child: Text(label,
                 style: GoogleFonts.inter(

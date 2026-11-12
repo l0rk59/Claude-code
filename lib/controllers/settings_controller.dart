@@ -14,6 +14,7 @@ import '../services/app_log_service.dart';
 import '../services/local_image_service.dart';
 import '../ffi/sd_backend.dart';
 import 'package:sd_flutter_android/sd_flutter_android.dart';
+import '../core/colors.dart';
 
 class SettingsController extends GetxController {
   final HiveService _hive = Get.find<HiveService>();
@@ -852,7 +853,7 @@ class SettingsController extends GetxController {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: isDark ? Colors.black : Colors.white,
+      systemNavigationBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       systemNavigationBarIconBrightness:
           isDark ? Brightness.light : Brightness.dark,
     ));

@@ -11,6 +11,7 @@ import '../services/local_image_service.dart';
 import '../services/hive_service.dart';
 import '../services/app_log_service.dart';
 import '../services/device_info_service.dart';
+import '../services/model_fit.dart';
 import '../models/ai_model.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
@@ -231,6 +232,66 @@ class ModelController extends GetxController {
     if (localFilter.value.isEmpty) {
       localFilter.value = defaultLocalFilter;
     }
+    unawaited(_autoLoadIfReady());
+  }
+
+  // ── Guided first launch ───────────────────────────────────────────────
+
+  /// Chat models offered on first launch, smartest first, with the memory
+  /// (GB) a phone needs for each to feel quick.
+  static const _starters = [
+    ('qwen3.5-4b-q4_k_m.gguf', 12.0),
+    ('qwen3.5-2b-q4_k_m.gguf', 6.0),
+    ('qwen3.5-0.8b-q4_k_m.gguf', 0.0),
+  ];
+
+  /// The model to suggest on this phone when none is installed: the
+  /// smartest starter that still runs comfortably.
+  AiModel? get starterModel => pickStarter(
+      availableModels, Get.find<DeviceInfoService>().totalRamGB.value);
+
+  /// The starter from [catalog] for a phone with [totalRamGb].
+  static AiModel? pickStarter(List<AiModel> catalog, double totalRamGb) {
+    AiModel? smallest;
+    for (final (filename, minRamGb) in _starters) {
+      final model = catalog.firstWhereOrNull((m) => m.filename == filename);
+      if (model == null) continue;
+      smallest = model;
+      final fit = modelFit(
+          modelBytes: declaredModelBytes(model), totalRamGb: totalRamGb);
+      if (totalRamGb >= minRamGb && fit == ModelFit.ideal) return model;
+    }
+    return smallest;
+  }
+
+  /// File name of the model to load as soon as its download finishes.
+  final autoLoadAfterDownload = ''.obs;
+
+  /// Downloads [model], then loads it without further questions.
+  Future<void> installAndLoad(AiModel model) async {
+    autoLoadAfterDownload.value = model.filename;
+    await _settings.setInferenceMode('local');
+    await downloadModel(model);
+    await _autoLoadIfReady();
+  }
+
+  /// Stops the guided install of [model].
+  void cancelInstall(AiModel model) {
+    if (autoLoadAfterDownload.value == model.filename) {
+      autoLoadAfterDownload.value = '';
+    }
+    for (final name in [model.filename, model.mmprojFilename]) {
+      if (name.isNotEmpty && isDownloadingModel(name)) pauseDownload(name);
+    }
+  }
+
+  Future<void> _autoLoadIfReady() async {
+    final name = autoLoadAfterDownload.value;
+    if (name.isEmpty || !isDownloaded(name) || isDownloadingModel(name)) {
+      return;
+    }
+    autoLoadAfterDownload.value = '';
+    await loadModel(name, confirm: false);
   }
 
   bool isDownloaded(String filename) {
@@ -384,13 +445,22 @@ class ModelController extends GetxController {
     return model.size;
   }
 
+  /// Whether [model] suits this phone's memory.
+  ModelFit fitOf(AiModel model) => modelFit(
+        modelBytes: _knownModelBytes(model),
+        totalRamGb: Get.find<DeviceInfoService>().totalRamGB.value,
+      );
+
   int _knownModelBytes(AiModel model) {
     final detected = fileSizes[model.filename] ?? 0;
     if (detected > 0) return detected;
     return _declaredModelBytes(model);
   }
 
-  int _declaredModelBytes(AiModel model) {
+  int _declaredModelBytes(AiModel model) => declaredModelBytes(model);
+
+  /// The model file's size as the catalogue states it ("1.28 GB + …").
+  static int declaredModelBytes(AiModel model) {
     final match = RegExp(r'([\d.]+)\s*(GB|MB)', caseSensitive: false)
         .firstMatch(model.size);
     if (match == null) return 0;
@@ -435,6 +505,9 @@ class ModelController extends GetxController {
       await refreshDownloaded();
     } catch (e) {
       Get.find<AppLogService>().error('Model download failed', details: e);
+      if (autoLoadAfterDownload.value == model.filename) {
+        autoLoadAfterDownload.value = '';
+      }
       showToast('Download Failed'.tr, '$e', tone: ToastTone.error);
     }
   }
@@ -609,7 +682,9 @@ class ModelController extends GetxController {
     }
   }
 
-  Future<void> loadModel(String filename) async {
+  /// Loads a downloaded model. [confirm] false skips the "Load model?"
+  /// memory sheet (the guided install has already picked a model that fits).
+  Future<void> loadModel(String filename, {bool confirm = true}) async {
     if (_inference.isLoadingModel.value) {
       showToast('Model Loading'.tr, 'Another model is already loading.'.tr,
           tone: ToastTone.warning);
@@ -684,12 +759,14 @@ class ModelController extends GetxController {
         !await Get.find<ClusterService>().confirmLiteRtRunsHere(filename)) {
       return;
     }
-    final loadAction = await _confirmModelLoadSafety(
-      filename: filename,
-      path: path,
-      fileBytes: fileBytes,
-      isLiteRt: isLiteRt,
-    );
+    final loadAction = confirm
+        ? await _confirmModelLoadSafety(
+            filename: filename,
+            path: path,
+            fileBytes: fileBytes,
+            isLiteRt: isLiteRt,
+          )
+        : _ModelLoadAction.continueLoad;
     if (loadAction == _ModelLoadAction.cancel) return;
     if (loadAction == _ModelLoadAction.unloadAndContinue) {
       await unloadModel();

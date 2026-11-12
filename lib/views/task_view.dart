@@ -6,6 +6,7 @@ import '../controllers/task_controller.dart';
 import '../core/ui.dart';
 import '../models/task_model.dart';
 import '../core/haptics.dart';
+import '../core/colors.dart';
 
 class TaskView extends GetView<TaskController> {
   const TaskView({super.key});
@@ -387,8 +388,8 @@ class _StepRow extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: t.isDark
-                      ? const Color(0xFF0E0E10)
-                      : const Color(0xFFF0F0F2),
+                      ? AppColors.sunkenDark
+                      : AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: t.hairline, width: 0.5),
                 ),

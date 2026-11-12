@@ -4,8 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/home_controller.dart';
 import '../models/chat_session.dart';
-import 'tonal_button.dart';
+import '../services/cluster_service.dart';
 import '../core/haptics.dart';
+import '../core/colors.dart';
+import '../core/ui.dart';
 
 /// Two-bar "sidebar" glyph — the long bar over a short one reads as a list
 /// rather than the generic hamburger.
@@ -33,9 +35,13 @@ class SidebarGlyph extends StatelessWidget {
   }
 }
 
-/// Conversation sidebar: search, new chat, and history grouped by date.
+/// The sidebar: new chat, search, history grouped by date, and the way to
+/// every other section (models, server, cluster, settings).
 class ChatDrawer extends StatefulWidget {
-  const ChatDrawer({super.key});
+  /// Shown permanently next to the chat (wide screens) instead of as a
+  /// drawer.
+  final bool pinned;
+  const ChatDrawer({super.key, this.pinned = false});
 
   @override
   State<ChatDrawer> createState() => _ChatDrawerState();
@@ -53,23 +59,19 @@ class _ChatDrawerState extends State<ChatDrawer> {
 
   ChatController get _chat => Get.find<ChatController>();
 
-  void _close() => Get.find<HomeController>().closeSidebar();
-
   void _newChat() {
     Haptics.selectionClick();
     // Reuse the current blank chat instead of piling up empty sessions.
     if (_chat.messages.isNotEmpty || _chat.currentSessionId.value.isEmpty) {
       _chat.createNewChat();
     }
-    Get.find<HomeController>().changeTab(0);
-    _close();
+    Get.find<HomeController>().showChat();
   }
 
   void _open(ChatSession s) {
     Haptics.selectionClick();
     if (_chat.currentSessionId.value != s.id) _chat.openChat(s.id);
-    Get.find<HomeController>().changeTab(0);
-    _close();
+    Get.find<HomeController>().showChat();
   }
 
   Future<void> _confirmDelete(BuildContext context, ChatSession s) async {
@@ -77,7 +79,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ok = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      backgroundColor: isDark ? AppColors.elevatedDark : Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
@@ -93,7 +95,8 @@ class _ChatDrawerState extends State<ChatDrawer> {
                   style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black)),
+                      color:
+                          isDark ? AppColors.textDark : AppColors.textLight)),
               const SizedBox(height: 4),
               Text('This conversation will be permanently deleted.'.tr,
                   style: GoogleFonts.inter(
@@ -108,7 +111,8 @@ class _ChatDrawerState extends State<ChatDrawer> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: TonalButton.destructive(ctx,
-                      label: 'Delete'.tr, onTap: () => Navigator.pop(ctx, true)),
+                      label: 'Delete'.tr,
+                      onTap: () => Navigator.pop(ctx, true)),
                 ),
               ]),
             ],
@@ -144,161 +148,224 @@ class _ChatDrawerState extends State<ChatDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark ? Colors.white : const Color(0xFF0B0B0C);
-    final muted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
-    final accent = isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
-    final bg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8);
-    final field = isDark
-        ? Colors.white.withValues(alpha: 0.07)
-        : Colors.black.withValues(alpha: 0.05);
-    final selected = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.06);
+    final t = AppTokens.of(context);
+    final home = Get.find<HomeController>();
+    final bg = t.isDark ? AppColors.sunkenDark : AppColors.sunkenLight;
 
-    final width = (MediaQuery.of(context).size.width * 0.84).clamp(0.0, 340.0);
+    final content = SafeArea(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // Brand
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+          child: Row(children: [
+            Image.asset('assets/icons/appicon.png', width: 28, height: 28),
+            const SizedBox(width: 10),
+            Text('PrivateLM',
+                style: GoogleFonts.inter(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                    color: t.text)),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: PrimaryButton(
+              label: 'New chat'.tr,
+              icon: Icons.add_rounded,
+              onPressed: _newChat),
+        ),
+        const SizedBox(height: 10),
+        // Search
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+                color: t.fill, borderRadius: BorderRadius.circular(12)),
+            child: TextField(
+              controller: _search,
+              onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+              style: GoogleFonts.inter(fontSize: 15, color: t.text),
+              cursorColor: t.accent,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Search'.tr,
+                hintStyle: GoogleFonts.inter(fontSize: 15, color: t.muted),
+                prefixIcon:
+                    Icon(Icons.search_rounded, size: 19, color: t.muted),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 38, minHeight: 40),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : GestureDetector(
+                        onTap: () {
+                          _search.clear();
+                          setState(() => _query = '');
+                        },
+                        child: Icon(Icons.cancel_rounded,
+                            size: 17, color: t.muted),
+                      ),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 11),
+              ),
+            ),
+          ),
+        ),
+        // History
+        Expanded(child: Obx(() {
+          final current = _chat.currentSessionId.value;
+          // Hide blank "New chat" shells, except the one that's open.
+          final all = _chat.sessions
+              .where((s) =>
+                  (s.lastMessage ?? '').trim().isNotEmpty || s.id == current)
+              .where((s) =>
+                  _query.isEmpty ||
+                  s.title.toLowerCase().contains(_query) ||
+                  (s.lastMessage ?? '').toLowerCase().contains(_query))
+              .toList();
 
+          if (all.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
+              child: Column(children: [
+                Icon(
+                    _query.isEmpty
+                        ? Icons.chat_bubble_outline_rounded
+                        : Icons.search_off_rounded,
+                    size: 28,
+                    color: t.faint),
+                const SizedBox(height: 12),
+                Text(
+                    _query.isEmpty
+                        ? 'No conversations yet'.tr
+                        : 'No matches'.tr,
+                    style: t.bodyStrong),
+                const SizedBox(height: 4),
+                Text(
+                    _query.isEmpty
+                        ? 'Your chats will show up here.'.tr
+                        : 'Try a different word.'.tr,
+                    textAlign: TextAlign.center,
+                    style: t.caption),
+              ]),
+            );
+          }
+
+          final groups = _group(all);
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+            children: [
+              for (final g in groups) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
+                  child: Text(g.$1,
+                      style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: t.muted)),
+                ),
+                for (final s in g.$2)
+                  _SessionRow(
+                    session: s,
+                    active: s.id == current,
+                    text: t.text,
+                    selected:
+                        t.accent.withValues(alpha: t.isDark ? 0.18 : 0.10),
+                    onTap: () => _open(s),
+                    onLongPress: () => _confirmDelete(context, s),
+                  ),
+              ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
+                child: Text('Long-press a chat to delete it'.tr,
+                    style: GoogleFonts.inter(fontSize: 12, color: t.faint)),
+              ),
+            ],
+          );
+        })),
+        // Sections
+        Container(height: 0.5, color: t.hairline),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+          child: Column(children: [
+            _NavRow(
+                icon: Icons.layers_outlined,
+                label: 'Models'.tr,
+                onTap: home.openModels),
+            _NavRow(
+                icon: Icons.lan_outlined,
+                label: 'Local API server'.tr,
+                onTap: home.openServer),
+            if (Get.isRegistered<ClusterService>())
+              _NavRow(
+                  icon: Icons.hub_outlined,
+                  label: 'Phone cluster'.tr,
+                  onTap: home.openCluster),
+            _NavRow(
+                icon: Icons.settings_outlined,
+                label: 'Settings'.tr,
+                onTap: home.openSettings),
+          ]),
+        ),
+      ]),
+    );
+
+    if (widget.pinned) return Material(color: bg, child: content);
+
+    final width = (MediaQuery.of(context).size.width * 0.86).clamp(0.0, 340.0);
     return Drawer(
       width: width,
       backgroundColor: bg,
       surfaceTintColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(),
-      child: SafeArea(
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 8, 10),
-            child: Row(children: [
-              Expanded(
-                child: Text('Chats'.tr,
-                    style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.6,
-                        color: text)),
-              ),
-              IconButton(
-                tooltip: 'New chat'.tr,
-                onPressed: _newChat,
-                icon: Icon(Icons.edit_square, size: 21, color: accent),
-              ),
-            ]),
-          ),
-          // Search
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Container(
-              height: 38,
-              decoration: BoxDecoration(
-                  color: field, borderRadius: BorderRadius.circular(10)),
-              child: TextField(
-                controller: _search,
-                onChanged: (v) =>
-                    setState(() => _query = v.trim().toLowerCase()),
-                style: GoogleFonts.inter(fontSize: 15, color: text),
-                cursorColor: accent,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Search'.tr,
-                  hintStyle: GoogleFonts.inter(fontSize: 15, color: muted),
-                  prefixIcon:
-                      Icon(Icons.search_rounded, size: 19, color: muted),
-                  prefixIconConstraints:
-                      const BoxConstraints(minWidth: 36, minHeight: 38),
-                  suffixIcon: _query.isEmpty
-                      ? null
-                      : GestureDetector(
-                          onTap: () {
-                            _search.clear();
-                            setState(() => _query = '');
-                          },
-                          child: Icon(Icons.cancel_rounded,
-                              size: 17, color: muted),
-                        ),
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(24))),
+      child: content,
+    );
+  }
+}
+
+/// A section link at the bottom of the sidebar.
+class _NavRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _NavRow({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: t.fill,
+        onTap: () {
+          Haptics.selectionClick();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(children: [
+            Icon(icon, size: 21, color: t.muted),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -0.15,
+                      color: t.text)),
             ),
-          ),
-          // List
-          Expanded(child: Obx(() {
-            final current = _chat.currentSessionId.value;
-            // Hide blank "New Chat" shells, except the one that's open.
-            final all = _chat.sessions
-                .where((s) =>
-                    (s.lastMessage ?? '').trim().isNotEmpty || s.id == current)
-                .where((s) =>
-                    _query.isEmpty ||
-                    s.title.toLowerCase().contains(_query) ||
-                    (s.lastMessage ?? '').toLowerCase().contains(_query))
-                .toList();
-
-            if (all.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(20, 32, 20, 0),
-                child: Column(children: [
-                  Icon(
-                      _query.isEmpty
-                          ? Icons.chat_bubble_outline_rounded
-                          : Icons.search_off_rounded,
-                      size: 28,
-                      color: muted.withValues(alpha: 0.6)),
-                  const SizedBox(height: 12),
-                  Text(_query.isEmpty ? 'No conversations yet'.tr : 'No matches'.tr,
-                      style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: text)),
-                  const SizedBox(height: 4),
-                  Text(
-                      _query.isEmpty
-                          ? 'Your chats will show up here.'.tr
-                          : 'Try a different word.'.tr,
-                      style: GoogleFonts.inter(fontSize: 13, color: muted)),
-                ]),
-              );
-            }
-
-            final groups = _group(all);
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(10, 4, 10, 16),
-              children: [
-                for (final g in groups) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
-                    child: Text(g.$1,
-                        style: GoogleFonts.inter(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: muted)),
-                  ),
-                  for (final s in g.$2)
-                    _SessionRow(
-                      session: s,
-                      active: s.id == current,
-                      text: text,
-                      selected: selected,
-                      onTap: () => _open(s),
-                      onLongPress: () => _confirmDelete(context, s),
-                    ),
-                ],
-              ],
-            );
-          })),
-          // Footer hint
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: Text('Long-press a chat to delete it'.tr,
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: muted.withValues(alpha: 0.8))),
-          ),
-        ]),
+            Icon(Icons.chevron_right_rounded, size: 19, color: t.faint),
+          ]),
+        ),
       ),
     );
   }

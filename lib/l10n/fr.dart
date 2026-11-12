@@ -157,17 +157,10 @@ const Map<String, String> fr = {
   'the cloud': 'le cloud',
   'No model selected': 'Aucun modèle sélectionné',
   'Change': 'Changer',
-  'Loading · @percent%': 'Chargement · @percent %',
   'Ready': 'Prêt',
-  'Switch': 'Changer',
   'Ready · Image generation · @backend':
       "Prêt · Génération d'images · @backend",
-  'No model on this device': 'Aucun modèle sur cet appareil',
-  'Download one to chat offline': 'Téléchargez-en un pour discuter hors ligne',
   'Browse': 'Parcourir',
-  '@count downloaded': '@count téléchargé(s)',
-  'Not loaded · last used': 'Non chargé · dernier utilisé',
-  'Choose': 'Choisir',
   'Load': 'Charger',
   'Explain quantum computing simply':
       "Expliquer l'informatique quantique simplement",
@@ -191,14 +184,6 @@ const Map<String, String> fr = {
   'A flat editorial illustration': 'Une illustration éditoriale en aplat',
   'Flat editorial illustration of a city street, muted palette':
       "Illustration éditoriale en aplat d'une rue de ville, palette sourde",
-  'How it works': 'Comment ça marche',
-  'Pick a model': 'Choisissez un modèle',
-  'Smaller models are faster; larger ones are smarter.':
-      'Les petits modèles sont plus rapides, les grands plus intelligents.',
-  'Download it once': 'Téléchargez-le une fois',
-  'Usually 0.5–3 GB. Wi-Fi recommended.':
-      'En général 0,5 à 3 Go. Wi-Fi recommandé.',
-  'Chat offline': 'Discutez hors ligne',
   'Runs on this device. No account, no server.':
       'Tourne sur cet appareil. Sans compte, sans serveur.',
 
@@ -275,7 +260,6 @@ const Map<String, String> fr = {
   'Almost full. Start a new chat for best results.':
       'Presque plein. Lancez une nouvelle discussion pour de meilleurs '
           'résultats.',
-  'Switch model': 'Changer de modèle',
   'Unload': 'Décharger',
   'Loading model': 'Chargement du modèle',
   'Reading image…': "Lecture de l'image…",
@@ -1256,6 +1240,30 @@ const Map<String, String> fr = {
   'its file is missing': 'son fichier est introuvable',
   'it could not be loaded (not enough memory?)':
       "il n'a pas pu être chargé (mémoire insuffisante ?)",
+  // ── Redesign: navigation and model fit ────────────────────────────────
+  'All models': 'Tous les modèles',
+  'Switch to': 'Passer à',
+  'Runs well': 'Idéal',
+  'Tight fit': 'Juste',
+  'Too big': 'Trop gros',
+  'Runs comfortably on this phone.': "Tourne à l'aise sur ce téléphone.",
+  'Loads on this phone with little memory to spare: it can be slow, or fail when other apps are open.':
+      "Se charge sur ce téléphone, mais avec peu de mémoire de marge : il "
+          "peut être lent, ou échouer si d'autres applis sont ouvertes.",
+  'Needs more memory than this phone has. Phone cluster can run it across several phones.':
+      "Demande plus de mémoire que n'en a ce téléphone. Le Cluster de "
+          'téléphones permet de le répartir sur plusieurs appareils.',
+  // ── Redesign: home and first launch ───────────────────────────────────
+  'Recommended for this phone': 'Recommandé pour ce téléphone',
+  'Install and start': 'Installer et démarrer',
+  'Other models': 'Autres modèles',
+  'Use the cloud': 'Utiliser le cloud',
+  'Choose a cloud model': 'Choisir un modèle cloud',
+  'Load @name': 'Charger @name',
+  'Choose another model': 'Choisir un autre modèle',
+  'The model you used last time.': 'Le modèle utilisé la dernière fois.',
+  'A model has to be loaded before you can chat.':
+      'Il faut charger un modèle avant de pouvoir discuter.',
 };
 
 /// Download statuses the Android code reports in English (shown through

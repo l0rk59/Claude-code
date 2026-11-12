@@ -22,15 +22,16 @@ import '../core/ui.dart';
 import '../widgets/thought_disclosure.dart';
 import '../core/haptics.dart';
 import '../core/app_platform.dart';
+import '../core/colors.dart';
 
 // ── Apple-style color helpers ──
 Color _appleBlue(BuildContext c) => Theme.of(c).brightness == Brightness.dark
-    ? const Color(0xFF0A84FF)
-    : const Color(0xFF007AFF);
+    ? AppColors.accentDark
+    : AppColors.accent;
 
 Color _aiBubble(BuildContext c) => Theme.of(c).brightness == Brightness.dark
-    ? const Color(0xFF1C1C1E)
-    : const Color(0xFFF2F2F7);
+    ? AppColors.elevatedDark
+    : AppColors.surfaceLight;
 
 Color _sep(BuildContext c) => Theme.of(c).brightness == Brightness.dark
     ? Colors.white.withValues(alpha: 0.08)
@@ -43,7 +44,7 @@ class ChatView extends GetView<ChatController> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     Widget scaffold = Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       appBar: _appBar(context, isDark),
       body: Column(
         children: [
@@ -97,8 +98,10 @@ class ChatView extends GetView<ChatController> {
 
   // ── AppBar ──
   PreferredSizeWidget _appBar(BuildContext context, bool isDark) {
+    final wide =
+        MediaQuery.sizeOf(context).width >= HomeController.wideLayoutWidth;
     return AppBar(
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       bottom: PreferredSize(
@@ -110,72 +113,51 @@ class ChatView extends GetView<ChatController> {
                 : _sep(context))),
       ),
       titleSpacing: 0,
-      leadingWidth: 52,
-      leading: IconButton(
-        tooltip: 'Chats'.tr,
-        onPressed: () {
-          FocusManager.instance.primaryFocus?.unfocus();
-          Get.find<HomeController>().openSidebar();
-        },
-        icon: SidebarGlyph(color: isDark ? Colors.white : Colors.black),
-      ),
+      leadingWidth: wide ? 12 : 52,
+      // On wide screens the sidebar is pinned: no button to open it.
+      leading: wide
+          ? const SizedBox.shrink()
+          : IconButton(
+              tooltip: 'Chats'.tr,
+              onPressed: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+                Get.find<HomeController>().openSidebar();
+              },
+              icon: SidebarGlyph(
+                  color: isDark ? AppColors.textDark : AppColors.textLight),
+            ),
+      // The model answering this chat; tap to switch.
       title: Obx(() {
-        final text = isDark ? Colors.white : Colors.black;
-        // Home: a quiet wordmark — the model card below carries the status.
-        if (controller.messages.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Text('PrivateLM',
-                style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    letterSpacing: -0.5,
-                    color: text)),
-          );
-        }
-        final sid = controller.currentSessionId.value;
+        final t = AppTokens.of(context);
         final info = _modelInfo(context);
-        final title =
-            controller.sessions.firstWhereOrNull((s) => s.id == sid)?.title ??
-                'Chat'.tr;
-        // Title + model line; tapping opens the model sheet.
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _showModelSheet(context),
-          child: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          letterSpacing: -0.3,
-                          color: text)),
-                  const SizedBox(height: 1),
-                  Row(children: [
-                    Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle, color: info.dot)),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(info.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                              fontSize: 12.5,
-                              color: Theme.of(context).hintColor)),
-                    ),
-                    Icon(Icons.expand_more_rounded,
-                        size: 16, color: Theme.of(context).hintColor),
-                  ]),
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Material(
+            color: t.fill,
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => _showModelSheet(context),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  StatusDot(info.dot, size: 7),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(info.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                            color: t.text)),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.expand_more_rounded, size: 19, color: t.muted),
                 ]),
+              ),
+            ),
           ),
         );
       }),
@@ -198,7 +180,7 @@ class ChatView extends GetView<ChatController> {
                 strokeCap: StrokeCap.round,
                 backgroundColor: _sep(context),
                 color: warn
-                    ? const Color(0xFFFF9500)
+                    ? AppColors.warning
                     : Theme.of(context).hintColor,
               ),
             ),
@@ -211,7 +193,7 @@ class ChatView extends GetView<ChatController> {
           return IconButton(
               tooltip: 'New chat'.tr,
               icon: Icon(Icons.edit_square,
-                  size: 20, color: isDark ? Colors.white : Colors.black),
+                  size: 20, color: isDark ? AppColors.textDark : AppColors.textLight),
               onPressed: () {
                 Haptics.selectionClick();
                 controller.createNewChat();
@@ -228,8 +210,8 @@ class ChatView extends GetView<ChatController> {
     final settings = Get.find<SettingsController>();
     final inf = Get.find<InferenceService>();
     final img = Get.find<LocalImageService>();
-    const green = Color(0xFF34C759);
-    const orange = Color(0xFFFF9500);
+    const green = AppColors.success;
+    const orange = AppColors.warning;
     String pretty(String n) => n.replaceAll(
         RegExp(r'\.(gguf|litertlm|task|bin)$', caseSensitive: false), '');
 
@@ -312,16 +294,17 @@ class ChatView extends GetView<ChatController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.elevatedDark : Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
           child: Obx(() {
             final info = _modelInfo(ctx);
             final usage = _contextUsage();
-            final text = isDark ? Colors.white : const Color(0xFF0B0B0C);
+            final text = isDark ? Colors.white : AppColors.textLight;
             final muted = Theme.of(ctx).hintColor;
             final warn = (usage?.pct ?? 0) >= 0.75;
             return Column(
@@ -382,7 +365,7 @@ class ChatView extends GetView<ChatController> {
                         }),
                         style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: warn ? const Color(0xFFFF9500) : muted,
+                            color: warn ? AppColors.warning : muted,
                             fontFeatures: const [
                               FontFeature.tabularFigures()
                             ])),
@@ -396,7 +379,7 @@ class ChatView extends GetView<ChatController> {
                       backgroundColor: isDark
                           ? Colors.white.withValues(alpha: 0.08)
                           : Colors.black.withValues(alpha: 0.06),
-                      color: warn ? const Color(0xFFFF9500) : _appleBlue(ctx),
+                      color: warn ? AppColors.warning : _appleBlue(ctx),
                     ),
                   ),
                   if (warn) ...[
@@ -405,13 +388,14 @@ class ChatView extends GetView<ChatController> {
                         style: GoogleFonts.inter(fontSize: 12.5, color: muted)),
                   ],
                 ],
-                const SizedBox(height: 24),
+                ..._quickSwitch(ctx),
+                const SizedBox(height: 20),
                 Row(children: [
                   Expanded(
-                    child: TonalButton.neutral(ctx, label: 'Switch model'.tr,
+                    child: TonalButton.neutral(ctx, label: 'All models'.tr,
                         onTap: () {
                       Navigator.pop(ctx);
-                      Get.find<HomeController>().changeTab(1);
+                      Get.find<HomeController>().openModels();
                     }),
                   ),
                   if (info.canUnload) ...[
@@ -431,6 +415,46 @@ class ChatView extends GetView<ChatController> {
         ),
       ),
     );
+  }
+
+  /// The other models on this phone, to switch with one tap.
+  List<Widget> _quickSwitch(BuildContext ctx) {
+    final settings = Get.find<SettingsController>();
+    if (settings.inferenceMode.value != 'local') return const [];
+    final models = Get.find<ModelController>();
+    final inf = Get.find<InferenceService>();
+    final img = Get.find<LocalImageService>();
+    final loaded = inf.isModelLoaded.value
+        ? inf.loadedModelName.value
+        : img.isModelLoaded.value
+            ? img.loadedModelName.value
+            : '';
+    final others = models.availableModels
+        .where((m) => models.isDownloaded(m.filename) && m.filename != loaded)
+        .take(5)
+        .toList();
+    if (others.isEmpty) return const [];
+    final t = AppTokens.of(ctx);
+    final busy = inf.isLoadingModel.value || img.isLoadingModel.value;
+    return [
+      const SizedBox(height: 22),
+      Text('Switch to'.tr, style: t.label),
+      const SizedBox(height: 8),
+      AppGroup(dividerIndent: 16, children: [
+        for (final m in others)
+          AppRow(
+            title: m.name,
+            subtitle: models.modelSizeLabel(m),
+            trailing: Icon(Icons.play_arrow_rounded, size: 20, color: t.accent),
+            onTap: busy
+                ? null
+                : () {
+                    Navigator.pop(ctx);
+                    models.loadModel(m.filename);
+                  },
+          ),
+      ]),
+    ];
   }
 
   // ── Model Loading ──
@@ -567,7 +591,7 @@ class ChatView extends GetView<ChatController> {
   Widget _inputBar(BuildContext context, bool isDark) {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-      color: isDark ? Colors.black : Colors.white,
+      color: isDark ? AppColors.bgDark : AppColors.bgLight,
       child: SafeArea(
           top: false,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -600,10 +624,10 @@ class ChatView extends GetView<ChatController> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B30).withValues(alpha: 0.10),
+                    color: AppColors.error.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: const Color(0xFFFF3B30).withValues(alpha: 0.3)),
+                        color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const _PulsingDot(),
@@ -611,7 +635,7 @@ class ChatView extends GetView<ChatController> {
                     Text('Listening… tap mic to stop'.tr,
                         style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: const Color(0xFFFF3B30),
+                            color: AppColors.error,
                             fontWeight: FontWeight.w500)),
                   ]),
                 ),
@@ -634,8 +658,8 @@ class ChatView extends GetView<ChatController> {
                       ? 'APPLE NPU'
                       : backend.displayName.split(' ').first.toUpperCase());
               final accent = backend == Backend.cpu
-                  ? const Color(0xFFFF9500)
-                  : const Color(0xFF34C759);
+                  ? AppColors.warning
+                  : AppColors.success;
               return Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Row(
@@ -704,7 +728,7 @@ class ChatView extends GetView<ChatController> {
                             steps.toString(),
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: isDark ? AppColors.textDark : AppColors.textLight,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -729,15 +753,15 @@ class ChatView extends GetView<ChatController> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF34C759).withValues(alpha: 0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color: const Color(0xFF34C759).withValues(alpha: 0.3)),
+                      color: AppColors.success.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.check_circle_rounded,
-                        size: 18, color: Color(0xFF34C759)),
+                        size: 18, color: AppColors.success),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -748,7 +772,7 @@ class ChatView extends GetView<ChatController> {
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: isDark ? Colors.white : Colors.black),
+                            color: isDark ? AppColors.textDark : AppColors.textLight),
                       ),
                     ),
                     TextButton(
@@ -764,7 +788,7 @@ class ChatView extends GetView<ChatController> {
                     FilledButton.icon(
                       onPressed: () => controller.downloadLastBatch(),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF34C759),
+                        backgroundColor: AppColors.success,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         minimumSize: const Size(0, 32),
                       ),
@@ -801,7 +825,7 @@ class ChatView extends GetView<ChatController> {
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: isDark ? Colors.white : Colors.black),
+                            color: isDark ? AppColors.textDark : AppColors.textLight),
                       ),
                     ),
                     TextButton(
@@ -834,8 +858,8 @@ class ChatView extends GetView<ChatController> {
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF141416)
-                      : const Color(0xFFF5F5F7),
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                       color: isDark
@@ -891,7 +915,7 @@ class ChatView extends GetView<ChatController> {
                     return GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: noModel && !loadingModel
-                            ? () => Get.find<HomeController>().changeTab(1)
+                            ? () => Get.find<HomeController>().openModels()
                             : null,
                         child: Container(
                           constraints: const BoxConstraints(minHeight: 40),
@@ -906,7 +930,7 @@ class ChatView extends GetView<ChatController> {
                             minLines: 1,
                             style: GoogleFonts.inter(
                                 fontSize: 15,
-                                color: isDark ? Colors.white : Colors.black),
+                                color: isDark ? AppColors.textDark : AppColors.textLight),
                             decoration: InputDecoration(
                               hintText: !noModel
                                   ? 'Ask anything'.tr
@@ -1025,12 +1049,12 @@ class ChatView extends GetView<ChatController> {
 
                     if (loading) {
                       // AI generating → solid neutral stop
-                      bgColor = isDark ? Colors.white : Colors.black;
+                      bgColor = isDark ? AppColors.textDark : AppColors.textLight;
                       iconData = Icons.stop_rounded;
                       onTap = controller.stopGenerating;
                     } else if (listening) {
                       // STT active → red stop
-                      bgColor = const Color(0xFFFF3B30);
+                      bgColor = AppColors.error;
                       iconData = Icons.stop_rounded;
                       onTap = controller.toggleListening;
                     } else if (noModel) {
@@ -1067,7 +1091,7 @@ class ChatView extends GetView<ChatController> {
                           child: Icon(iconData,
                               key: ValueKey(iconData),
                               color: loading
-                                  ? (isDark ? Colors.black : Colors.white)
+                                  ? (isDark ? AppColors.bgDark : AppColors.bgLight)
                                   : (listening || (hasContent && !noModel))
                                       ? Colors.white
                                       : Theme.of(context)
@@ -1099,7 +1123,7 @@ class ChatView extends GetView<ChatController> {
   MarkdownStyleSheet _thoughtMd(BuildContext c, bool isDark) {
     final muted = Theme.of(c).hintColor;
     final base = GoogleFonts.inter(fontSize: 13, color: muted, height: 1.4);
-    final codeBg = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
+    final codeBg = isDark ? AppColors.raisedDark : AppColors.surfacePressedLight;
     return MarkdownStyleSheet.fromTheme(Theme.of(c)).copyWith(
         p: base,
         strong: base.copyWith(fontWeight: FontWeight.w600),
@@ -1223,8 +1247,8 @@ class _AttachButton extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: dark ? 0.35 : 0.12),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (dialogCtx, _, __) {
-        final fg = dark ? Colors.white : const Color(0xFF0B0B0C);
-        final muted = dark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
+        final fg = dark ? Colors.white : AppColors.textLight;
+        final muted = dark ? AppColors.muted : AppColors.mutedLight;
         return Stack(children: [
           Positioned(
             left: origin.dx - 6,
@@ -1357,7 +1381,7 @@ class _PulsingDotState extends State<_PulsingDot>
         width: 8,
         height: 8,
         decoration: const BoxDecoration(
-            color: Color(0xFFFF3B30), shape: BoxShape.circle),
+            color: AppColors.error, shape: BoxShape.circle),
       ),
     );
   }
@@ -1456,8 +1480,8 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
     final backend = localImage.currentBackend.value;
     final isCpu = backend == Backend.cpu;
     final color = isCpu
-        ? const Color(0xFFFF9500) // Orange for CPU
-        : const Color(0xFF34C759); // Green for GPU
+        ? AppColors.warning // Orange for CPU
+        : AppColors.success; // Green for GPU
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -1539,7 +1563,7 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                   width: 160,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: (widget.isDark ? Colors.white : Colors.black)
+                    color: (widget.isDark ? AppColors.textDark : AppColors.textLight)
                         .withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -1603,20 +1627,20 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.stop_rounded,
-                            size: 12, color: Color(0xFFFF3B30)),
+                            size: 12, color: AppColors.error),
                         const SizedBox(width: 4),
                         Text(
                           'Cancel'.tr,
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: const Color(0xFFFF3B30),
+                            color: AppColors.error,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

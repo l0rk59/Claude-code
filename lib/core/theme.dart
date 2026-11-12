@@ -13,12 +13,12 @@ class AppTheme {
     final isDark = brightness == Brightness.dark;
 
     // Apple system backgrounds
-    final bg = isDark ? Colors.black : Colors.white;
-    final surface = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
-    final surfaceHigh = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
-    final card = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final textPrimary = isDark ? Colors.white : Colors.black;
-    final textMuted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93);
+    final bg = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final surface = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final surfaceHigh = isDark ? AppColors.raisedDark : AppColors.surfacePressedLight;
+    final card = isDark ? AppColors.elevatedDark : Colors.white;
+    final textPrimary = isDark ? AppColors.textDark : AppColors.textLight;
+    final textMuted = isDark ? AppColors.mutedDark : AppColors.mutedLight;
     final separator = isDark
         ? Colors.white.withValues(alpha: 0.08)
         : Colors.black.withValues(alpha: 0.08);
@@ -26,15 +26,15 @@ class AppTheme {
     return ThemeData(
       brightness: brightness,
       scaffoldBackgroundColor: bg,
-      primaryColor: AppColors.primary,
+      primaryColor: AppColors.accent,
       cardColor: card,
       hintColor: textMuted,
       dividerColor: separator,
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        primary: isDark ? AppColors.accentDark : AppColors.accent,
         onPrimary: Colors.white,
-        secondary: AppColors.secondary,
+        secondary: AppColors.violet,
         onSecondary: textPrimary,
         surface: surface,
         onSurface: textPrimary,
@@ -61,7 +61,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        iconTheme: IconThemeData(color: isDark ? const Color(0xFF0A84FF) : AppColors.primary),
+        iconTheme: IconThemeData(color: isDark ? AppColors.accentDark : AppColors.accent),
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
 
@@ -79,7 +79,7 @@ class AppTheme {
       // ── Bottom Nav ──
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: bg,
-        selectedItemColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        selectedItemColor: isDark ? AppColors.accentDark : AppColors.accent,
         unselectedItemColor: textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -102,7 +102,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF0A84FF) : AppColors.primary, width: 1),
+          borderSide: BorderSide(color: isDark ? AppColors.accentDark : AppColors.accent, width: 1),
         ),
         hintStyle: GoogleFonts.inter(color: textMuted, fontSize: 15),
         labelStyle: GoogleFonts.inter(color: textMuted, fontSize: 14),
@@ -111,7 +111,7 @@ class AppTheme {
       // ── Buttons ──
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          backgroundColor: isDark ? AppColors.accentDark : AppColors.accent,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -122,7 +122,7 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          foregroundColor: isDark ? AppColors.accentDark : AppColors.accent,
           side: BorderSide(color: separator),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -132,14 +132,14 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          foregroundColor: isDark ? AppColors.accentDark : AppColors.accent,
           textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
         ),
       ),
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          backgroundColor: isDark ? AppColors.accentDark : AppColors.accent,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -152,12 +152,12 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return Colors.white;
-          return isDark ? const Color(0xFF8E8E93) : Colors.white;
+          return isDark ? AppColors.muted : Colors.white;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           final color = states.contains(WidgetState.selected)
-              ? const Color(0xFF34C759)
-              : (isDark ? const Color(0xFF39393D) : const Color(0xFFD1D1D6));
+              ? (isDark ? AppColors.accentDark : AppColors.accent)
+              : (isDark ? AppColors.outlineDark : AppColors.outlineLight);
           // Fade locked switches so they don't look interactive.
           return states.contains(WidgetState.disabled)
               ? color.withValues(alpha: 0.4)
@@ -167,10 +167,10 @@ class AppTheme {
       ),
 
       sliderTheme: SliderThemeData(
-        activeTrackColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        activeTrackColor: isDark ? AppColors.accentDark : AppColors.accent,
         inactiveTrackColor: surfaceHigh,
         thumbColor: Colors.white,
-        overlayColor: AppColors.primary.withValues(alpha: 0.1),
+        overlayColor: AppColors.accent.withValues(alpha: 0.1),
         trackHeight: 4,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
       ),
@@ -178,7 +178,7 @@ class AppTheme {
       // ── Chips ──
       chipTheme: ChipThemeData(
         backgroundColor: surface,
-        selectedColor: (isDark ? const Color(0xFF0A84FF) : AppColors.primary).withValues(alpha: 0.14),
+        selectedColor: (isDark ? AppColors.accentDark : AppColors.accent).withValues(alpha: 0.14),
         labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(color: separator),
@@ -189,11 +189,11 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return (isDark ? const Color(0xFF0A84FF) : AppColors.primary).withValues(alpha: 0.14);
+            if (states.contains(WidgetState.selected)) return (isDark ? AppColors.accentDark : AppColors.accent).withValues(alpha: 0.14);
             return Colors.transparent;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0A84FF) : AppColors.primary;
+            if (states.contains(WidgetState.selected)) return isDark ? AppColors.accentDark : AppColors.accent;
             return textMuted;
           }),
           side: WidgetStateProperty.all(BorderSide(color: separator)),
@@ -205,16 +205,16 @@ class AppTheme {
       // ── Misc ──
       dividerTheme: DividerThemeData(color: separator, thickness: 0.5),
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        backgroundColor: isDark ? AppColors.raisedDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         titleTextStyle: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w600, color: textPrimary),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        backgroundColor: isDark ? AppColors.elevatedDark : Colors.white,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        backgroundColor: isDark ? AppColors.accentDark : AppColors.accent,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -227,16 +227,16 @@ class AppTheme {
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0A84FF) : AppColors.primary;
+          if (states.contains(WidgetState.selected)) return isDark ? AppColors.accentDark : AppColors.accent;
           return textMuted;
         }),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        color: isDark ? AppColors.accentDark : AppColors.accent,
         linearTrackColor: surfaceHigh,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFF1C1C1E),
+        backgroundColor: isDark ? AppColors.raisedDark : AppColors.elevatedDark,
         contentTextStyle: GoogleFonts.inter(fontSize: 14, color: Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
@@ -247,14 +247,14 @@ class AppTheme {
   // Bubble colors
   static Color userBubbleColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF0A84FF)
-        : const Color(0xFF007AFF);
+        ? AppColors.accentDark
+        : AppColors.accent;
   }
 
   static Color aiBubbleColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF1C1C1E)
-        : const Color(0xFFF2F2F7);
+        ? AppColors.elevatedDark
+        : AppColors.surfaceLight;
   }
 
   static Color cmdBubbleColor(BuildContext context) {

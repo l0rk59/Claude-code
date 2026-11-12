@@ -10,6 +10,9 @@ import '../models/ai_model.dart';
 import '../services/download_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
+import '../services/model_fit.dart';
+import '../widgets/fit_badge.dart';
+import '../core/colors.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -951,7 +954,7 @@ class ModelView extends GetView<ModelController> {
                           isExpanded: true,
                           borderRadius: BorderRadius.circular(12),
                           dropdownColor:
-                              t.isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                              t.isDark ? AppColors.raisedDark : Colors.white,
                           icon: Icon(Icons.expand_more_rounded,
                               color: t.muted, size: 20),
                           style: t.body,
@@ -1640,16 +1643,22 @@ class ModelView extends GetView<ModelController> {
       // models) or the selected chip (Browse), so neither repeats here.
       final uncensored = controller.isUncensoredModel(model) &&
           (library || filter != 'uncensored');
+      // The row says whether the model suits this phone, in plain words; the
+      // technical variant (Q4_K_M…) is kept for the details sheet.
+      final fit = controller.fitOf(model);
       final subtitle = [
         controller.modelSizeLabel(model),
-        if (runtime == 'LiteRT') 'LiteRT',
-        if (variant != null) variant,
         if (!library && controller.isVisionModel(model) && filter != 'vision')
           'Vision'.tr,
         if (model.isImported) 'Imported'.tr,
       ].join(' · ');
+      final details = [
+        controller.modelSizeLabel(model),
+        if (runtime != null) runtime,
+        if (variant != null) variant,
+      ].join(' · ');
       void openDetails() => _showModelDetails(
-          context, model, subtitle, secondary, disableActions, primaryAction,
+          context, model, details, secondary, disableActions, primaryAction,
           onLoad: load);
       return Material(
         color: Colors.transparent,
@@ -1702,6 +1711,13 @@ class ModelView extends GetView<ModelController> {
                                       text: '★ Recommended · '.tr,
                                       style: TextStyle(
                                           color: t.accent,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  if (fit != ModelFit.unknown)
+                                    TextSpan(
+                                      text: '${FitBadge.label(fit)} · ',
+                                      style: TextStyle(
+                                          color: FitBadge.color(fit, t),
                                           fontWeight: FontWeight.w600),
                                     ),
                                   TextSpan(text: subtitle),
@@ -1974,6 +1990,7 @@ class ModelView extends GetView<ModelController> {
       builder: (ctx) {
         final t = AppTokens.of(ctx);
         final tags = _buildModelTags(ctx, model);
+        final fit = controller.fitOf(model);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1983,6 +2000,14 @@ class ModelView extends GetView<ModelController> {
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 12),
               Wrap(spacing: 6, runSpacing: 6, children: tags),
+            ],
+            if (fit != ModelFit.unknown) ...[
+              const SizedBox(height: 14),
+              AppNotice(
+                '${FitBadge.label(fit)} — ${FitBadge.explain(fit)}',
+                icon: FitBadge.icon(fit),
+                color: FitBadge.color(fit, t),
+              ),
             ],
             if (onLoad != null) ...[
               const SizedBox(height: 18),

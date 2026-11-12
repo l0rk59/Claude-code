@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/colors.dart';
 
 class ThoughtDisclosure extends StatefulWidget {
   final String thought;
@@ -102,7 +103,7 @@ class _ThoughtDisclosureState extends State<ThoughtDisclosure>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = Theme.of(context).hintColor;
     final accentColor =
-        isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
+        isDark ? AppColors.accentDark : AppColors.accent;
 
     // Inline disclosure: a quiet "Thought for 6s ›" line; expanded reasoning
     // sits behind a thin left rule, like a quote.

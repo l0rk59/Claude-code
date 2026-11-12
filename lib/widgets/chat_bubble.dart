@@ -9,6 +9,7 @@ import 'attachment_preview.dart';
 import 'image_viewer.dart';
 import 'thought_disclosure.dart';
 import '../core/haptics.dart';
+import '../core/colors.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -162,7 +163,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   static Color _userFill(bool isDark) =>
-      isDark ? const Color(0xFF1E1E21) : const Color(0xFFF0F0F2);
+      isDark ? AppColors.surfacePressedDark : AppColors.surfaceLight;
 
   /// Answer text style — shared with the streaming reply so text doesn't
   /// shift when generation finishes.
@@ -173,7 +174,7 @@ class ChatBubble extends StatelessWidget {
     final base = GoogleFonts.inter(
         fontSize: 15.5, color: color, height: 1.6, letterSpacing: -0.1);
     final codeBlockBg =
-        isDark ? const Color(0xFF161618) : const Color(0xFFF3F3F5);
+        isDark ? const Color(0xFF161618) : AppColors.surfaceLight;
 
     return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
       p: base,
@@ -229,10 +230,10 @@ class ChatBubble extends StatelessWidget {
         fontSize: 11,
         color: muted,
         backgroundColor:
-            isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+            isDark ? AppColors.raisedDark : AppColors.surfacePressedLight,
       ),
       codeblockDecoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
+        color: isDark ? AppColors.raisedDark : AppColors.surfacePressedLight,
         borderRadius: BorderRadius.circular(10),
       ),
     );
@@ -285,8 +286,8 @@ class ChatBubble extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Container(
                       height: 150,
                       color: isDark
-                          ? const Color(0xFF1C1C1E)
-                          : const Color(0xFFF2F2F7),
+                          ? AppColors.elevatedDark
+                          : AppColors.surfaceLight,
                       child: const Center(
                           child: Icon(Icons.broken_image_rounded, size: 28)),
                     ),

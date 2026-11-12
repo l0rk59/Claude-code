@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/local_image_service.dart';
+import '../core/colors.dart';
 
 /// Minimal test screen for WebGPU image generation.
 /// Open this route to test CyberRealistic/DreamShaper in the browser.
@@ -62,11 +63,11 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       appBar: AppBar(
         title: Text('WebGPU Image Gen Test',
             style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-        backgroundColor: isDark ? Colors.black : Colors.white,
+        backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -96,7 +97,7 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
                 ElevatedButton(
                   onPressed: _localImage.isModelLoaded.value ? _generate : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0A84FF),
+                    backgroundColor: AppColors.accentDark,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Generate'),

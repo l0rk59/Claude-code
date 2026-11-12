@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/colors.dart';
 
 class AttachmentPreview extends StatelessWidget {
   final String fileName;
@@ -36,7 +37,7 @@ class AttachmentPreview extends StatelessWidget {
       constraints: compact ? const BoxConstraints(maxWidth: 260) : null,
       padding: EdgeInsets.all(compact ? 8 : 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF141416) : const Color(0xFFF5F5F7),
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: isDark
@@ -229,7 +230,7 @@ class AttachmentPreview extends StatelessWidget {
   Color _colorForType(String type, bool isDark) {
     // Neutral glyphs; PDF keeps a muted red so the type still scans.
     if (type == 'pdf') {
-      return isDark ? const Color(0xFFFF6961) : const Color(0xFFD93A30);
+      return isDark ? const Color(0xFFFF6961) : AppColors.errorLight;
     }
     return isDark
         ? Colors.white.withValues(alpha: 0.8)

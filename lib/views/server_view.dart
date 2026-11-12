@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../controllers/server_controller.dart';
 import '../core/ui.dart';
 import '../core/haptics.dart';
+import '../core/colors.dart';
 
 class ServerView extends GetView<ServerController> {
   const ServerView({super.key});
@@ -425,7 +426,7 @@ class _CodeBlock extends StatelessWidget {
     final t = AppTokens.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: t.isDark ? const Color(0xFF0E0E10) : const Color(0xFFF0F0F2),
+        color: t.isDark ? AppColors.sunkenDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: t.hairline, width: 0.5),
       ),

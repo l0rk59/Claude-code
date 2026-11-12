@@ -1,57 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../controllers/chat_controller.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
-import '../ffi/sd_backend.dart';
-import '../services/cluster_service.dart';
+import '../core/colors.dart';
+import '../core/haptics.dart';
+import '../core/ui.dart';
+import '../models/ai_model.dart';
+import '../services/device_info_service.dart';
+import '../services/download_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
-import '../core/haptics.dart';
+import 'fit_badge.dart';
 
-/// Landing screen shown in the Chat tab before the first message is sent.
-///
-/// Layout, top to bottom: the model that will answer (with the one action
-/// needed to get it ready), a centred greeting, and prompt starters. Past
-/// conversations live in the sidebar (see `ChatDrawer`).
+/// The chat before its first message: a greeting, and under it whatever
+/// gets the user talking fastest — a one-tap install on first launch, the
+/// last model to load again, or prompt suggestions once a model is ready.
+/// The model itself is named in the pill at the top of the chat.
 class HomeEmptyState extends StatelessWidget {
   const HomeEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final t = _HomeTokens.of(context);
     return LayoutBuilder(builder: (context, box) {
       // Keep a readable column on tablets / desktop.
       final hPad = box.maxWidth > 640 ? (box.maxWidth - 600) / 2 : 20.0;
-      // While typing, drop the suggestions and icon so nothing gets clipped
-      // behind the composer — the greeting alone stays centred.
+      // While typing, drop everything but the greeting so nothing gets
+      // clipped behind the composer.
       final typing = View.of(context).viewInsets.bottom > 0;
-      // Model up top, greeting centred, suggestions just above the composer.
       return SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 8),
+        padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 12),
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: box.maxHeight - 16),
+          constraints: BoxConstraints(minHeight: box.maxHeight - 20),
           child: IntrinsicHeight(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ModelCard(t: t),
                 const Spacer(),
-                const SizedBox(height: 32),
-                _Greeting(t: t, compact: typing),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                _Greeting(compact: typing),
+                const SizedBox(height: 28),
                 const Spacer(),
-                if (!typing)
-                  Obx(() {
-                    final settings = Get.find<SettingsController>();
-                    final models = Get.find<ModelController>();
-                    final needsModel =
-                        settings.inferenceMode.value == 'local' &&
-                            models.downloadedCount == 0;
-                    return needsModel ? _GettingStarted(t: t) : _Starters(t: t);
-                  }),
+                if (!typing) const _NextStep(),
               ],
             ),
           ),
@@ -61,120 +54,41 @@ class HomeEmptyState extends StatelessWidget {
   }
 }
 
-// ── Tokens ──────────────────────────────────────────────────────────────
-
-class _HomeTokens {
-  final bool isDark;
-  final Color text;
-  final Color muted;
-  final Color faint;
-  final Color accent;
-  final Color card;
-  final Color cardPressed;
-  final Color hairline;
-  final Color outline;
-  final Color green;
-  final Color orange;
-
-  const _HomeTokens({
-    required this.isDark,
-    required this.text,
-    required this.muted,
-    required this.faint,
-    required this.accent,
-    required this.card,
-    required this.cardPressed,
-    required this.hairline,
-    required this.outline,
-    required this.green,
-    required this.orange,
-  });
-
-  factory _HomeTokens.of(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return _HomeTokens(
-      isDark: isDark,
-      text: isDark ? Colors.white : const Color(0xFF0B0B0C),
-      muted: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
-      faint: isDark ? const Color(0xFF5A5A5F) : const Color(0xFFAEAEB2),
-      accent: isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
-      card: isDark ? const Color(0xFF141416) : const Color(0xFFF5F5F7),
-      cardPressed: isDark ? const Color(0xFF1E1E21) : const Color(0xFFEBEBED),
-      hairline: isDark
-          ? Colors.white.withValues(alpha: 0.07)
-          : Colors.black.withValues(alpha: 0.06),
-      outline: isDark
-          ? Colors.white.withValues(alpha: 0.14)
-          : Colors.black.withValues(alpha: 0.10),
-      green: isDark ? const Color(0xFF30D158) : const Color(0xFF28A745),
-      orange: isDark ? const Color(0xFFFF9F0A) : const Color(0xFFE08600),
-    );
-  }
-
-  TextStyle get sectionLabel => GoogleFonts.inter(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: muted,
-      letterSpacing: -0.08);
-}
-
-/// Card surface with a pressed state instead of a ripple — calmer and closer
-/// to native iOS list cells.
-class _Pressable extends StatefulWidget {
-  final _HomeTokens t;
-  final VoidCallback? onTap;
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  const _Pressable({
-    required this.t,
-    required this.child,
-    this.onTap,
-    this.padding = const EdgeInsets.all(16),
-  });
-
-  @override
-  State<_Pressable> createState() => _PressableState();
-}
-
-class _PressableState extends State<_Pressable> {
-  bool _down = false;
-
-  void _set(bool v) {
-    if (widget.onTap == null || _down == v) return;
-    setState(() => _down = v);
-  }
+/// Picks the block under the greeting from the app's state.
+class _NextStep extends StatelessWidget {
+  const _NextStep();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: widget.padding,
-        decoration: BoxDecoration(
-          // Outlined, like the suggestion pills — the composer is the only
-          // filled surface on the home screen.
-          color: _down ? widget.t.cardPressed : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: widget.t.outline),
-        ),
-        child: widget.child,
-      ),
-    );
+    return Obx(() {
+      final settings = Get.find<SettingsController>();
+      final models = Get.find<ModelController>();
+      final inf = Get.find<InferenceService>();
+      final img = Get.find<LocalImageService>();
+      if (settings.inferenceMode.value != 'local') {
+        return settings.selectedCloudModelName.isEmpty
+            ? const _PickCloudModel()
+            : const _Starters();
+      }
+      if (inf.isModelLoaded.value ||
+          img.isModelLoaded.value ||
+          inf.isLoadingModel.value ||
+          img.isLoadingModel.value) {
+        return const _Starters();
+      }
+      // Still installing the first model, or nothing on the phone yet.
+      final installing = models.autoLoadAfterDownload.value.isNotEmpty;
+      if (models.downloadedCount == 0 || installing) return const _FirstRun();
+      return const _Resume();
+    });
   }
 }
 
 // ── Greeting ────────────────────────────────────────────────────────────
 
 class _Greeting extends StatelessWidget {
-  final _HomeTokens t;
   final bool compact;
-  const _Greeting({required this.t, this.compact = false});
+  const _Greeting({this.compact = false});
 
   String get _salutation {
     final h = DateTime.now().hour;
@@ -186,10 +100,24 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
     return Column(children: [
       if (!compact) ...[
-        Image.asset('assets/icons/appicon.png', width: 44, height: 44),
-        const SizedBox(height: 18),
+        // The logo on a soft halo of the brand colour.
+        Container(
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(colors: [
+              AppColors.violet.withValues(alpha: t.isDark ? 0.30 : 0.18),
+              AppColors.violet.withValues(alpha: 0),
+            ]),
+          ),
+          alignment: Alignment.center,
+          child: Image.asset('assets/icons/appicon.png', width: 46, height: 46),
+        ),
+        const SizedBox(height: 12),
       ],
       Text(
         "@salutation\nwhat's on your mind?"
@@ -198,9 +126,9 @@ class _Greeting extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: compact ? 24 : 28,
           height: 1.25,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.7,
-          color: t.text.withValues(alpha: 0.88),
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.8,
+          color: t.text,
         ),
       ),
     ]);
@@ -236,227 +164,195 @@ String providerLabel(SettingsController s) {
 String _prettyModel(String name) => name.replaceAll(
     RegExp(r'\.(gguf|litertlm|task|bin)$', caseSensitive: false), '');
 
-// ── Model card ──────────────────────────────────────────────────────────
+// ── First launch: one-tap install ───────────────────────────────────────
 
-enum _ModelState { noModels, idle, loading, readyText, readyImage, cloud }
-
-class _ModelCard extends StatelessWidget {
-  final _HomeTokens t;
-  const _ModelCard({required this.t});
-
-  void _openModels() {
-    Haptics.selectionClick();
-    Get.find<HomeController>().changeTab(1);
-  }
+/// Nothing on the phone yet: suggests the model that suits this phone and
+/// installs it in one tap (download, then load).
+class _FirstRun extends StatelessWidget {
+  const _FirstRun();
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final models = Get.find<ModelController>();
+    final home = Get.find<HomeController>();
+    final ram = Get.find<DeviceInfoService>().totalRamGB.value;
     return Obx(() {
-      final settings = Get.find<SettingsController>();
-      final models = Get.find<ModelController>();
-      final inf = Get.find<InferenceService>();
-      final img = Get.find<LocalImageService>();
+      final model = models.availableModels.firstWhereOrNull(
+              (m) => m.filename == models.autoLoadAfterDownload.value) ??
+          models.starterModel;
+      if (model == null) return const _PickLocalModel();
+      final progress = models.getDownloadProgress(model.filename);
+      final downloading = progress != null;
 
-      final _ModelState state;
-      if (settings.inferenceMode.value != 'local') {
-        state = _ModelState.cloud;
-      } else if (inf.isLoadingModel.value) {
-        state = _ModelState.loading;
-      } else if (inf.isModelLoaded.value) {
-        state = _ModelState.readyText;
-      } else if (img.isModelLoaded.value) {
-        state = _ModelState.readyImage;
-      } else if (models.downloadedCount == 0) {
-        state = _ModelState.noModels;
-      } else {
-        state = _ModelState.idle;
-      }
-
-      late final IconData icon;
-      late final String title;
-      late final String meta;
-      late final Color dot;
-      Widget? action;
-
-      switch (state) {
-        case _ModelState.cloud:
-          final m = settings.selectedCloudModelName;
-          icon = Icons.cloud_outlined;
-          title = m.isEmpty ? 'No model selected'.tr : m;
-          meta = providerLabel(settings);
-          dot = t.accent;
-          action = _ActionChip(t: t, label: 'Change'.tr, onTap: _openModels);
-        case _ModelState.loading:
-          icon = Icons.memory_rounded;
-          title = _prettyModel(inf.loadedModelName.value.isNotEmpty
-              ? inf.loadedModelName.value
-              : models.lastLoadedModelName);
-          meta = 'Loading · @percent%'.trParams(
-              {'percent': '${(inf.modelLoadProgress.value * 100).round()}'});
-          dot = t.orange;
-        case _ModelState.readyText:
-          final runtime =
-              inf.loadedModelRuntime.value == 'litert' ? 'LiteRT' : 'GGUF';
-          icon = Icons.memory_rounded;
-          title = _prettyModel(inf.loadedModelName.value);
-          meta = [
-            'Ready'.tr,
-            Get.isRegistered<ClusterService>()
-              ? Get.find<ClusterService>().splitSummary ??
-                  (inf.isGpuAccelerated.value ? 'GPU' : 'CPU')
-              : (inf.isGpuAccelerated.value ? 'GPU' : 'CPU'),
-            runtime,
-          ].join(' · ');
-          dot = t.green;
-          action = _ActionChip(t: t, label: 'Switch'.tr, onTap: _openModels);
-        case _ModelState.readyImage:
-          final backend = img.currentBackend.value;
-          icon = Icons.image_outlined;
-          title = _prettyModel(img.loadedModelName.value);
-          meta = 'Ready · Image generation · @backend'.trParams({
-            'backend': backend == Backend.cpu
-                ? 'CPU'
-                : backend.displayName.split(' ').first
-          });
-          dot = t.green;
-          action = _ActionChip(t: t, label: 'Switch'.tr, onTap: _openModels);
-        case _ModelState.noModels:
-          icon = Icons.download_rounded;
-          title = 'No model on this device'.tr;
-          meta = 'Download one to chat offline'.tr;
-          dot = t.orange;
-          action = _ActionChip(
-              t: t, label: 'Browse'.tr, primary: true, onTap: _openModels);
-        case _ModelState.idle:
-          final last =
-              models.canLoadLastModel ? models.lastLoadedModelName : '';
-          icon = Icons.memory_rounded;
-          title = last.isEmpty ? 'No model loaded'.tr : _prettyModel(last);
-          meta = last.isEmpty
-              ? '@count downloaded'
-                  .trParams({'count': '${models.downloadedCount}'})
-              : 'Not loaded · last used'.tr;
-          dot = t.faint;
-          action = last.isEmpty
-              ? _ActionChip(
-                  t: t, label: 'Choose'.tr, primary: true, onTap: _openModels)
-              : _ActionChip(
-                  t: t,
-                  label: 'Load'.tr,
-                  primary: true,
-                  onTap: () {
-                    Haptics.lightImpact();
-                    models.loadModel(last);
-                  });
-      }
-
-      return _Pressable(
-        t: t,
-        onTap: _openModels,
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-        child: Column(children: [
-          Row(children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: t.isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(Icons.auto_awesome_rounded, size: 15, color: t.accent),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Recommended for this phone'.tr,
+                    style: t.label.copyWith(color: t.accent)),
               ),
-              child: Icon(icon, size: 20, color: t.text.withValues(alpha: 0.8)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                            color: t.text)),
-                    const SizedBox(height: 3),
-                    Row(children: [
-                      Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                              color: dot, shape: BoxShape.circle)),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(meta,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                color: t.muted,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures()
-                                ])),
-                      ),
-                    ]),
-                  ]),
-            ),
-            if (action != null) ...[const SizedBox(width: 10), action],
+              Text('@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)}),
+                  style: t.small),
+            ]),
+            const SizedBox(height: 10),
+            Text(_cleanName(model),
+                style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                    color: t.text)),
+            const SizedBox(height: 4),
+            Text(model.description.tr, style: t.caption),
+            const SizedBox(height: 10),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              FitBadge(models.fitOf(model)),
+              AppTag(models.modelSizeLabel(model),
+                  icon: Icons.sd_storage_outlined),
+              if (model.hasVisionProjector)
+                AppTag('Vision'.tr, icon: Icons.visibility_outlined),
+            ]),
+            const SizedBox(height: 16),
+            if (downloading)
+              _InstallProgress(
+                  progress: progress,
+                  onCancel: () => models.cancelInstall(model))
+            else
+              PrimaryButton(
+                label: 'Install and start'.tr,
+                icon: Icons.download_rounded,
+                onPressed: () {
+                  Haptics.lightImpact();
+                  models.installAndLoad(model);
+                },
+              ),
           ]),
-          if (state == _ModelState.loading) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: inf.modelLoadProgress.value,
-                minHeight: 3,
-                color: t.accent,
-                backgroundColor: t.hairline,
-              ),
-            ),
-          ],
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+            child: TonalButton.neutral(context,
+                label: 'Other models'.tr,
+                onTap: () => home.openModels(scope: 'browse')),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TonalButton.neutral(context,
+                label: 'Use the cloud'.tr,
+                onTap: () => home.openModels(scope: 'online')),
+          ),
         ]),
-      );
+        const SizedBox(height: 12),
+        Text('Runs on this device. No account, no server.'.tr,
+            textAlign: TextAlign.center, style: t.small),
+      ]);
+    });
+  }
+
+  /// "Qwen 3.5 2B (Q4_K_M)" → "Qwen 3.5 2B".
+  static String _cleanName(AiModel model) =>
+      model.name.replaceAll(RegExp(r'\s*\([^)]*\)\s*$'), '');
+}
+
+class _InstallProgress extends StatelessWidget {
+  final DownloadProgress progress;
+  final VoidCallback onCancel;
+  const _InstallProgress({required this.progress, required this.onCancel});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Obx(() {
+      final value = progress.progress.value;
+      final speed = progress.bytesPerSecond.value;
+      final status = [
+        'Downloading'.tr,
+        '${(value * 100).clamp(0, 100).round()}%',
+        if (speed > 0) DownloadService.formatSpeed(speed),
+      ].join(' · ');
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        AppProgressBar(value: value > 0 ? value : null),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: Text(status, style: t.caption)),
+          PillButton(label: 'Cancel'.tr, onPressed: onCancel),
+        ]),
+      ]);
     });
   }
 }
 
-class _ActionChip extends StatelessWidget {
-  final _HomeTokens t;
-  final String label;
-  final bool primary;
-  final VoidCallback onTap;
+/// Fallback when the catalogue has no starter model.
+class _PickLocalModel extends StatelessWidget {
+  const _PickLocalModel();
 
-  const _ActionChip({
-    required this.t,
-    required this.label,
-    required this.onTap,
-    this.primary = false,
-  });
+  @override
+  Widget build(BuildContext context) => PrimaryButton(
+        label: 'Browse models'.tr,
+        icon: Icons.layers_outlined,
+        onPressed: () => Get.find<HomeController>().openModels(scope: 'browse'),
+      );
+}
+
+/// Cloud mode without a model picked yet.
+class _PickCloudModel extends StatelessWidget {
+  const _PickCloudModel();
+
+  @override
+  Widget build(BuildContext context) => PrimaryButton(
+        label: 'Choose a cloud model'.tr,
+        icon: Icons.cloud_outlined,
+        onPressed: () => Get.find<HomeController>().openModels(scope: 'online'),
+      );
+}
+
+// ── Models on the phone, none loaded ────────────────────────────────────
+
+/// Offers to load the last model again, or to pick another one.
+class _Resume extends StatelessWidget {
+  const _Resume();
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: primary
-          ? t.accent
-          : (t.isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.05)),
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          child: Text(label,
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: primary ? Colors.white : t.text)),
+    final t = AppTokens.of(context);
+    final models = Get.find<ModelController>();
+    final home = Get.find<HomeController>();
+    return Obx(() {
+      final last = models.canLoadLastModel ? models.lastLoadedModelName : '';
+      final name = last.isNotEmpty
+          ? last
+          : models.availableModels
+                  .firstWhereOrNull((m) => models.isDownloaded(m.filename))
+                  ?.filename ??
+              '';
+      if (name.isEmpty) return const _PickLocalModel();
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        PrimaryButton(
+          label: 'Load @name'.trParams({'name': _prettyModel(name)}),
+          icon: Icons.play_arrow_rounded,
+          onPressed: () {
+            Haptics.lightImpact();
+            models.loadModel(name);
+          },
         ),
-      ),
-    );
+        const SizedBox(height: 10),
+        TonalButton.neutral(context,
+            label: 'Choose another model'.tr,
+            onTap: () => home.openModels(scope: 'local')),
+        const SizedBox(height: 12),
+        Text(
+            last.isNotEmpty
+                ? 'The model you used last time.'.tr
+                : 'A model has to be loaded before you can chat.'.tr,
+            textAlign: TextAlign.center,
+            style: t.small),
+      ]);
+    });
   }
 }
 
@@ -489,19 +385,12 @@ const _imageStarters = [
       'Flat editorial illustration of a city street, muted palette'),
 ];
 
-/// Three tappable prompt pills. Sends right away when a model is ready;
-/// otherwise opens Models so the user can load one.
+/// Tappable prompt suggestions; sends right away.
 class _Starters extends StatelessWidget {
-  final _HomeTokens t;
-  const _Starters({required this.t});
+  const _Starters();
 
-  void _use(_Starter s, {required bool ready}) {
+  void _use(_Starter s) {
     Haptics.selectionClick();
-    // No local model yet: the composer is disabled, so go pick one.
-    if (!ready) {
-      Get.find<HomeController>().changeTab(1);
-      return;
-    }
     final chat = Get.find<ChatController>();
     final prompt = s.prompt.tr;
     chat.textController.value = TextEditingValue(
@@ -514,6 +403,7 @@ class _Starters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
     return Obx(() {
       final inf = Get.find<InferenceService>();
       final img = Get.find<LocalImageService>();
@@ -521,36 +411,35 @@ class _Starters extends StatelessWidget {
           Get.find<SettingsController>().inferenceMode.value == 'local';
       final imageMode =
           isLocal && img.isModelLoaded.value && !inf.isModelLoaded.value;
-      final ready =
-          !isLocal || inf.isModelLoaded.value || img.isModelLoaded.value;
       final items = imageMode ? _imageStarters : _textStarters;
 
-      return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         for (final s in items)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Material(
-              color: Colors.transparent,
-              shape: StadiumBorder(side: BorderSide(color: t.outline)),
+              color: t.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: t.hairline, width: 0.5),
+              ),
+              clipBehavior: Clip.antiAlias,
               child: InkWell(
-                customBorder: const StadiumBorder(),
-                onTap: () => _use(s, ready: ready),
+                onTap: () => _use(s),
                 splashFactory: NoSplash.splashFactory,
-                highlightColor: t.cardPressed,
+                highlightColor: t.surfacePressed,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 18, 10),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(s.icon, size: 18, color: t.muted),
-                    const SizedBox(width: 10),
-                    Flexible(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+                  child: Row(children: [
+                    IconBadge(s.icon, size: 30),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Text(s.label.tr,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                              fontSize: 15,
-                              letterSpacing: -0.15,
-                              color: t.text.withValues(alpha: 0.9))),
+                          style: t.body),
                     ),
+                    Icon(Icons.north_east_rounded, size: 16, color: t.faint),
                   ]),
                 ),
               ),
@@ -558,62 +447,5 @@ class _Starters extends StatelessWidget {
           ),
       ]);
     });
-  }
-}
-
-// ── Getting started (no models yet) ─────────────────────────────────────
-
-class _GettingStarted extends StatelessWidget {
-  final _HomeTokens t;
-  const _GettingStarted({required this.t});
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = [
-      ('Pick a model', 'Smaller models are faster; larger ones are smarter.'),
-      ('Download it once', 'Usually 0.5–3 GB. Wi-Fi recommended.'),
-      ('Chat offline', 'Runs on this device. No account, no server.'),
-    ];
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('How it works'.tr, style: t.sectionLabel),
-      const SizedBox(height: 14),
-      for (var i = 0; i < steps.length; i++)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 24,
-              height: 24,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: t.faint, width: 1),
-              ),
-              child: Text('${i + 1}',
-                  style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: t.muted)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 2),
-                    Text(steps[i].$1.tr,
-                        style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: t.text)),
-                    const SizedBox(height: 2),
-                    Text(steps[i].$2.tr,
-                        style: GoogleFonts.inter(
-                            fontSize: 13.5, height: 1.35, color: t.muted)),
-                  ]),
-            ),
-          ]),
-        ),
-    ]);
   }
 }

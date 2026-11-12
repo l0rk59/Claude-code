@@ -4,13 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../widgets/tonal_button.dart';
 import 'haptics.dart';
+import 'colors.dart';
 
 export '../widgets/tonal_button.dart';
 
-/// Shared design system — the same visual language as the home and chat
-/// screens: plain white/black pages, quiet neutral surfaces with hairline
-/// borders, sentence-case section labels, and one accent colour (blue) used
-/// sparingly for the primary action.
+/// Shared design system: quiet, slightly violet-tinted surfaces with hairline
+/// borders, sentence-case section labels, and the brand's indigo-violet
+/// accent for the primary action (see [AppColors]).
 ///
 /// Prefer these widgets over hand-rolled containers so every screen matches.
 class AppTokens {
@@ -50,25 +50,23 @@ class AppTokens {
     final d = Theme.of(context).brightness == Brightness.dark;
     return AppTokens._(
       isDark: d,
-      bg: d ? Colors.black : Colors.white,
-      text: d ? Colors.white : const Color(0xFF0B0B0C),
-      muted: d ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
-      faint: d ? const Color(0xFF5A5A5F) : const Color(0xFFAEAEB2),
-      accent: d ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
-      surface: d ? const Color(0xFF141416) : const Color(0xFFF5F5F7),
-      surfacePressed: d ? const Color(0xFF1E1E21) : const Color(0xFFEBEBED),
-      fill: d
-          ? Colors.white.withValues(alpha: 0.08)
-          : Colors.black.withValues(alpha: 0.05),
-      outline: d
-          ? Colors.white.withValues(alpha: 0.14)
-          : Colors.black.withValues(alpha: 0.10),
-      hairline: d
-          ? Colors.white.withValues(alpha: 0.07)
-          : Colors.black.withValues(alpha: 0.06),
-      green: d ? const Color(0xFF30D158) : const Color(0xFF28A745),
-      orange: d ? const Color(0xFFFF9F0A) : const Color(0xFFE08600),
-      red: d ? const Color(0xFFFF453A) : const Color(0xFFE5342B),
+      bg: d ? AppColors.bgDark : AppColors.bgLight,
+      text: d ? AppColors.textDark : AppColors.textLight,
+      muted: d ? AppColors.mutedDark : AppColors.mutedLight,
+      faint: d ? AppColors.faintDark : AppColors.faintLight,
+      accent: d ? AppColors.accentDark : AppColors.accent,
+      surface: d ? AppColors.surfaceDark : AppColors.surfaceLight,
+      surfacePressed: d ? AppColors.surfacePressedDark : AppColors.surfacePressedLight,
+      // Tinted like the text, so fills and lines keep the violet cast.
+      fill: (d ? AppColors.textDark : AppColors.indigo)
+          .withValues(alpha: d ? 0.08 : 0.06),
+      outline: (d ? AppColors.textDark : AppColors.textLight)
+          .withValues(alpha: d ? 0.14 : 0.11),
+      hairline: (d ? AppColors.textDark : AppColors.textLight)
+          .withValues(alpha: 0.07),
+      green: d ? AppColors.successDark : AppColors.successLight,
+      orange: d ? AppColors.warningDark : AppColors.warningLight,
+      red: d ? AppColors.errorDark : AppColors.errorLight,
     );
   }
 
@@ -98,8 +96,9 @@ class AppTokens {
 
 // ── Page chrome ─────────────────────────────────────────────────────────
 
-/// Standard tab-screen app bar: left-aligned bold title, page background,
-/// no elevation. Hairline appears only once content scrolls under it.
+/// Standard screen app bar: left-aligned bold title, page background, no
+/// elevation. Shows a back arrow whenever the screen was opened over
+/// another one.
 PreferredSizeWidget appScreenBar(
   BuildContext context, {
   required String title,
@@ -108,15 +107,16 @@ PreferredSizeWidget appScreenBar(
   bool showBack = false,
 }) {
   final t = AppTokens.of(context);
+  final back = showBack || (ModalRoute.of(context)?.canPop ?? false);
   return AppBar(
     backgroundColor: t.bg,
     surfaceTintColor: Colors.transparent,
     elevation: 0,
     scrolledUnderElevation: 0,
-    automaticallyImplyLeading: showBack,
+    automaticallyImplyLeading: back,
     leading: leading,
     iconTheme: IconThemeData(color: t.text),
-    titleSpacing: leading == null && !showBack ? 20 : 0,
+    titleSpacing: leading == null && !back ? 20 : 0,
     title: Text(title,
         style: GoogleFonts.inter(
             fontSize: 22,
@@ -148,6 +148,9 @@ class AppBarIcon extends StatelessWidget {
 
 /// Standard horizontal page padding.
 const kPagePadding = EdgeInsets.fromLTRB(16, 4, 16, 32);
+
+/// Corner radius of cards and grouped lists.
+const kCardRadius = 20.0;
 
 // ── Sections & groups ───────────────────────────────────────────────────
 
@@ -209,7 +212,7 @@ class AppCard extends StatelessWidget {
     return Material(
       color: outlined ? Colors.transparent : t.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(kCardRadius),
         side: BorderSide(
             color: outlined ? t.outline : t.hairline,
             width: outlined ? 1 : 0.5),
@@ -249,7 +252,7 @@ class AppGroup extends StatelessWidget {
           ? null
           : BoxDecoration(
               color: t.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(kCardRadius),
               border: Border.all(color: t.hairline, width: 0.5),
             ),
       clipBehavior: flat ? Clip.none : Clip.antiAlias,
@@ -451,12 +454,16 @@ class IconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
+    final tint = color ?? t.accent;
+    // A soft squircle in the icon's own colour: the accent by default.
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: t.fill),
-      child: Icon(icon,
-          size: size * 0.53, color: color ?? t.text.withValues(alpha: 0.8)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.34),
+        color: tint.withValues(alpha: t.isDark ? 0.18 : 0.11),
+      ),
+      child: Icon(icon, size: size * 0.53, color: tint),
     );
   }
 }
@@ -613,7 +620,7 @@ class AppSegmented<T> extends StatelessWidget {
             width: w,
             child: Container(
               decoration: BoxDecoration(
-                color: t.isDark ? const Color(0xFF2C2C2F) : Colors.white,
+                color: t.isDark ? AppColors.raisedDark : Colors.white,
                 borderRadius: BorderRadius.circular(9),
                 boxShadow: t.isDark
                     ? null
@@ -670,7 +677,6 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
     final enabled = onPressed != null && !busy;
     final child = Row(
       mainAxisSize: MainAxisSize.min,
@@ -692,17 +698,23 @@ class PrimaryButton extends StatelessWidget {
                 color: Colors.white)),
       ],
     );
-    final button = Material(
-      color: enabled ? t.accent : t.accent.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: enabled ? onPressed : null,
-        child: SizedBox(
-          height: 48,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Center(child: child),
+    final button = Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: const BoxDecoration(gradient: AppColors.brandGradient),
+          child: InkWell(
+            onTap: enabled ? onPressed : null,
+            child: SizedBox(
+              height: 50,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Center(child: child),
+              ),
+            ),
           ),
         ),
       ),
@@ -733,7 +745,7 @@ class PillButton extends StatelessWidget {
     final Color bg;
     final Color fg;
     if (primary) {
-      bg = t.accent;
+      bg = Colors.transparent; // the brand gradient is painted below
       fg = Colors.white;
     } else if (destructive) {
       bg = t.red.withValues(alpha: t.isDark ? 0.16 : 0.10);
@@ -747,20 +759,25 @@ class PillButton extends StatelessWidget {
       child: Material(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onPressed,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(icon != null ? 10 : 14, 7, 14, 7),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (icon != null) ...[
-                Icon(icon, size: 15, color: fg),
-                const SizedBox(width: 5),
-              ],
-              Text(label,
-                  style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
-            ]),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: primary
+              ? const BoxDecoration(gradient: AppColors.brandGradient)
+              : null,
+          child: InkWell(
+            onTap: onPressed,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(icon != null ? 11 : 15, 8, 15, 8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 15, color: fg),
+                  const SizedBox(width: 5),
+                ],
+                Text(label,
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
+              ]),
+            ),
           ),
         ),
       ),
@@ -846,7 +863,7 @@ InputDecoration appInputDecoration(BuildContext context,
     suffixIcon: suffix,
     prefixIcon: prefix,
     filled: true,
-    fillColor: t.isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF0F0F2),
+    fillColor: t.isDark ? const Color(0xFF1C1C1F) : AppColors.surfaceLight,
     hintStyle: GoogleFonts.inter(fontSize: 15, color: t.faint),
     labelStyle: GoogleFonts.inter(fontSize: 14, color: t.muted),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -901,7 +918,7 @@ Future<T?> showAppSheet<T>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: t.isDark ? const Color(0xFF1C1C1E) : Colors.white,
+    backgroundColor: t.isDark ? AppColors.elevatedDark : Colors.white,
     barrierColor: Colors.black.withValues(alpha: t.isDark ? 0.6 : 0.32),
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -1000,10 +1017,10 @@ void showToast(
   Duration duration = const Duration(seconds: 3),
 }) {
   final (IconData icon, Color color) = switch (tone) {
-    ToastTone.success => (Icons.check_circle_rounded, const Color(0xFF30D158)),
-    ToastTone.warning => (Icons.warning_amber_rounded, const Color(0xFFFF9F0A)),
-    ToastTone.error => (Icons.error_rounded, const Color(0xFFFF453A)),
-    ToastTone.info => (Icons.info_rounded, const Color(0xFF8E8E93)),
+    ToastTone.success => (Icons.check_circle_rounded, AppColors.successDark),
+    ToastTone.warning => (Icons.warning_amber_rounded, AppColors.warningDark),
+    ToastTone.error => (Icons.error_rounded, AppColors.errorDark),
+    ToastTone.info => (Icons.info_rounded, AppColors.muted),
   };
   if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
   Get.snackbar(
@@ -1011,7 +1028,7 @@ void showToast(
     message,
     snackPosition: SnackPosition.BOTTOM,
     duration: duration,
-    backgroundColor: const Color(0xFF1C1C1E),
+    backgroundColor: AppColors.elevatedDark,
     colorText: Colors.white,
     borderRadius: 16,
     margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
