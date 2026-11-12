@@ -51,9 +51,15 @@ class InferenceEngine {
   Timer? _idleTimer;
   void Function()? _onStop;
   bool _isLiteRt = false;
-  // GGUF model loaded together with a working vision projector.
+  // The loaded GGUF model can read images: its vision file is on the
+  // phone, in memory or waiting to be loaded with the first image.
   bool _ggufVisionLoaded = false;
   bool get ggufVisionLoaded => _ggufVisionLoaded;
+
+  /// The vision file, until the first image needs it. Loading it copies its
+  /// weights into memory (0.2 to 0.9 GB), which a text-only chat never uses.
+  String? _pendingVisionPath;
+  int _visionThreads = 4;
   bool _disposed = false;
   bool _hasLoadedModel = false;
   String? _liteConversationSystemPrompt;
@@ -94,6 +100,7 @@ class InferenceEngine {
 
     _isLiteRt = false;
     _ggufVisionLoaded = false;
+    _pendingVisionPath = null;
     _controller = LlamaController();
 
     // The native plugin can still hold a model this engine never loaded
@@ -194,18 +201,17 @@ class InferenceEngine {
     } catch (_) {}
 
     // ── Load ──
-    final visionError = await _controller!.loadModel(
+    // The vision file is not loaded now: see [_pendingVisionPath].
+    await _controller!.loadModel(
       modelPath: modelPath,
       threads: threads,
       contextSize: contextSize,
       gpuLayers: gpuLayers,
-      mmprojPath: mmprojPath,
     );
     _hasLoadedModel = true;
-    _ggufVisionLoaded = mmprojPath != null && visionError == null;
-    if (visionError != null) {
-      print('[Inference] Vision projector not loaded: $visionError');
-    }
+    _pendingVisionPath = mmprojPath;
+    _visionThreads = threads;
+    _ggufVisionLoaded = mmprojPath != null;
 
     final accel = gpuLayers > 0
         ? 'GPU (@layers layers, @gpu)'
@@ -361,6 +367,27 @@ class InferenceEngine {
     return normalized.clamp(0.0, 1.0).toDouble();
   }
 
+  /// Loads the vision file if it is still waiting. Returns an error
+  /// message, or null when the model can read images now. A failed load
+  /// stays pending: memory may have been short, and the next image retries.
+  Future<String?> _loadPendingVision() async {
+    final path = _pendingVisionPath;
+    if (path == null) return null;
+    String? error;
+    try {
+      error = await LlamaEngine.loadVision(path, threads: _visionThreads);
+    } catch (e) {
+      error = '$e';
+    }
+    if (error == null) {
+      _pendingVisionPath = null;
+      print('[Inference] Vision projector loaded for the first image');
+    } else {
+      print('[Inference] Vision projector not loaded: $error');
+    }
+    return error;
+  }
+
   Future<String> generate({
     required String prompt,
     List<Map<String, String>>? conversationHistory,
@@ -388,10 +415,17 @@ class InferenceEngine {
     }
 
     if (_controller == null) throw Exception('No model loaded');
-    if (imagePath != null && imagePath.isNotEmpty && !_ggufVisionLoaded) {
-      return "This model can't read images. Load a vision model (one marked "
-              'Vision in Models) to ask about photos.'
-          .tr;
+    if (imagePath != null && imagePath.isNotEmpty) {
+      if (!_ggufVisionLoaded) {
+        return "This model can't read images. Load a vision model (one marked "
+                'Vision in Models) to ask about photos.'
+            .tr;
+      }
+      final visionError = await _loadPendingVision();
+      if (visionError != null) {
+        return "ERROR: The model's vision file couldn't be loaded, so it can't read this image: @error"
+            .trParams({'error': visionError});
+      }
     }
     if (audioPath != null && audioPath.isNotEmpty) {
       return 'GGUF audio input is not available in this build yet. Text files can be read when their content is attached, but audio needs a model/runtime path that supports audio input.'
@@ -821,6 +855,7 @@ class InferenceEngine {
     _liteEngine = null;
     _isLiteRt = false;
     _hasLoadedModel = false;
+    _pendingVisionPath = null;
     _liteConversationSystemPrompt = null;
     _liteConversationTemperature = null;
     _liteConversationHasMessages = false;

@@ -1333,6 +1333,8 @@ const Map<String, String> fr = {
       'Quelque chose répond à @endpoint, mais ce n’est pas le rpc-server de llama.cpp.',
   "Can't reach @endpoint. Check that rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through.":
       'Impossible de joindre @endpoint. Vérifiez que rpc-server est lancé, que l’ordinateur est sur le même Wi-Fi et que son pare-feu laisse passer le port.',
+  "ERROR: The model's vision file couldn't be loaded, so it can't read this image: @error":
+      'ERREUR : le fichier de vision du modèle n’a pas pu être chargé, il ne peut donc pas lire cette image : @error',
 };
 
 /// Download statuses the Android code reports in English (shown through

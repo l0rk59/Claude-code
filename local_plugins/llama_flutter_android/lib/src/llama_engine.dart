@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
-/// Engine options for GGUF models on Android: the GPU backend and the
-/// speculative-decoding draft model.
+/// Engine options for GGUF models on Android: the GPU backend, the
+/// speculative-decoding draft model and the vision projector.
 class LlamaEngine {
   static const _channel = MethodChannel('llama_flutter_android/engine');
 
@@ -17,6 +17,15 @@ class LlamaEngine {
   static Future<String?> loadDraftModel(String path, {int threads = 4}) =>
       _channel.invokeMethod<String>(
           'loadDraftModel', {'path': path, 'threads': threads});
+
+  /// Loads the vision projector ("mmproj") of the loaded model, so it can
+  /// read images. Doing this when the first image arrives, rather than with
+  /// the model, keeps the projector's weights (0.2 to 0.9 GB) out of memory
+  /// during text-only chats. Freed with the model. Returns an error message,
+  /// or null on success.
+  static Future<String?> loadVision(String path, {int threads = 4}) =>
+      _channel.invokeMethod<String>(
+          'loadVision', {'path': path, 'threads': threads});
 
   /// Stops using the draft model and frees it.
   static Future<void> freeDraftModel() =>

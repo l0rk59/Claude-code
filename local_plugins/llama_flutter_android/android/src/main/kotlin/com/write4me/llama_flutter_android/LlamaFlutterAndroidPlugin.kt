@@ -442,6 +442,29 @@ class LlamaFlutterAndroidPlugin : FlutterPlugin, LlamaHostApi, ActivityAware {
                     withContext(Dispatchers.Main) { result.success(error) }
                 }
             }
+            "loadVision" -> {
+                // The vision projector, loaded when the first image arrives
+                // instead of with the model: its weights are copied into
+                // memory, which a text-only chat never needs.
+                ensureNativeLoaded()?.let {
+                    result.error("NATIVE_LOAD", it.message, null)
+                    return
+                }
+                val path = call.argument<String>("path")
+                val threads = call.argument<Int>("threads") ?: 4
+                if (path == null) {
+                    result.error("ARGS", "path is required", null)
+                    return
+                }
+                scope.launch {
+                    val error = try {
+                        nativeLoadMmproj(path, threads.toLong())
+                    } catch (e: Throwable) {
+                        e.message ?: "Vision file failed to load"
+                    }
+                    withContext(Dispatchers.Main) { result.success(error) }
+                }
+            }
             "freeDraftModel" -> {
                 if (nativeLoadError == null) {
                     try { nativeFreeDraftModel() } catch (_: Throwable) {}
