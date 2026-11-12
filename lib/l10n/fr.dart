@@ -1300,6 +1300,39 @@ const Map<String, String> fr = {
       'Le Qwen le plus capable qu’un téléphone puisse accueillir, avec compréhension des images. Pour les téléphones de 12 Go de RAM ou plus',
   'Liquid AI: 8B of knowledge with only 1B active per word, so it stays fast — for phones with 12 GB of RAM or more':
       'Liquid AI : 8 milliards de paramètres, dont 1 seul actif par mot, donc il reste rapide. Pour les téléphones de 12 Go de RAM ou plus',
+  'Computer': 'Ordinateur',
+  '@size given': '@size confiés',
+  'Add a computer': 'Ajouter un ordinateur',
+  'A laptop or desktop on the same Wi-Fi can hold most of a big model.':
+      'Un PC portable ou fixe sur le même Wi-Fi peut porter l’essentiel d’un gros modèle.',
+  'Computer added': 'Ordinateur ajouté',
+  'On the computer, download llama.cpp @release for its system (github.com/ggml-org/llama.cpp, Releases) and unzip it.':
+      'Sur l’ordinateur, téléchargez llama.cpp @release pour son système (github.com/ggml-org/llama.cpp, rubrique Releases) et décompressez-le.',
+  'In that folder, open a terminal and run:':
+      'Dans ce dossier, ouvrez un terminal et lancez :',
+  "Enter the computer's address on your Wi-Fi.":
+      'Saisissez l’adresse de l’ordinateur sur votre Wi-Fi.',
+  'The computer answers: it has @size of memory.':
+      'L’ordinateur répond : il a @size de mémoire.',
+  'Memory to give the cluster (GB)': 'Mémoire à confier au cluster (Go)',
+  'Leave some for the computer itself. The more it gives, the bigger the models the cluster can hold.':
+      'Gardez-en pour l’ordinateur lui-même. Plus il en confie, plus le cluster peut porter de gros modèles.',
+  'Add this computer': 'Ajouter cet ordinateur',
+  'Check': 'Vérifier',
+  'The connection has no password: only do this on a network you trust.':
+      'La connexion n’a pas de mot de passe : à faire uniquement sur un réseau de confiance.',
+  'Give it at least 0.5 GB.': 'Confiez-lui au moins 0,5 Go.',
+  'This computer only has @size.': 'Cet ordinateur n’a que @size.',
+  'This computer runs another version of llama.cpp (protocol @version). Use release @release.':
+      'Cet ordinateur utilise une autre version de llama.cpp (protocole @version). Utilisez la version @release.',
+  'The computer answered, but it offers no memory.':
+      'L’ordinateur a répondu, mais ne propose aucune mémoire.',
+  "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart rpc-server.":
+      'L’ordinateur a accepté la connexion sans répondre. Il est peut-être occupé avec un autre téléphone : déchargez le modèle là-bas, ou relancez rpc-server.',
+  "Something answers at @endpoint, but it isn't llama.cpp's rpc-server.":
+      'Quelque chose répond à @endpoint, mais ce n’est pas le rpc-server de llama.cpp.',
+  "Can't reach @endpoint. Check that rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through.":
+      'Impossible de joindre @endpoint. Vérifiez que rpc-server est lancé, que l’ordinateur est sur le même Wi-Fi et que son pare-feu laisse passer le port.',
 };
 
 /// Download statuses the Android code reports in English (shown through

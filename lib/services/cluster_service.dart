@@ -12,6 +12,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import 'app_log_service.dart';
 import 'hive_service.dart';
+import 'rpc_probe.dart';
 import '../core/app_platform.dart';
 
 /// What this phone does in a phone cluster.
@@ -61,6 +62,36 @@ class ClusterService extends GetxService {
 
   /// Speed assumed for workers paired before they reported one (GB/s).
   static const _unknownSpeed = 4.0;
+
+  /// Memory assumed for a worker that never reported any (MB).
+  static const _unknownRamMb = 2000;
+
+  /// Memory a worker can take, in MB. A phone reports what was free when it
+  /// started, and its other apps may have claimed some since: count three
+  /// quarters of it. A computer's figure is what its owner chose to give.
+  static double capacityMb(ClusterWorker w) => w.computer
+      ? (w.ramMb ?? _unknownRamMb).toDouble()
+      : (w.ramMb ?? _unknownRamMb) * 0.75;
+
+  /// Speed to rank a worker by, in GB/s. A computer doesn't measure its
+  /// own; it is plugged in, doesn't throttle and often has a graphics card,
+  /// so it ranks ahead of this phone ([localSpeed]).
+  static double speedOf(ClusterWorker w, double localSpeed) =>
+      w.bandwidth ??
+      (w.computer ? math.max(12.0, localSpeed * 1.25) : _unknownSpeed);
+
+  /// Reads "192.168.1.20" or "192.168.1.20:50052". Null when it is neither.
+  static ({String host, int port})? parseEndpoint(String input) {
+    final text = input.trim();
+    final colon = text.lastIndexOf(':');
+    final host = colon < 0 ? text : text.substring(0, colon);
+    final port = colon < 0
+        ? LlamaCluster.defaultPort
+        : int.tryParse(text.substring(colon + 1));
+    if (host.isEmpty || host.contains(' ') || port == null) return null;
+    if (port <= 0 || port > 65535) return null;
+    return (host: host, port: port);
+  }
 
   /// Workers the master can use on its next GGUF load.
   final workers = <ClusterWorker>[].obs;
@@ -259,16 +290,78 @@ class ClusterService extends GetxService {
   /// Adds a worker by IP ("192.168.1.20" or "192.168.1.20:50052"). Returns
   /// an error message, or null on success.
   Future<String?> addManual(String input) async {
-    final text = input.trim();
-    if (text.isEmpty) return "Enter the worker phone's IP address".tr;
-    final host = text.contains(':') ? text.substring(0, text.lastIndexOf(':')) : text;
-    final port = text.contains(':')
-        ? int.tryParse(text.substring(text.lastIndexOf(':') + 1))
-        : LlamaCluster.defaultPort;
-    if (host.isEmpty || port == null) {
-      return 'Use the form 192.168.1.20:50052'.tr;
+    if (input.trim().isEmpty) return "Enter the worker phone's IP address".tr;
+    final endpoint = parseEndpoint(input);
+    if (endpoint == null) return 'Use the form 192.168.1.20:50052'.tr;
+    return _add(ClusterWorker(
+        name: endpoint.host, host: endpoint.host, port: endpoint.port));
+  }
+
+  /// Asks the computer at [input] ("192.168.1.20", or with ":port") what
+  /// it offers. Returns its answer, or the reason it can't be used.
+  Future<({RpcServerInfo? info, String? error})> inspectComputer(
+      String input) async {
+    final endpoint = parseEndpoint(input);
+    if (endpoint == null) {
+      return (info: null, error: 'Use the form 192.168.1.20:50052'.tr);
     }
-    return _add(ClusterWorker(name: host, host: host, port: port));
+    final address = '${endpoint.host}:${endpoint.port}';
+    try {
+      final info = await RpcProbe.query(endpoint.host, endpoint.port);
+      if (!info.compatible) {
+        return (
+          info: null,
+          error:
+              'This computer runs another version of llama.cpp (protocol @version). Use release @release.'
+                  .trParams({
+            'version': info.version,
+            'release': LlamaCluster.llamaCppRelease,
+          }),
+        );
+      }
+      if (info.totalMb <= 0) {
+        return (
+          info: null,
+          error: 'The computer answered, but it offers no memory.'.tr,
+        );
+      }
+      return (info: info, error: null);
+    } on TimeoutException {
+      return (
+        info: null,
+        error:
+            "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart rpc-server."
+                .tr,
+      );
+    } on FormatException {
+      return (
+        info: null,
+        error: "Something answers at @endpoint, but it isn't llama.cpp's rpc-server."
+            .trParams({'endpoint': address}),
+      );
+    } catch (_) {
+      return (
+        info: null,
+        error:
+            "Can't reach @endpoint. Check that rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through."
+                .trParams({'endpoint': address}),
+      );
+    }
+  }
+
+  /// Adds a computer running llama.cpp's rpc-server, giving the cluster
+  /// [memoryMb] of its memory. Returns an error message, or null on
+  /// success.
+  Future<String?> addComputer(String input, {required int memoryMb}) async {
+    final endpoint = parseEndpoint(input);
+    if (endpoint == null) return 'Use the form 192.168.1.20:50052'.tr;
+    return _add(ClusterWorker(
+      name: endpoint.host,
+      host: endpoint.host,
+      port: endpoint.port,
+      ramMb: memoryMb,
+      computer: true,
+    ));
   }
 
   Future<String?> addFound(ClusterWorker w) => _add(w);
@@ -381,7 +474,7 @@ class ClusterService extends GetxService {
     final phones = [
       master,
       for (final w in available)
-        _Phone(w, (w.ramMb ?? 2000) * 0.75, w.bandwidth ?? _unknownSpeed),
+        _Phone(w, capacityMb(w), speedOf(w, _localSpeed!)),
     ];
     final totalMb = phones.fold<double>(0, (a, p) => a + p.capacityMb);
     if (needMb > totalMb) {
@@ -554,7 +647,12 @@ class ClusterService extends GetxService {
       final open = b.name.indexOf('[');
       if (open < 0) continue;
       final endpoint = b.name.substring(open + 1, b.name.lastIndexOf(']'));
-      final name = workers.firstWhereOrNull((w) => w.endpoint == endpoint)?.model ?? endpoint;
+      final worker = workers.firstWhereOrNull((w) => w.endpoint == endpoint);
+      final name = worker == null
+          ? endpoint
+          : worker.computer
+              ? 'Computer'.tr
+              : worker.model ?? endpoint;
       remote[name] = (remote[name] ?? 0) + b.mb;
     }
     final fileMb = await File(modelPath).length() / (1024 * 1024);

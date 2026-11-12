@@ -224,11 +224,16 @@ class _ClusterViewState extends State<ClusterView> {
         AppGroup(dividerIndent: 60, children: [
           for (final w in cluster.workers)
             AppRow(
-              icon: Icons.smartphone_rounded,
-              title: w.model ?? w.name,
+              icon: w.computer
+                  ? Icons.laptop_mac_rounded
+                  : Icons.smartphone_rounded,
+              title: w.computer ? 'Computer'.tr : w.model ?? w.name,
               subtitle: [
                 w.endpoint,
-                if (w.ramMb != null) '@size free'.trParams({'size': _gb(w.ramMb!)}),
+                if (w.ramMb != null)
+                  w.computer
+                      ? '@size given'.trParams({'size': _gb(w.ramMb!)})
+                      : '@size free'.trParams({'size': _gb(w.ramMb!)}),
                 if (w.bandwidth != null) _gbs(w.bandwidth!),
               ].join(' · '),
               trailing: IconButton(
@@ -258,6 +263,15 @@ class _ClusterViewState extends State<ClusterView> {
           onPressed: () => _enterIp(context),
         ),
       ]),
+      const SizedBox(height: 10),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: PillButton(
+          label: 'Add a computer'.tr,
+          icon: Icons.laptop_mac_rounded,
+          onPressed: () => _addComputer(context),
+        ),
+      ),
       if (cluster.found.isNotEmpty) ...[
         const SizedBox(height: 12),
         AppGroup(dividerIndent: 60, children: [
@@ -308,6 +322,22 @@ class _ClusterViewState extends State<ClusterView> {
     if (input != null) await _report(cluster.addManual(input));
   }
 
+  Future<void> _addComputer(BuildContext context) async {
+    final added = await showAppSheet<bool>(
+      context,
+      title: 'Add a computer'.tr,
+      subtitle:
+          'A laptop or desktop on the same Wi-Fi can hold most of a big model.'
+              .tr,
+      builder: (_) => _AddComputer(cluster: cluster),
+    );
+    if (added == true) {
+      showToast('Computer added'.tr,
+          'Used the next time you load a GGUF model.'.tr,
+          tone: ToastTone.success);
+    }
+  }
+
   Future<void> _report(Future<String?> adding) async {
     final error = await adding;
     if (error != null) {
@@ -325,6 +355,205 @@ String _gb(num mb) =>
 /// Memory speed, e.g. "4.2 GB/s".
 String _gbs(double bandwidth) =>
     '@size GB/s'.trParams({'size': bandwidth.toStringAsFixed(1)});
+
+/// Adds a computer to the cluster: says what to run on it, checks that it
+/// answers, then asks how much of its memory to use.
+class _AddComputer extends StatefulWidget {
+  final ClusterService cluster;
+  const _AddComputer({required this.cluster});
+
+  @override
+  State<_AddComputer> createState() => _AddComputerState();
+}
+
+class _AddComputerState extends State<_AddComputer> {
+  static const _command = 'rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
+
+  final _address = TextEditingController();
+  final _memory = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  /// Memory the computer reported, in MB; null until it has answered.
+  int? _totalMb;
+
+  @override
+  void dispose() {
+    _address.dispose();
+    _memory.dispose();
+    super.dispose();
+  }
+
+  Future<void> _check() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busy = true;
+      _error = null;
+      _totalMb = null;
+    });
+    final result = await widget.cluster.inspectComputer(_address.text);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _error = result.error;
+      final info = result.info;
+      if (info != null) {
+        _totalMb = info.totalMb;
+        _memory.text = (info.suggestedMb / 1024).toStringAsFixed(1);
+      }
+    });
+  }
+
+  Future<void> _add() async {
+    // "12,5" on a French keyboard.
+    final gb = double.tryParse(_memory.text.trim().replaceAll(',', '.'));
+    final totalMb = _totalMb ?? 0;
+    if (gb == null || gb < 0.5) {
+      setState(() => _error = 'Give it at least 0.5 GB.'.tr);
+      return;
+    }
+    if (gb * 1024 > totalMb) {
+      setState(() => _error = 'This computer only has @size.'
+          .trParams({'size': _gb(totalMb)}));
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final error = await widget.cluster
+        .addComputer(_address.text, memoryMb: (gb * 1024).round());
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.pop(context, true);
+    } else {
+      setState(() {
+        _busy = false;
+        _error = error;
+      });
+    }
+  }
+
+  Widget _step(AppTokens t, int number, Widget child) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: t.accent.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Text('$number',
+                style: t.small.copyWith(
+                    color: t.accent, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: child),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final found = _totalMb != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _step(
+          t,
+          1,
+          Text(
+            'On the computer, download llama.cpp @release for its system (github.com/ggml-org/llama.cpp, Releases) and unzip it.'
+                .trParams({'release': LlamaCluster.llamaCppRelease}),
+            style: t.caption,
+          ),
+        ),
+        _step(
+          t,
+          2,
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('In that folder, open a terminal and run:'.tr,
+                style: t.caption),
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: t.fill,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const SelectableText(
+                _command,
+                style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+              ),
+            ),
+          ]),
+        ),
+        _step(
+          t,
+          3,
+          Text("Enter the computer's address on your Wi-Fi.".tr,
+              style: t.caption),
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: _address,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: appInputDecoration(context,
+              hint: '192.168.1.20:${LlamaCluster.defaultPort}'),
+          onChanged: (_) {
+            if (found) setState(() => _totalMb = null);
+          },
+          onSubmitted: (_) => _check(),
+        ),
+        if (found) ...[
+          const SizedBox(height: 12),
+          AppNotice(
+            'The computer answers: it has @size of memory.'
+                .trParams({'size': _gb(_totalMb!)}),
+            icon: Icons.check_circle_rounded,
+            color: t.green,
+          ),
+          const SizedBox(height: 14),
+          AppField(
+            label: 'Memory to give the cluster (GB)'.tr,
+            helper:
+                'Leave some for the computer itself. The more it gives, the bigger the models the cluster can hold.'
+                    .tr,
+            child: TextField(
+              controller: _memory,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: appInputDecoration(context),
+            ),
+          ),
+        ],
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          AppNotice(_error!,
+              icon: Icons.error_outline_rounded, color: t.red),
+        ],
+        const SizedBox(height: 16),
+        PrimaryButton(
+          label: found ? 'Add this computer'.tr : 'Check'.tr,
+          busy: _busy,
+          onPressed: _busy ? null : (found ? _add : _check),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'The connection has no password: only do this on a network you trust.'
+              .tr,
+          style: t.small,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
 
 /// How the loaded model is spread across phones: a stacked bar and legend.
 class _SplitCard extends StatelessWidget {

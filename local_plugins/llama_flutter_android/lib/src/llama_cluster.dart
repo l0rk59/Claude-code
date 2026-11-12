@@ -18,6 +18,11 @@ class ClusterWorker {
   /// The worker device's lasting ID: finds it again when its IP changes.
   final String? id;
 
+  /// A computer running llama.cpp's `rpc-server`, not a phone running the
+  /// app. Its [ramMb] is what the user chose to give, not a measure of
+  /// what was free.
+  final bool computer;
+
   const ClusterWorker({
     required this.name,
     required this.host,
@@ -26,6 +31,7 @@ class ClusterWorker {
     this.bandwidth,
     this.model,
     this.id,
+    this.computer = false,
   });
 
   String get endpoint => '$host:$port';
@@ -38,11 +44,19 @@ class ClusterWorker {
         bandwidth: (map['bandwidth'] as num?)?.toDouble(),
         model: map['model'] as String?,
         id: map['id'] as String?,
+        computer: map['computer'] == true,
       );
 
   /// The same device at a new address.
   ClusterWorker movedTo(String host, int port) => ClusterWorker(
-      name: name, host: host, port: port, ramMb: ramMb, bandwidth: bandwidth, model: model, id: id);
+      name: name,
+      host: host,
+      port: port,
+      ramMb: ramMb,
+      bandwidth: bandwidth,
+      model: model,
+      id: id,
+      computer: computer);
 
   Map<String, dynamic> toMap() => {
         'name': name,
@@ -52,6 +66,7 @@ class ClusterWorker {
         'bandwidth': bandwidth,
         'model': model,
         'id': id,
+        'computer': computer,
       };
 }
 
@@ -103,6 +118,11 @@ class ClusterWorkerStatus {
 class LlamaCluster {
   static const _channel = MethodChannel('llama_flutter_android/cluster');
   static const defaultPort = 50052;
+
+  /// The llama.cpp release this plugin is built from. A computer joins the
+  /// cluster by running the `rpc-server` of that same release, so both ends
+  /// speak the same protocol.
+  static const llamaCppRelease = 'b11157';
 
   /// Starts serving this phone's CPU to a master, in a foreground service
   /// that keeps running in the background.
