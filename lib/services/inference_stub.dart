@@ -6,6 +6,8 @@ import 'package:get/get.dart' show Trans;
 
 bool get supportsLocalInference => false;
 
+int? defaultCpuThreads() => null;
+
 bool get isRunning32Bit => false;
 
 Future<int> fileLength(String path) async => 0;
@@ -49,6 +51,7 @@ class InferenceEngine {
     bool enableLiteRtVision = false,
     bool allowGgufGpu = false,
     String ggufGpuApi = 'vulkan',
+    int? ggufThreads,
     String? mmprojPath,
     void Function(double)? onProgress,
   }) async {

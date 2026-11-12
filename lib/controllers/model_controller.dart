@@ -740,7 +740,10 @@ class ModelController extends GetxController {
 
   /// Loads a downloaded model. [confirm] false skips the "Load model?"
   /// memory sheet (the guided install has already picked a model that fits).
-  Future<void> loadModel(String filename, {bool confirm = true}) async {
+  /// [quiet] skips the "Model loaded" toast, for loads the app makes on its
+  /// own (the speed tuning reloads the model several times).
+  Future<void> loadModel(String filename,
+      {bool confirm = true, bool quiet = false}) async {
     if (_inference.isLoadingModel.value) {
       showToast('Model Loading'.tr, 'Another model is already loading.'.tr,
           tone: ToastTone.warning);
@@ -906,15 +909,17 @@ class ModelController extends GetxController {
         _inference.isVisionLoaded.value = isLiteRt
             ? (!fallbackToText && model != null && isVisionModel(model))
             : _inference.ggufVisionLoaded;
-        if (visionNote.isNotEmpty) {
+        if (visionNote.isNotEmpty && !quiet) {
           showToast('Model Loaded'.tr, '$result$visionNote',
               tone: ToastTone.info, duration: const Duration(seconds: 5));
           await _settings.setInferenceMode('local');
           return;
         }
         await _settings.setInferenceMode('local');
-        showToast('Model Loaded'.tr, result, tone: ToastTone.success);
-      } else {
+        if (!quiet) {
+          showToast('Model Loaded'.tr, result, tone: ToastTone.success);
+        }
+      } else if (!quiet) {
         _showLoadFailedSheet(filename, result);
       }
     }

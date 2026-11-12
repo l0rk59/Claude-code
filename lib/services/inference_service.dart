@@ -5,6 +5,7 @@ import '../core/constants.dart';
 import 'device_info_service.dart';
 import 'app_log_service.dart';
 import 'cluster_service.dart';
+import 'auto_tune.dart';
 import 'stop_sequence_filter.dart';
 
 // Conditionally import llama_flutter_android — only on Android
@@ -55,6 +56,9 @@ class InferenceService extends GetxService {
 
   /// Whether the current platform supports local inference.
   bool get supportsLocalInference => platform.supportsLocalInference;
+
+  /// Threads a GGUF model uses on the processor unless measured otherwise.
+  int? get defaultCpuThreads => platform.defaultCpuThreads();
 
   // Platform-specific engine
   platform.InferenceEngine? _engine;
@@ -154,6 +158,9 @@ class InferenceService extends GetxService {
 
       final requestedModelName = modelName ?? modelPath.split('/').last;
       var activeModelName = requestedModelName;
+      // How this model was measured to run fastest, if it was.
+      final choice =
+          isLiteRt ? null : DeviceChoices.of(_hive, requestedModelName);
       var result = await _loadModelOnEngine(
         modelPath: modelPath,
         modelRuntime: modelRuntime,
@@ -165,9 +172,10 @@ class InferenceService extends GetxService {
         clearLiteRtCache: contextChanged,
         tryLiteRtGpu: shouldTryLiteRtGpu,
         enableLiteRtVision: enableLiteRtVision,
-        allowGgufGpu: allowGgufGpu && clusterWorkers == 0,
+        allowGgufGpu: (choice?.gpu ?? allowGgufGpu) && clusterWorkers == 0,
         ggufGpuApi: _hive.getSetting<String>(AppConstants.keyGgufGpuApi) ??
             'vulkan',
+        ggufThreads: choice?.threads,
         mmprojPath: mmprojPath,
       );
 
@@ -520,6 +528,7 @@ class InferenceService extends GetxService {
     required bool enableLiteRtVision,
     bool allowGgufGpu = false,
     String ggufGpuApi = 'vulkan',
+    int? ggufThreads,
     String? mmprojPath,
   }) async {
     // Auto fast: if a LiteRT GPU load fails, retry this load on the CPU.
@@ -540,6 +549,7 @@ class InferenceService extends GetxService {
         forceLiteRtCpu: true,
         clearLiteRtCache: true,
         enableLiteRtVision: enableLiteRtVision,
+        ggufThreads: ggufThreads,
         mmprojPath: mmprojPath,
         onProgress: (p) => modelLoadProgress.value = _normalizeProgress(p),
       );
@@ -558,6 +568,7 @@ class InferenceService extends GetxService {
         enableLiteRtVision: enableLiteRtVision,
         allowGgufGpu: allowGgufGpu,
         ggufGpuApi: ggufGpuApi,
+        ggufThreads: ggufThreads,
         mmprojPath: mmprojPath,
         onProgress: (p) => modelLoadProgress.value = _normalizeProgress(p),
       );

@@ -15,6 +15,7 @@ import '../services/download_service.dart';
 import '../services/soc_family.dart' as platform_info;
 import '../ffi/sd_backend.dart';
 import '../services/cluster_service.dart';
+import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
 import 'cluster_view.dart';
 import 'speed_test_sheet.dart';
@@ -193,22 +194,85 @@ class SettingsView extends GetView<SettingsController> {
     final workers = Get.isRegistered<ClusterService>()
         ? (Get.find<ClusterService>().split.length - 1).clamp(0, 99)
         : 0;
+    final model =
+        inference.isModelLoaded.value ? inference.loadedModelName.value : '';
+    // Tuning compares ways a GGUF model runs on this phone alone.
+    final String? unavailable;
+    if (model.isEmpty) {
+      unavailable = null;
+    } else if (inference.loadedModelRuntime.value == 'litert' ||
+        !model.toLowerCase().endsWith('.gguf')) {
+      unavailable =
+          'For GGUF models only: a LiteRT model follows the GGUF & LiteRT setting.'
+              .tr;
+    } else if (workers > 0) {
+      unavailable =
+          'Not while the model is shared with other devices in a cluster.'.tr;
+    } else {
+      unavailable = null;
+    }
     showAppSheet<void>(
       context,
       title: 'Measure speed'.tr,
-      subtitle: inference.isModelLoaded.value
-          ? inference.loadedModelName.value
-          : null,
+      subtitle: model.isEmpty ? null : model,
       builder: (_) => SpeedTestSheet(
-        modelName: inference.isModelLoaded.value
-            ? inference.loadedModelName.value
-            : '',
+        modelName: model,
         history: SpeedTest.history(hive),
         run: (onProgress) => SpeedTest.run(inference,
             clusterWorkers: workers, onProgress: onProgress),
         remember: (result) => SpeedTest.remember(hive, result),
+        currentChoice: model.isEmpty ? null : DeviceChoices.of(hive, model),
+        autoTuneUnavailable: unavailable,
+        autoTune: model.isEmpty || unavailable != null
+            ? null
+            : (onStep) => _autoTune(model, onStep),
       ),
     );
+  }
+
+  /// Reloads [model] each way it can run on this phone, measures it, and
+  /// keeps the fastest for it.
+  Future<TuneOutcome> _autoTune(
+      String model, void Function(String step) onStep) async {
+    final inference = Get.find<InferenceService>();
+    final hive = Get.find<HiveService>();
+    final models = Get.find<ModelController>();
+    final candidates =
+        AutoTune.candidates(defaultThreads: inference.defaultCpuThreads);
+    final outcome = await AutoTune.run(
+      candidates: candidates,
+      apply: (choice) => DeviceChoices.set(hive, model, choice),
+      reload: (choice) async {
+        await models.loadModel(model, confirm: false, quiet: true);
+        if (!inference.isModelLoaded.value ||
+            inference.loadedModelName.value != model) {
+          return "The model didn't load this way.".tr;
+        }
+        if (choice.gpu && !inference.isGpuAccelerated.value) {
+          return 'The graphics card is not usable for this model.'.tr;
+        }
+        return null;
+      },
+      measure: () async {
+        // A short first run warms the engine up (the graphics card compiles
+        // its programs on first use), so it isn't counted against it.
+        await SpeedTest.run(inference, maxTokens: 8);
+        final result = await SpeedTest.run(inference);
+        await SpeedTest.remember(hive, result);
+        return result;
+      },
+      onTrial: (index, choice) => onStep('Trying @setting (@index of @count)…'
+          .trParams({
+        'setting': SpeedTestSheet.describe(choice),
+        'index': '${index + 1}',
+        'count': '${candidates.length}',
+      })),
+    );
+    // Nothing worked: load it back the usual way.
+    if (!inference.isModelLoaded.value) {
+      await models.loadModel(model, confirm: false, quiet: true);
+    }
+    return outcome;
   }
 
   Widget _navRow(

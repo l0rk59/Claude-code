@@ -64,7 +64,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.orailnoor.privatelm"
+        // This fork's own identity: it installs next to the original app
+        // instead of over it. The Kotlin package (namespace) stays as is.
+        applicationId = "com.l0rk59.privatelm"
         minSdk = 28
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

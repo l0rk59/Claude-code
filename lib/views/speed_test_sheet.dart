@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../core/ui.dart';
+import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
 
 /// Measures how fast the loaded model answers, and keeps the last results
@@ -19,13 +20,34 @@ class SpeedTestSheet extends StatefulWidget {
   /// Saves a result and returns the updated history.
   final Future<List<SpeedResult>> Function(SpeedResult result) remember;
 
+  /// Tries the ways this model can run and keeps the fastest, reporting
+  /// each step. Null when tuning doesn't apply (no GGUF model, cluster).
+  final Future<TuneOutcome> Function(void Function(String step) onStep)?
+      autoTune;
+
+  /// Why tuning isn't offered, shown in its place. Null to say nothing.
+  final String? autoTuneUnavailable;
+
+  /// The setting remembered for this model, if one was found earlier.
+  final DeviceChoice? currentChoice;
+
   const SpeedTestSheet({
     super.key,
     required this.modelName,
     required this.history,
     required this.run,
     required this.remember,
+    this.autoTune,
+    this.autoTuneUnavailable,
+    this.currentChoice,
   });
+
+  /// "Graphics card", "Processor", "Processor, 4 threads".
+  static String describe(DeviceChoice choice) => choice.gpu
+      ? 'Graphics card'.tr
+      : choice.threads == null
+          ? 'Processor'.tr
+          : 'Processor, @count threads'.trParams({'count': '${choice.threads}'});
 
   @override
   State<SpeedTestSheet> createState() => _SpeedTestSheetState();
@@ -39,6 +61,97 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
 
   /// The measurement just made, shown large.
   SpeedResult? _latest;
+
+  bool _tuning = false;
+  String _tuneStep = '';
+  TuneOutcome? _tuned;
+
+  Future<void> _autoTune() async {
+    setState(() {
+      _tuning = true;
+      _tuneStep = '';
+      _error = null;
+      _tuned = null;
+    });
+    try {
+      final outcome = await widget.autoTune!((step) {
+        if (mounted) setState(() => _tuneStep = step);
+      });
+      if (!mounted) return;
+      setState(() => _tuned = outcome);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = "The tuning didn't finish: @error"
+          .trParams({'error': e is StateError ? e.message : '$e'}));
+    } finally {
+      if (mounted) setState(() => _tuning = false);
+    }
+  }
+
+  Widget _tuneCard(AppTokens t, TuneOutcome outcome) {
+    final best = outcome.best;
+    final bestTrial = outcome.bestTrial;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: t.green.withValues(alpha: t.isDark ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(kCardRadius),
+        border: Border.all(color: t.green.withValues(alpha: 0.3), width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            best == null
+                ? 'Nothing could be measured.'.tr
+                : '@setting is the fastest for this model. It will be used from now on.'
+                    .trParams({'setting': SpeedTestSheet.describe(best)}),
+            style: t.bodyStrong,
+          ),
+          if (bestTrial != null && outcome.speedup >= 1.1) ...[
+            const SizedBox(height: 4),
+            Text(
+                '@times× faster than the slowest setting.'.trParams(
+                    {'times': outcome.speedup.toStringAsFixed(1)}),
+                style: t.caption),
+          ],
+          const SizedBox(height: 10),
+          for (final trial in outcome.trials)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(children: [
+                Icon(
+                    trial.choice == best
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    size: 14,
+                    color: trial.choice == best ? t.green : t.faint),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(SpeedTestSheet.describe(trial.choice),
+                      style: t.small,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    trial.result != null
+                        ? '${_speed(trial.result!.tokensPerSecond)} · ${_wait(trial.result!.firstTokenSeconds)}'
+                        : trial.error ?? '',
+                    style: t.small.copyWith(
+                        fontFeatures: const [FontFeature.tabularFigures()]),
+                    textAlign: TextAlign.end,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ]),
+            ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _measure() async {
     setState(() {
@@ -142,8 +255,41 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
             label: latest == null ? 'Measure'.tr : 'Measure again'.tr,
             icon: Icons.timer_outlined,
             busy: _running,
-            onPressed: _running ? null : _measure,
+            onPressed: _running || _tuning ? null : _measure,
           ),
+          const SizedBox(height: 18),
+          Text('Best setting for this model'.tr, style: t.label),
+          const SizedBox(height: 6),
+          if (widget.autoTune == null)
+            Text(widget.autoTuneUnavailable ?? '', style: t.caption)
+          else ...[
+            Text(
+              widget.currentChoice == null
+                  ? 'Tries the graphics card and the processor, measures each, and keeps the fastest. The model reloads a few times: about a minute.'
+                      .tr
+                  : 'Now: @setting. Search again after an update, or to try another model.'
+                      .trParams({
+                      'setting': SpeedTestSheet.describe(widget.currentChoice!)
+                    }),
+              style: t.caption,
+            ),
+            const SizedBox(height: 10),
+            if (_tuning) ...[
+              Text(_tuneStep, style: t.caption),
+              const SizedBox(height: 8),
+              AppProgressBar(color: t.accent),
+              const SizedBox(height: 10),
+            ],
+            if (_tuned != null) ...[
+              _tuneCard(t, _tuned!),
+              const SizedBox(height: 10),
+            ],
+            PillButton(
+              label: 'Find the best setting'.tr,
+              icon: Icons.auto_awesome_rounded,
+              onPressed: _running || _tuning ? null : _autoTune,
+            ),
+          ],
         ],
         if (earlier.isNotEmpty) ...[
           const SizedBox(height: 18),

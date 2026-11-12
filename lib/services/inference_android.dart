@@ -11,6 +11,9 @@ import 'sampling_presets.dart';
 /// Whether the current platform supports local inference.
 bool get supportsLocalInference => Platform.isAndroid || Platform.isIOS;
 
+/// Threads a GGUF model uses on the processor unless told otherwise.
+int? defaultCpuThreads() => performanceCoreCount();
+
 /// True when the app runs as a 32-bit process (32-bit Android, e.g. Android
 /// Go phones). LiteRT ships 64-bit only, and the address space limits model
 /// size.
@@ -81,6 +84,7 @@ class InferenceEngine {
     bool enableLiteRtVision = false,
     bool allowGgufGpu = true,
     String ggufGpuApi = 'vulkan',
+    int? ggufThreads,
     String? mmprojPath,
     void Function(double)? onProgress,
   }) async {
@@ -170,6 +174,9 @@ class InferenceEngine {
     int threads;
     if (gpuLayers > 0) {
       threads = 4;
+    } else if (ggufThreads != null && ggufThreads > 0) {
+      // Measured as fastest for this model (Settings > Measure speed).
+      threads = ggufThreads;
     } else {
       threads = performanceCoreCount() ??
           switch (deviceTier) {

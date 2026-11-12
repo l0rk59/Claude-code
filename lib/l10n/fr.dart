@@ -1374,6 +1374,29 @@ const Map<String, String> fr = {
   'For a fair measure, close the other apps and keep the phone plugged in.':
       'Pour une mesure fiable, fermez les autres applications et laissez le téléphone branché.',
   'Your network · @provider': 'Votre réseau · @provider',
+  'Graphics card': 'Carte graphique',
+  'Processor': 'Processeur',
+  'Processor, @count threads': 'Processeur, @count cœurs',
+  "The tuning didn't finish: @error": 'La recherche n’a pas abouti : @error',
+  'Nothing could be measured.': 'Aucun réglage n’a pu être mesuré.',
+  '@setting is the fastest for this model. It will be used from now on.':
+      '@setting est le plus rapide pour ce modèle. Il sera utilisé désormais.',
+  '@times× faster than the slowest setting.':
+      '@times× plus rapide que le réglage le plus lent.',
+  'Best setting for this model': 'Meilleur réglage pour ce modèle',
+  'Tries the graphics card and the processor, measures each, and keeps the fastest. The model reloads a few times: about a minute.':
+      'Essaie la carte graphique et le processeur, mesure chacun et garde le plus rapide. Le modèle se recharge plusieurs fois : environ une minute.',
+  'Now: @setting. Search again after an update, or to try another model.':
+      'Actuellement : @setting. Relancez après une mise à jour, ou pour un autre modèle.',
+  'Find the best setting': 'Trouver le meilleur réglage',
+  'For GGUF models only: a LiteRT model follows the GGUF & LiteRT setting.':
+      'Pour les modèles GGUF uniquement : un modèle LiteRT suit le réglage GGUF & LiteRT.',
+  'Not while the model is shared with other devices in a cluster.':
+      'Pas pendant que le modèle est partagé avec d’autres appareils en cluster.',
+  "The model didn't load this way.": 'Le modèle ne s’est pas chargé de cette façon.',
+  'The graphics card is not usable for this model.':
+      'La carte graphique n’est pas utilisable pour ce modèle.',
+  'Trying @setting (@index of @count)…': 'Essai : @setting (@index sur @count)…',
 };
 
 /// Download statuses the Android code reports in English (shown through

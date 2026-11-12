@@ -102,6 +102,7 @@ class SpeedTest {
   static Future<SpeedResult> run(
     InferenceService inference, {
     int clusterWorkers = 0,
+    int maxTokens = SpeedTest.maxTokens,
     void Function(int tokens)? onProgress,
   }) async {
     final watch = Stopwatch()..start();
