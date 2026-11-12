@@ -257,6 +257,30 @@ class AppConstants {
           'https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/mmproj-F16.gguf',
     },
     {
+      'name': 'Qwen 3.5 9B (Q4_K_M)',
+      'filename': 'qwen3.5-9b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf',
+      'size': '5.68 GB + 918 MB vision',
+      'description':
+          'The most capable Qwen a phone can hold, with image understanding — for phones with 12 GB of RAM or more',
+      'template': 'chatml',
+      'vision': 'true',
+      'mmproj_filename': 'qwen3.5-9b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'LFM2.5 8B-A1B (Q4_K_M)',
+      'filename': 'lfm2.5-8b-a1b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/LiquidAI/LFM2.5-8B-A1B-GGUF/resolve/main/LFM2.5-8B-A1B-Q4_K_M.gguf',
+      'size': '5.16 GB',
+      'description':
+          'Liquid AI: 8B of knowledge with only 1B active per word, so it stays fast — for phones with 12 GB of RAM or more',
+      'template': 'chatml',
+    },
+    {
       'name': 'LFM2.5-VL 3B (Q4_K_M)',
       'filename': 'lfm2.5-vl-3b-q4_k_m.gguf',
       'url':

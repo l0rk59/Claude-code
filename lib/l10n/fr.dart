@@ -1296,6 +1296,10 @@ const Map<String, String> fr = {
   'Bigger files answer better, but need more memory and run slower.':
       'Les gros fichiers répondent mieux, mais demandent plus de mémoire et sont plus lents.',
   'Not set up': 'À configurer',
+  'The most capable Qwen a phone can hold, with image understanding — for phones with 12 GB of RAM or more':
+      'Le Qwen le plus capable qu’un téléphone puisse accueillir, avec compréhension des images. Pour les téléphones de 12 Go de RAM ou plus',
+  'Liquid AI: 8B of knowledge with only 1B active per word, so it stays fast — for phones with 12 GB of RAM or more':
+      'Liquid AI : 8 milliards de paramètres, dont 1 seul actif par mot, donc il reste rapide. Pour les téléphones de 12 Go de RAM ou plus',
 };
 
 /// Download statuses the Android code reports in English (shown through
