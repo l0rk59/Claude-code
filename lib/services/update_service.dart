@@ -135,6 +135,20 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
             'https://api.github.com/repos/${AppConstants.githubRepo}/releases/latest'),
         headers: const {'Accept': 'application/vnd.github+json'},
       ).timeout(const Duration(seconds: 15));
+      // 404: the repository has published no release yet. That is "nothing
+      // newer", not a failed check.
+      if (res.statusCode == 404) {
+        lastCheck.value = DateTime.now();
+        availableUpdate.value = null;
+        state.value = UpdateState.idle;
+        if (manual) {
+          showToast("You're up to date".tr,
+              'PrivateLM @version is the latest version.'
+                  .trParams({'version': currentVersion.value}),
+              tone: ToastTone.success);
+        }
+        return null;
+      }
       if (res.statusCode != 200) {
         throw HttpException('GitHub returned ${res.statusCode}');
       }

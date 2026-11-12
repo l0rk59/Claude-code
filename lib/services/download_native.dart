@@ -241,6 +241,17 @@ Future<void> deleteModel(String path) async {
   if (await tempFile.exists()) await tempFile.delete();
 }
 
+/// Bytes free on the storage holding [dir]. Null when it can't be read
+/// (only Android reports it).
+Future<int?> freeSpaceBytes(String dir) async {
+  if (!Platform.isAndroid) return null;
+  try {
+    return await _channel.invokeMethod<int>('freeSpaceBytes', {'path': dir});
+  } catch (_) {
+    return null;
+  }
+}
+
 // ── Native MethodChannel bridges (Android DownloadManager) ──
 
 Future<Map<String, dynamic>?> startNativeDownload({

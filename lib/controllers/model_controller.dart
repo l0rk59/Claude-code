@@ -474,6 +474,18 @@ class ModelController extends GetxController {
     return 0;
   }
 
+  /// Everything a model downloads, in bytes: the model and, when it has
+  /// one, its vision file ("5.68 GB + 918 MB vision").
+  static int declaredDownloadBytes(AiModel model) {
+    var total = 0.0;
+    for (final match in RegExp(r'([\d.]+)\s*(GB|MB)', caseSensitive: false)
+        .allMatches(model.size)) {
+      final value = double.tryParse(match.group(1) ?? '') ?? 0;
+      total += match.group(2)!.toUpperCase() == 'GB' ? value * 1e9 : value * 1e6;
+    }
+    return total.round();
+  }
+
   String _formatModelSize(String filename) {
     final bytes = fileSizes[filename] ?? 0;
     if (bytes <= 0) return 'Local File'.tr;
@@ -491,6 +503,19 @@ class ModelController extends GetxController {
       return;
     }
     try {
+      // A model that can't fit would fail hours into the download.
+      final problem = DownloadService.storageProblem(
+        neededBytes: declaredDownloadBytes(model),
+        freeBytes: await _download.freeSpaceBytes(),
+      );
+      if (problem != null) {
+        if (autoLoadAfterDownload.value == model.filename) {
+          autoLoadAfterDownload.value = '';
+        }
+        showToast('Not enough storage'.tr, problem,
+            tone: ToastTone.error, duration: const Duration(seconds: 7));
+        return;
+      }
       // Vision models need their projector too; fetch both together.
       if (model.hasVisionProjector &&
           model.mmprojUrl.isNotEmpty &&

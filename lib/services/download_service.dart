@@ -72,6 +72,26 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     return await platform_dl.getModelSize(await modelPath(filename));
   }
 
+  /// Bytes free where models are stored. Null when unknown.
+  Future<int?> freeSpaceBytes() async {
+    if (kIsWeb) return null;
+    return platform_dl.freeSpaceBytes(await modelsDir);
+  }
+
+  /// Why a download of [neededBytes] can't start, or null when it can.
+  /// A small margin is kept: a phone with no space left misbehaves.
+  static String? storageProblem(
+      {required int neededBytes, required int? freeBytes}) {
+    if (freeBytes == null || neededBytes <= 0) return null;
+    const margin = 300 * 1024 * 1024;
+    if (neededBytes + margin <= freeBytes) return null;
+    return 'This needs @needed of storage and the phone has @free free. Delete models or files you no longer use, then try again.'
+        .trParams({
+      'needed': formatBytes(neededBytes),
+      'free': formatBytes(freeBytes),
+    });
+  }
+
   Future<int> getRemoteFileSize(String url, {String? authToken}) async {
     if (kIsWeb) return 0;
     return await platform_dl.getRemoteFileSize(url, authToken: authToken);

@@ -14,6 +14,7 @@ import android.util.Log
 import android.os.Handler
 import android.os.Looper
 import android.os.Environment
+import android.os.StatFs
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterActivity
@@ -220,6 +221,17 @@ class MainActivity : FlutterActivity() {
                 "restartApp" -> {
                     restartApp()
                     result.success(null)
+                }
+                "freeSpaceBytes" -> {
+                    // Space left where models are stored, to refuse a
+                    // download that can't fit before it starts.
+                    val path = call.argument<String>("path")
+                    try {
+                        val dir = File(path ?: filesDir.path).apply { mkdirs() }
+                        result.success(StatFs(dir.path).availableBytes)
+                    } catch (e: Exception) {
+                        result.success(null)
+                    }
                 }
                 else -> result.notImplemented()
             }

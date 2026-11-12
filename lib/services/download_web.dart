@@ -11,6 +11,8 @@ Future<int> getModelSize(String path) async => 0;
 
 Future<int> getRemoteFileSize(String url, {String? authToken}) async => 0;
 
+Future<int?> freeSpaceBytes(String dir) async => null;
+
 Future<String> downloadModel({
   required String url,
   required String savePath,

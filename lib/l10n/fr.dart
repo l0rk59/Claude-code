@@ -1335,6 +1335,9 @@ const Map<String, String> fr = {
       'Impossible de joindre @endpoint. Vérifiez que ggml-rpc-server est lancé, que l’ordinateur est sur le même Wi-Fi et que son pare-feu laisse passer le port.',
   "ERROR: The model's vision file couldn't be loaded, so it can't read this image: @error":
       'ERREUR : le fichier de vision du modèle n’a pas pu être chargé, il ne peut donc pas lire cette image : @error',
+  'Not enough storage': 'Stockage insuffisant',
+  'This needs @needed of storage and the phone has @free free. Delete models or files you no longer use, then try again.':
+      'Il faut @needed de stockage et le téléphone en a @free de libre. Supprimez des modèles ou des fichiers dont vous ne vous servez plus, puis réessayez.',
 };
 
 /// Download statuses the Android code reports in English (shown through

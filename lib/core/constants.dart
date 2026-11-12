@@ -59,8 +59,11 @@ class AppConstants {
   static const String keyLastUpdatePrompt = 'last_update_prompt';
   static const String keySkippedUpdateVersion = 'skipped_update_version';
 
-  /// GitHub repository whose releases ship the Android APKs.
-  static const String githubRepo = 'orailnoor/cross-platform-llm-client';
+  /// GitHub repository whose releases ship this app's Android APKs. This
+  /// is the fork, not the project it started from: an APK from there is
+  /// signed with another key (Android refuses it as an update) and lacks
+  /// what this fork adds.
+  static const String githubRepo = 'l0rk59/Claude-code';
   static const String keyServerApiKey = 'server_api_key';
   static const String keyServerUseApiKey = 'server_use_api_key';
   static const String keyServerAllowNetwork = 'server_allow_network';
