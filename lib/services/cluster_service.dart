@@ -80,6 +80,14 @@ class ClusterService extends GetxService {
       w.bandwidth ??
       (w.computer ? math.max(12.0, localSpeed * 1.25) : _unknownSpeed);
 
+  /// Reads an amount of memory typed in GB ("12.5", or "12,5" on a French
+  /// keyboard) as MB. Null when it isn't a number.
+  static int? parseMemoryGb(String input) {
+    final gb = double.tryParse(input.trim().replaceAll(',', '.'));
+    if (gb == null || gb.isNaN || gb.isInfinite) return null;
+    return (gb * 1024).round();
+  }
+
   /// Reads "192.168.1.20" or "192.168.1.20:50052". Null when it is neither.
   static ({String host, int port})? parseEndpoint(String input) {
     final text = input.trim();

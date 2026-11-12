@@ -329,7 +329,7 @@ class _ClusterViewState extends State<ClusterView> {
       subtitle:
           'A laptop or desktop on the same Wi-Fi can hold most of a big model.'
               .tr,
-      builder: (_) => _AddComputer(cluster: cluster),
+      builder: (_) => AddComputerSheet(cluster: cluster),
     );
     if (added == true) {
       showToast('Computer added'.tr,
@@ -357,16 +357,17 @@ String _gbs(double bandwidth) =>
     '@size GB/s'.trParams({'size': bandwidth.toStringAsFixed(1)});
 
 /// Adds a computer to the cluster: says what to run on it, checks that it
-/// answers, then asks how much of its memory to use.
-class _AddComputer extends StatefulWidget {
+/// answers, then asks how much of its memory to use. Pops with true once
+/// the computer is added.
+class AddComputerSheet extends StatefulWidget {
   final ClusterService cluster;
-  const _AddComputer({required this.cluster});
+  const AddComputerSheet({super.key, required this.cluster});
 
   @override
-  State<_AddComputer> createState() => _AddComputerState();
+  State<AddComputerSheet> createState() => _AddComputerSheetState();
 }
 
-class _AddComputerState extends State<_AddComputer> {
+class _AddComputerSheetState extends State<AddComputerSheet> {
   static const _command = 'ggml-rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
 
   final _address = TextEditingController();
@@ -405,14 +406,13 @@ class _AddComputerState extends State<_AddComputer> {
   }
 
   Future<void> _add() async {
-    // "12,5" on a French keyboard.
-    final gb = double.tryParse(_memory.text.trim().replaceAll(',', '.'));
+    final memoryMb = ClusterService.parseMemoryGb(_memory.text);
     final totalMb = _totalMb ?? 0;
-    if (gb == null || gb < 0.5) {
+    if (memoryMb == null || memoryMb < 512) {
       setState(() => _error = 'Give it at least 0.5 GB.'.tr);
       return;
     }
-    if (gb * 1024 > totalMb) {
+    if (memoryMb > totalMb) {
       setState(() => _error = 'This computer only has @size.'
           .trParams({'size': _gb(totalMb)}));
       return;
@@ -421,8 +421,8 @@ class _AddComputerState extends State<_AddComputer> {
       _busy = true;
       _error = null;
     });
-    final error = await widget.cluster
-        .addComputer(_address.text, memoryMb: (gb * 1024).round());
+    final error =
+        await widget.cluster.addComputer(_address.text, memoryMb: memoryMb);
     if (!mounted) return;
     if (error == null) {
       Navigator.pop(context, true);
