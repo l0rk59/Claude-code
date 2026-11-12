@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:io' show File, InternetAddressType, NetworkInterface, Platform;
+import 'dart:io' show File, InternetAddressType, NetworkInterface;
 import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -13,6 +12,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import 'app_log_service.dart';
 import 'hive_service.dart';
+import '../core/app_platform.dart';
 
 /// What this phone does in a phone cluster.
 enum ClusterRole {
@@ -47,14 +47,14 @@ class _Phone {
 class ClusterService extends GetxService {
   final HiveService _hive = Get.find<HiveService>();
 
-  static bool get isSupported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  static bool get isSupported => AppPlatform.isAndroid || AppPlatform.isIOS;
 
   /// Running a model across workers is Android-only for now; iOS devices
   /// can be workers (their GPU serves a master's layers).
-  static bool get canBeMaster => !kIsWeb && Platform.isAndroid;
+  static bool get canBeMaster => AppPlatform.isAndroid;
 
   /// iOS can't stop the worker without closing the app.
-  static bool get workerStopsWithApp => !kIsWeb && Platform.isIOS;
+  static bool get workerStopsWithApp => AppPlatform.isIOS;
 
   /// QR codes a worker shows: privatelm://worker?host=…&port=…
   static const _qrScheme = 'privatelm';
@@ -108,7 +108,7 @@ class ClusterService extends GetxService {
     final saved = _hive.getSetting<List>(AppConstants.keyClusterWorkers) ?? const [];
     workers.assignAll(saved.whereType<Map>().map(ClusterWorker.fromMap));
     if (isSupported) {
-      if (Platform.isIOS) {
+      if (AppPlatform.isIOS) {
         DeviceInfoPlugin().iosInfo.then((info) => deviceName = info.modelName);
       } else {
         DeviceInfoPlugin().androidInfo.then((info) => deviceName = info.model);
@@ -175,7 +175,7 @@ class ClusterService extends GetxService {
   }
 
   Future<void> startWorker() async {
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       // Unrestricted battery keeps Android (Samsung especially) from moving
       // the worker to slow cores once it gets busy.
       final status = await LlamaCluster.workerStatus();

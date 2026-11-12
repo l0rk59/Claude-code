@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -15,6 +14,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import '../widgets/update_sheet.dart';
 import 'hive_service.dart';
+import '../core/app_platform.dart';
 
 /// A published GitHub release and the APK chosen for this device.
 class AppRelease {
@@ -64,7 +64,7 @@ class UpdateService extends GetxService with WidgetsBindingObserver {
   String? _pendingInstallPath;
   bool _sheetOpen = false;
 
-  static bool get isSupported => !kIsWeb && Platform.isAndroid;
+  static bool get isSupported => AppPlatform.isAndroid;
 
   @override
   void onInit() {

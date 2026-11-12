@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart' show Trans;
 import 'package:permission_handler/permission_handler.dart';
+import '../core/app_platform.dart';
 
 class ImageGenerationNotificationService {
   static const int _progressNotificationId = 4201;
@@ -45,7 +45,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> configureBackgroundService() async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await FlutterBackgroundService().configure(
       androidConfiguration: AndroidConfiguration(
         onStart: imageGenerationBackgroundStart,
@@ -64,7 +64,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> ensurePermission() async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await _notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
@@ -79,7 +79,7 @@ class ImageGenerationNotificationService {
     required int steps,
     required String sizeLabel,
   }) async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await init();
     await ensurePermission();
     final details =
@@ -105,7 +105,7 @@ class ImageGenerationNotificationService {
     required int etaSeconds,
     required int elapsedSeconds,
   }) async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     final percent = total > 0 ? ((step / total) * 100).clamp(0, 100).round() : 0;
     final eta = etaSeconds > 0
         ? ' · ~${'@time left'.trParams({'time': _formatEta(etaSeconds)})}'
@@ -131,7 +131,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> decoding() async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     FlutterBackgroundService().invoke('progress',
         {'title': 'Finishing image'.tr, 'content': 'Decoding image...'.tr});
     await _showProgress(
@@ -144,7 +144,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> complete({required int durationMs}) async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await _notifications.show(
       _progressNotificationId,
       'Image ready'.tr,
@@ -165,7 +165,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> failed() async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await _notifications.show(
       _progressNotificationId,
       'Image generation failed'.tr,
@@ -185,7 +185,7 @@ class ImageGenerationNotificationService {
   }
 
   Future<void> cancel() async {
-    if (!Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     await _notifications.cancel(_progressNotificationId);
     await _notifications.cancel(_foregroundNotificationId);
     FlutterBackgroundService().invoke('stopService');

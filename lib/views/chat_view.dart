@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -22,6 +21,7 @@ import '../widgets/home_empty_state.dart';
 import '../core/ui.dart';
 import '../widgets/thought_disclosure.dart';
 import '../core/haptics.dart';
+import '../core/app_platform.dart';
 
 // ── Apple-style color helpers ──
 Color _appleBlue(BuildContext c) => Theme.of(c).brightness == Brightness.dark
@@ -85,7 +85,7 @@ class ChatView extends GetView<ChatController> {
       ),
     );
 
-    if (Platform.isIOS) {
+    if (AppPlatform.isIOS) {
       return GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         behavior: HitTestBehavior.translucent,

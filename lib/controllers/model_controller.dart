@@ -16,6 +16,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import '../services/cluster_service.dart';
 import 'settings_controller.dart';
+import '../core/app_platform.dart';
 
 enum _ModelLoadAction { cancel, unloadAndContinue, continueLoad }
 
@@ -66,7 +67,7 @@ class ModelController extends GetxController {
   }
 
   /// Apple Neural Engine (Core ML) models are only usable on Apple devices.
-  static bool get supportsAppleNpu => Platform.isIOS || Platform.isMacOS;
+  static bool get supportsAppleNpu => AppPlatform.isIOS || AppPlatform.isMacOS;
 
   static const localFilters = [
     'general',
@@ -494,7 +495,7 @@ class ModelController extends GetxController {
       return;
     }
 
-    if (!Platform.isAndroid) {
+    if (!AppPlatform.isAndroid) {
       showToast(
         'Android Only'.tr,
         'Use the app download button or import a local model on this platform.'
@@ -569,7 +570,7 @@ class ModelController extends GetxController {
 
   /// Android's DownloadManager offers no pause API, so stopping there cancels
   /// the download; elsewhere progress is kept and the next download resumes.
-  bool get canPauseDownloads => !Platform.isAndroid;
+  bool get canPauseDownloads => !AppPlatform.isAndroid;
 
   void pauseDownload(String filename) {
     _download.pauseDownload(filename);
@@ -1170,7 +1171,7 @@ class ModelController extends GetxController {
       return;
     }
 
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       await _importModelWithAndroidPicker();
       return;
     }
@@ -1325,7 +1326,7 @@ class ModelController extends GetxController {
   }
 
   /// Folder import is Android only (storage access framework tree picker).
-  bool get supportsFolderImport => Platform.isAndroid;
+  bool get supportsFolderImport => AppPlatform.isAndroid;
 
   /// Opens the system folder picker and lists the model files inside.
   /// Returns null when the user cancels.

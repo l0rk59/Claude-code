@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -10,6 +9,7 @@ import 'update_service.dart';
 
 import 'download_native.dart' if (dart.library.html) 'download_web.dart'
     as platform_dl;
+import '../core/app_platform.dart';
 
 /// State for an individual download.
 class DownloadProgress {
@@ -81,7 +81,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
   void onInit() {
     super.onInit();
 
-    if (!kIsWeb && Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       WidgetsBinding.instance.addObserver(this);
 
       // Initial reconciliation on startup
@@ -206,7 +206,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
 
   @override
   void onClose() {
-    if (!kIsWeb && Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       WidgetsBinding.instance.removeObserver(this);
     }
     super.onClose();
@@ -220,7 +220,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
   }
 
   Future<void> reconcileActiveDownloads() async {
-    if (kIsWeb || !Platform.isAndroid) return;
+    if (!AppPlatform.isAndroid) return;
     try {
       final list = await platform_dl.getActiveNativeDownloads();
       final recoveredFilenames = <String>{};
@@ -271,7 +271,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     final downloadProgress = DownloadProgress(filename: filename);
     activeDownloads[filename] = downloadProgress;
 
-    if (Platform.isAndroid) {
+    if (AppPlatform.isAndroid) {
       try {
         final modelsDirectory = await modelsDir;
         final result = await platform_dl.startNativeDownload(
@@ -359,7 +359,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
 
   void pauseDownload(String filename) {
     final nativeId = _nativeDownloadIds[filename];
-    if (nativeId != null && Platform.isAndroid) {
+    if (nativeId != null && AppPlatform.isAndroid) {
       platform_dl.cancelNativeDownload(
           downloadId: nativeId, filename: filename);
       activeDownloads.remove(filename);
@@ -374,7 +374,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
   Future<void> deleteModel(String filename) async {
     if (kIsWeb) return;
     final nativeId = _nativeDownloadIds[filename];
-    if (nativeId != null && Platform.isAndroid) {
+    if (nativeId != null && AppPlatform.isAndroid) {
       await platform_dl.cancelNativeDownload(
           downloadId: nativeId, filename: filename);
       _nativeDownloadIds.remove(filename);

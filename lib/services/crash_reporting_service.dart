@@ -15,6 +15,7 @@ import 'app_log_service.dart';
 import 'device_info_service.dart';
 import 'inference_service.dart';
 import 'local_image_service.dart';
+import '../core/app_platform.dart';
 
 class CrashReportingService extends GetxService {
   bool _enabled = false;
@@ -30,7 +31,7 @@ class CrashReportingService extends GetxService {
         await Firebase.initializeApp();
       }
       _packageInfo = await PackageInfo.fromPlatform();
-      if (Platform.isAndroid) {
+      if (AppPlatform.isAndroid) {
         _androidInfo = await DeviceInfoPlugin().androidInfo;
       }
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
