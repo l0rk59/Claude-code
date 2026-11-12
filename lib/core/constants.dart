@@ -23,6 +23,27 @@ class AppConstants {
   static const String keyCustomCloudBaseUrl = 'custom_cloud_base_url';
   static const String keyCustomCloudKey = 'custom_cloud_api_key';
   static const String keyCustomCloudProfiles = 'custom_cloud_profiles';
+
+  /// Hugging Face access token: lets the app download models whose
+  /// publisher asks to accept a licence first (Gemma, Llama…).
+  static const String keyHfToken = 'hf_token';
+
+  /// Settings that hold secrets. They live in the phone's keystore, never
+  /// in the ordinary settings file (see HiveService).
+  static const secretKeys = {
+    keyOpenaiKey,
+    keyAnthropicKey,
+    keyGoogleKey,
+    keyKimiKey,
+    keyStabilityKey,
+    keyNvidiaKey,
+    keyOpenRouterKey,
+    keyDeepSeekKey,
+    keyCustomCloudKey,
+    keyCustomCloudProfiles,
+    keyServerApiKey,
+    keyHfToken,
+  };
   static const String keyCustomCloudProfileIndex = 'custom_cloud_profile_index';
   static const String keyOpenaiModel = 'openai_model';
   static const String keyAnthropicModel = 'anthropic_model';
