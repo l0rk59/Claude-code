@@ -1,0 +1,36 @@
+# Runs the analyzer and the tests on every push and pull request, so a
+# change that breaks them is caught before it reaches a phone.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # The version the app is developed and built with.
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      - run: flutter test

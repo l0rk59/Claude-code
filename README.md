@@ -26,6 +26,8 @@ _Generated on pixel 6 with 20 step_
 
 ---
 
+Where the project stands and what comes next: [docs/feuille-de-route.md](docs/feuille-de-route.md). What to try on real devices: [docs/plan-de-test.md](docs/plan-de-test.md). Both in French.
+
 ## Technical Architecture
 
 ### Stack
