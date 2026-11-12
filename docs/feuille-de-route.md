@@ -14,7 +14,7 @@ vous. Rédigé après l'audit complet du dépôt.
 | Cluster téléphones + ordinateur | en place | dialogue vérifié contre le vrai `ggml-rpc-server` b11157 ; aucun chargement réel réparti |
 | Mesure de vitesse | nouveau | tests |
 | Mises à jour de l'application | pointent sur ce dépôt | aucune version publiée pour l'instant |
-| Tests automatiques sur GitHub | fichier ajouté | pas encore exécuté sur GitHub |
+| Tests automatiques sur GitHub | en place | première exécution réussie sur GitHub |
 | Télémétrie | inactive | aucun fichier de configuration Firebase : rien n'est envoyé |
 
 Le point faible est unique et il est partout : **rien n'a tourné sur un vrai
