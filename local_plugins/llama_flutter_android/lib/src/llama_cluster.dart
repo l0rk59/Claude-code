@@ -18,7 +18,7 @@ class ClusterWorker {
   /// The worker device's lasting ID: finds it again when its IP changes.
   final String? id;
 
-  /// A computer running llama.cpp's `rpc-server`, not a phone running the
+  /// A computer running llama.cpp's `ggml-rpc-server`, not a phone running the
   /// app. Its [ramMb] is what the user chose to give, not a measure of
   /// what was free.
   final bool computer;
@@ -120,7 +120,7 @@ class LlamaCluster {
   static const defaultPort = 50052;
 
   /// The llama.cpp release this plugin is built from. A computer joins the
-  /// cluster by running the `rpc-server` of that same release, so both ends
+  /// cluster by running the `ggml-rpc-server` of that same release, so both ends
   /// speak the same protocol.
   static const llamaCppRelease = 'b11157';
 

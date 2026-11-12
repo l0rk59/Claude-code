@@ -367,7 +367,7 @@ class _AddComputer extends StatefulWidget {
 }
 
 class _AddComputerState extends State<_AddComputer> {
-  static const _command = 'rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
+  static const _command = 'ggml-rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
 
   final _address = TextEditingController();
   final _memory = TextEditingController();

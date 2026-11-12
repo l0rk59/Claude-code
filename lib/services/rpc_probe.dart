@@ -6,7 +6,7 @@ import 'dart:typed_data';
 /// bytes.
 typedef RpcDeviceMemory = ({int free, int total});
 
-/// What a llama.cpp RPC server says about itself: the `rpc-server` program
+/// What a llama.cpp RPC server says about itself: the `ggml-rpc-server` program
 /// on a computer, or the worker inside PrivateLM on a phone.
 class RpcServerInfo {
   final int major;

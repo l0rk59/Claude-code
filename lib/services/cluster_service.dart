@@ -330,26 +330,26 @@ class ClusterService extends GetxService {
       return (
         info: null,
         error:
-            "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart rpc-server."
+            "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart ggml-rpc-server."
                 .tr,
       );
     } on FormatException {
       return (
         info: null,
-        error: "Something answers at @endpoint, but it isn't llama.cpp's rpc-server."
+        error: "Something answers at @endpoint, but it isn't llama.cpp's ggml-rpc-server."
             .trParams({'endpoint': address}),
       );
     } catch (_) {
       return (
         info: null,
         error:
-            "Can't reach @endpoint. Check that rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through."
+            "Can't reach @endpoint. Check that ggml-rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through."
                 .trParams({'endpoint': address}),
       );
     }
   }
 
-  /// Adds a computer running llama.cpp's rpc-server, giving the cluster
+  /// Adds a computer running llama.cpp's ggml-rpc-server, giving the cluster
   /// [memoryMb] of its memory. Returns an error message, or null on
   /// success.
   Future<String?> addComputer(String input, {required int memoryMb}) async {

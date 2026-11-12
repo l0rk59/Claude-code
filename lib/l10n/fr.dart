@@ -1327,12 +1327,12 @@ const Map<String, String> fr = {
       'Cet ordinateur utilise une autre version de llama.cpp (protocole @version). Utilisez la version @release.',
   'The computer answered, but it offers no memory.':
       'L’ordinateur a répondu, mais ne propose aucune mémoire.',
-  "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart rpc-server.":
-      'L’ordinateur a accepté la connexion sans répondre. Il est peut-être occupé avec un autre téléphone : déchargez le modèle là-bas, ou relancez rpc-server.',
-  "Something answers at @endpoint, but it isn't llama.cpp's rpc-server.":
-      'Quelque chose répond à @endpoint, mais ce n’est pas le rpc-server de llama.cpp.',
-  "Can't reach @endpoint. Check that rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through.":
-      'Impossible de joindre @endpoint. Vérifiez que rpc-server est lancé, que l’ordinateur est sur le même Wi-Fi et que son pare-feu laisse passer le port.',
+  "The computer accepted the connection but didn't answer. It may be busy with another phone: unload the model there, or restart ggml-rpc-server.":
+      'L’ordinateur a accepté la connexion sans répondre. Il est peut-être occupé avec un autre téléphone : déchargez le modèle là-bas, ou relancez ggml-rpc-server.',
+  "Something answers at @endpoint, but it isn't llama.cpp's ggml-rpc-server.":
+      'Quelque chose répond à @endpoint, mais ce n’est pas le ggml-rpc-server de llama.cpp.',
+  "Can't reach @endpoint. Check that ggml-rpc-server is running, that the computer is on the same Wi-Fi, and that its firewall lets the port through.":
+      'Impossible de joindre @endpoint. Vérifiez que ggml-rpc-server est lancé, que l’ordinateur est sur le même Wi-Fi et que son pare-feu laisse passer le port.',
   "ERROR: The model's vision file couldn't be loaded, so it can't read this image: @error":
       'ERREUR : le fichier de vision du modèle n’a pas pu être chargé, il ne peut donc pas lire cette image : @error',
 };
