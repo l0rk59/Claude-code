@@ -13,6 +13,9 @@ import '../services/local_image_service.dart';
 import '../services/model_fit.dart';
 import '../widgets/fit_badge.dart';
 import '../core/colors.dart';
+import '../controllers/home_controller.dart';
+import '../services/lan_server_finder.dart';
+import 'computer_finder_sheet.dart';
 import 'hf_search_view.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
@@ -618,6 +621,7 @@ class ModelView extends GetView<ModelController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildComputerCard(context, cloud),
           SectionHeader('Providers'.tr,
               padding: const EdgeInsets.fromLTRB(4, 20, 4, 8)),
           AppGroup(
@@ -632,6 +636,66 @@ class ModelView extends GetView<ModelController> {
         ],
       );
     });
+  }
+
+  /// A model running on a computer of the user's own network: bigger than
+  /// a phone can hold, and still private.
+  Widget _buildComputerCard(BuildContext context, CloudModelController cloud) {
+    final t = AppTokens.of(context);
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      onTap: () => _findComputer(context, cloud),
+      child: Row(children: [
+        const IconBadge(Icons.laptop_mac_rounded, size: 40),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('A computer on your network'.tr, style: t.bodyStrong),
+              const SizedBox(height: 2),
+              Text(
+                'Run a big model on a PC or a Mac and chat from this phone. Nothing leaves your network.'
+                    .tr,
+                style: t.small,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Icon(Icons.chevron_right_rounded, size: 22, color: t.faint),
+      ]),
+    );
+  }
+
+  Future<void> _findComputer(
+      BuildContext context, CloudModelController cloud) async {
+    String? picked;
+    final connected = await showAppSheet<bool>(
+      context,
+      title: 'A computer on your network'.tr,
+      subtitle:
+          'Computers running llama.cpp, Ollama or LM Studio on your Wi-Fi.'.tr,
+      builder: (_) => ComputerFinderSheet(
+        onConnect: (LanServer server, String model) async {
+          picked = model;
+          await cloud.connectComputer(
+            name: server.software.isEmpty
+                ? '${'Computer'.tr} · ${server.host}'
+                : '${server.software} · ${server.host}',
+            baseUrl: server.baseUrl,
+            model: model,
+          );
+        },
+      ),
+    );
+    if (connected != true) return;
+    showToast('Connected to the computer'.tr,
+        '@name answers from your network.'.trParams({'name': picked ?? ''}),
+        tone: ToastTone.success);
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().showChat();
+    }
   }
 
   Widget _buildOnlineProviderRow(

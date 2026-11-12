@@ -133,17 +133,10 @@ Un modèle « dense » de même taille fonctionne aussi, mais bien plus lentemen
 
 ## Variante : l'ordinateur aux commandes
 
-Pour les utilisateurs à l'aise avec la ligne de commande : l'ordinateur peut
-charger le modèle lui-même avec `llama-server` (dans la même archive) et se
-servir des téléphones comme auxiliaires, avec l'option `--rpc` suivie de leurs
-adresses. L'application s'y connecte alors comme à un serveur, depuis
-**Modèles > Cloud > API personnalisée** (adresse `http://IP-du-PC:8080/v1`,
-sans clé). Le fichier du modèle reste sur le disque de l'ordinateur.
-
-Attention : dans ce sens, llama.cpp croit que toute la mémoire d'un téléphone
-est libre. Il faut lui indiquer la répartition avec `--tensor-split`, sinon
-il en confie trop aux téléphones. Cette variante n'a pas été testée ici ;
-voir la documentation de llama.cpp (`tools/rpc/README.md`).
+Si le modèle tient sur l'ordinateur seul, ne passez pas par le cluster : faites
+tourner le modèle sur l'ordinateur et discutez depuis le téléphone. C'est plus
+rapide et plus simple. Voir [ordinateur.md](ordinateur.md), qui décrit aussi
+comment l'ordinateur peut emprunter la mémoire des téléphones.
 
 ## En cas de problème
 

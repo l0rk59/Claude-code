@@ -20,6 +20,7 @@ _Generated on pixel 6 with 20 step_
 - **Persistent Sessions** — All chats and settings are stored locally via Hive. Nothing leaves your device unless you explicitly choose cloud mode.
 - **Background Services** — Firebase Cloud Messaging integration for push updates and background task handling.
 - **Smart Auto-Configuration** — On first launch, the app detects your device's RAM and recommends optimal context size and token limits automatically.
+- **A Computer On Your Network** — Run a big model on a PC or a Mac (llama.cpp, Ollama, LM Studio) and chat from the phone: the app finds it on the Wi-Fi. See [docs/ordinateur.md](docs/ordinateur.md) (French).
 - **Phone Cluster** — Spread one GGUF model across several phones, and a computer running llama.cpp's `ggml-rpc-server`, on the same Wi-Fi, to run models too big for one device. See [docs/cluster-ordinateur.md](docs/cluster-ordinateur.md) (French).
 - **Task Management (in development)** — A task view for structured, multi-step AI workflows is being built. It is not available in the app yet.
 

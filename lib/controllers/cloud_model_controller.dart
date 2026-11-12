@@ -331,6 +331,29 @@ class CloudModelController extends GetxController {
     );
   }
 
+  /// Chats with [model] on a computer of the user's own network, reached
+  /// at [baseUrl]. A computer added before keeps its entry (and its key, if
+  /// it had one) instead of being listed twice.
+  Future<void> connectComputer({
+    required String name,
+    required String baseUrl,
+    required String model,
+  }) async {
+    final url = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    final known = customProfiles.indexWhere((p) => p['baseUrl'] == url);
+    final key = known >= 0 ? customProfiles[known]['apiKey'] ?? '' : '';
+    if (known >= 0) {
+      await _settings.selectCustomCloudProfile(known);
+    } else {
+      _settings.beginNewCustomCloudProfile();
+    }
+    await _settings.setCustomCloudConfig(
+        name: name, baseUrl: url, apiKey: key, model: model);
+    _syncCustomControllers();
+    customProviderError.value = '';
+    await selectModel('custom', model, showSnackbar: false);
+  }
+
   Future<void> clearCustomProvider() async {
     await _settings.clearCustomCloudConfig();
     customProviderError.value = '';

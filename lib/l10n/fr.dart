@@ -1338,6 +1338,27 @@ const Map<String, String> fr = {
   'Not enough storage': 'Stockage insuffisant',
   'This needs @needed of storage and the phone has @free free. Delete models or files you no longer use, then try again.':
       'Il faut @needed de stockage et le téléphone en a @free de libre. Supprimez des modèles ou des fichiers dont vous ne vous servez plus, puis réessayez.',
+  'A computer on your network': 'Un ordinateur de votre réseau',
+  'Run a big model on a PC or a Mac and chat from this phone. Nothing leaves your network.':
+      'Faites tourner un gros modèle sur un PC ou un Mac et discutez depuis ce téléphone. Rien ne sort de votre réseau.',
+  'Computers running llama.cpp, Ollama or LM Studio on your Wi-Fi.':
+      'Les ordinateurs de votre Wi-Fi qui font tourner llama.cpp, Ollama ou LM Studio.',
+  'Connected to the computer': 'Connecté à l’ordinateur',
+  '@name answers from your network.': '@name répond depuis votre réseau.',
+  'Looking on your Wi-Fi…': 'Recherche sur votre Wi-Fi…',
+  'This phone is not on a Wi-Fi network. Connect it to the same Wi-Fi as the computer.':
+      'Ce téléphone n’est pas sur un réseau Wi-Fi. Connectez-le au même Wi-Fi que l’ordinateur.',
+  'No computer found. On the computer, start llama-server, Ollama or LM Studio and let it accept connections from the network, then search again.':
+      'Aucun ordinateur trouvé. Sur l’ordinateur, lancez llama-server, Ollama ou LM Studio en autorisant les connexions du réseau, puis relancez la recherche.',
+  'This computer has no model ready yet.':
+      'Cet ordinateur n’a pas encore de modèle prêt.',
+  "Or enter the computer's address": 'Ou saisissez l’adresse de l’ordinateur',
+  'Checking…': 'Vérification…',
+  'Search again': 'Relancer la recherche',
+  'No model server answers there. Check the address, that the program is running on the computer, and that it accepts connections from the network.':
+      'Aucun serveur de modèle ne répond à cette adresse. Vérifiez l’adresse, que le programme est lancé sur l’ordinateur et qu’il accepte les connexions du réseau.',
+  'The computer runs the model and this phone only shows the conversation. Nothing leaves your network.':
+      'L’ordinateur fait tourner le modèle, ce téléphone n’affiche que la conversation. Rien ne sort de votre réseau.',
 };
 
 /// Download statuses the Android code reports in English (shown through
