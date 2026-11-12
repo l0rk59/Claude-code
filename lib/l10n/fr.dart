@@ -1264,6 +1264,33 @@ const Map<String, String> fr = {
   'The model you used last time.': 'Le modèle utilisé la dernière fois.',
   'A model has to be loaded before you can chat.':
       'Il faut charger un modèle avant de pouvoir discuter.',
+  'Search Hugging Face': 'Rechercher sur Hugging Face',
+  'Search a model': 'Rechercher un modèle',
+  "Couldn't reach Hugging Face": 'Hugging Face est injoignable',
+  'No model found': 'Aucun modèle trouvé',
+  'Try a shorter name, such as "qwen" or "gemma".':
+      'Essayez un nom plus court, par exemple « qwen » ou « gemma ».',
+  'Most downloaded first.': 'Les plus téléchargés en premier.',
+  'Thousands of open models, straight from Hugging Face. Each file shows whether it suits this phone before you download it.':
+      'Des milliers de modèles ouverts, directement depuis Hugging Face. Chaque fichier indique s’il convient à ce téléphone avant le téléchargement.',
+  'Ideas': 'Idées',
+  "Couldn't load this model's files. Check your connection and try again.":
+      'Impossible de charger les fichiers de ce modèle. Vérifiez votre connexion, puis réessayez.',
+  "Its publisher asks you to accept a licence on Hugging Face, so the app can't download it. The same model is often available from another publisher.":
+      'Son éditeur demande d’accepter une licence sur Hugging Face : l’application ne peut pas le télécharger. Le même modèle est souvent proposé par un autre éditeur.',
+  "The app's engine can't run this kind of model yet (@kind).":
+      'Le moteur de l’application ne sait pas encore faire tourner ce type de modèle (@kind).',
+  'Reads images: its vision file (@size) downloads with it.':
+      'Lit les images : son fichier de vision (@size) est téléchargé avec lui.',
+  "No file the app can download here. Models split in several parts aren't supported yet.":
+      'Aucun fichier téléchargeable ici. Les modèles découpés en plusieurs parties ne sont pas encore pris en charge.',
+  'Too big for this phone': 'Trop gros pour ce téléphone',
+  'This file needs more memory than this phone has, so it will probably not load. Download it anyway?':
+      'Ce fichier demande plus de mémoire que n’en a ce téléphone : il ne se chargera sans doute pas. Le télécharger quand même ?',
+  'Download started': 'Téléchargement lancé',
+  '@name is in My models once it is ready.':
+      '@name apparaîtra dans Mes modèles une fois prêt.',
+  'On this phone': 'Sur ce téléphone',
 };
 
 /// Download statuses the Android code reports in English (shown through

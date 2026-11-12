@@ -649,8 +649,26 @@ class ModelController extends GetxController {
     _download.pauseDownload(filename);
   }
 
-  /// Removes a custom model entry added from a URL in an earlier version,
-  /// cancelling any download and deleting any partial or complete file.
+  /// Adds a model found on Hugging Face to the list and starts downloading
+  /// it. Returns its entry in the list: the one already there when the list
+  /// has this file.
+  Future<AiModel> addFromHub(AiModel model) async {
+    final existing =
+        availableModels.firstWhereOrNull((m) => m.filename == model.filename);
+    if (existing == null) {
+      customModels.add(model);
+      availableModels.add(model);
+      await _saveCustomModels();
+    }
+    final entry = existing ?? model;
+    if (!isDownloaded(entry.filename) && !isDownloadingModel(entry.filename)) {
+      unawaited(downloadModel(entry));
+    }
+    return entry;
+  }
+
+  /// Removes a model the user added (from Hugging Face, or from a URL in an
+  /// earlier version), cancelling any download and deleting its file.
   Future<void> removeCustomModel(AiModel model) async {
     if (_download.activeDownloads.containsKey(model.filename)) {
       _download.pauseDownload(model.filename);

@@ -13,6 +13,7 @@ import '../services/local_image_service.dart';
 import '../services/model_fit.dart';
 import '../widgets/fit_badge.dart';
 import '../core/colors.dart';
+import 'hf_search_view.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -81,6 +82,7 @@ class ModelView extends GetView<ModelController> {
                 _buildImportingProgress(context),
                 ..._buildLibrary(context),
               ] else if (scope == 'browse') ...[
+                _buildHubSearch(context),
                 _buildFeatured(context),
                 _buildLocalFilterChips(context),
                 ..._buildBrowse(context),
@@ -103,6 +105,38 @@ class ModelView extends GetView<ModelController> {
           selected: controller.modelScope.value,
           onChanged: (value) => controller.modelScope.value = value,
         ));
+  }
+
+  /// Opens the Hugging Face search. Looks like a search field so it reads
+  /// as "search here", but the typing happens on the search screen.
+  Widget _buildHubSearch(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Material(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => Get.to(() => const HfSearchView()),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            child: Row(children: [
+              Icon(Icons.search_rounded, size: 20, color: t.muted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('Search Hugging Face'.tr,
+                    style: t.body.copyWith(color: t.muted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, size: 20, color: t.faint),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildLocalActions(BuildContext context) {
