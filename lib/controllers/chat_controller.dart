@@ -25,6 +25,7 @@ import '../services/local_image_service.dart';
 import '../services/app_log_service.dart';
 import '../services/image_generation_notification_service.dart';
 import '../services/document_extractor_service.dart';
+import '../services/token_coalescer.dart';
 import '../utils/thought_parser.dart';
 
 const int _visionImageMaxSide = 768;
@@ -77,6 +78,10 @@ class ChatController extends GetxController {
 
   // Real-time streaming state — the AI response as it's being generated
   final streamingResponse = ''.obs;
+
+  /// Groups the tokens of the reply in progress before they reach
+  /// [streamingResponse]. Null when nothing is being generated.
+  TokenCoalescer? _tokenStream;
   final isStreaming = false.obs;
   final streamingAttachmentType = Rxn<String>();
 
@@ -678,6 +683,18 @@ class ChatController extends GetxController {
         }
       }
 
+      // Tokens reach the screen a few times a second, not one by one:
+      // every update re-reads the whole reply on the UI thread, which
+      // slows the model down (see TokenCoalescer).
+      final tokens = TokenCoalescer(onText: (text) {
+        // Ignore tokens from a generation the user already stopped.
+        if (generationId != _generationSerial) return;
+        streamingResponse.value += text;
+        trackThoughtTiming();
+        _scrollToBottom();
+      });
+      _tokenStream = tokens;
+
       final inferenceMode = _hive.getSetting(
             AppConstants.keyInferenceMode,
             defaultValue: 'local',
@@ -803,13 +820,7 @@ class ChatController extends GetxController {
             audioPath: fileType == 'audio' ? filePath : null,
             stopSequences:
                 Get.find<SettingsController>().stopSequences.toList(),
-            onToken: (token) {
-              // Ignore tokens from a generation the user already stopped.
-              if (generationId != _generationSerial) return;
-              streamingResponse.value += token;
-              trackThoughtTiming();
-              _scrollToBottom();
-            },
+            onToken: tokens.add,
           );
         }
       } else {
@@ -821,14 +832,13 @@ class ChatController extends GetxController {
         rawResponse = await cloud.sendMessage(
           messages: apiMessages,
           imageBase64: imgBase64, // already encoded before clearImage()
-          onToken: (token) {
-            if (generationId != _generationSerial) return;
-            streamingResponse.value += token;
-            trackThoughtTiming();
-            _scrollToBottom();
-          },
+          onToken: tokens.add,
         );
       }
+
+      // Show the last tokens before the reply is read as finished.
+      tokens.flush();
+      if (identical(_tokenStream, tokens)) _tokenStream = null;
 
       if (thoughtStartedAt != null && thoughtDurationSeconds == null) {
         thoughtDurationSeconds =
@@ -885,6 +895,9 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       if (generationId != _generationSerial) return;
+      // Nothing may arrive on screen after the reply has failed.
+      _tokenStream?.flush();
+      _tokenStream = null;
       isStreaming.value = false;
       streamingAttachmentType.value = null;
       streamingResponse.value = '';
@@ -914,6 +927,9 @@ class ChatController extends GetxController {
 
   void stopGenerating() {
     if (!isLoading.value && !isStreaming.value) return;
+    // The tokens still waiting are part of what was generated so far.
+    _tokenStream?.flush();
+    _tokenStream = null;
     final partialResponse = streamingResponse.value.trim();
     if (partialResponse.isNotEmpty) {
       final tps = Get.find<InferenceService>().tokensPerSecond.value;
