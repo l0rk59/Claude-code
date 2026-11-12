@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import '../controllers/model_controller.dart';
+import '../core/constants.dart';
 import '../core/ui.dart';
+import 'hive_service.dart';
 import 'update_service.dart';
 
 import 'download_native.dart' if (dart.library.html) 'download_web.dart'
@@ -279,6 +281,19 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     }
   }
 
+  /// The token to send with a download from [url]: the user's Hugging Face
+  /// token, and only to Hugging Face.
+  static String? hfTokenFor(String url, String? token) {
+    if (token == null || token.trim().isEmpty) return null;
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
+    final ours = host == 'huggingface.co' || host.endsWith('.huggingface.co');
+    return ours ? token.trim() : null;
+  }
+
+  String? _savedHfToken() => Get.isRegistered<HiveService>()
+      ? Get.find<HiveService>().getSetting<String>(AppConstants.keyHfToken)
+      : null;
+
   Future<String> downloadModel({
     required String url,
     required String filename,
@@ -287,6 +302,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     if (kIsWeb) {
       return 'ERROR: Downloading models is not supported on web.'.tr;
     }
+    authToken ??= hfTokenFor(url, _savedHfToken());
 
     final downloadProgress = DownloadProgress(filename: filename);
     activeDownloads[filename] = downloadProgress;
@@ -298,6 +314,7 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
           url: url,
           filename: filename,
           modelsDir: modelsDirectory,
+          authToken: authToken,
         );
         if (result != null) {
           final id = result['downloadId'] as int;

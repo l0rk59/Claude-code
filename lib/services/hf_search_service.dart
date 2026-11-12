@@ -24,9 +24,13 @@ class HfRepo {
 
 /// What a repository holds: its GGUF files and whether the app can use them.
 class HfRepoDetails {
-  /// Needs a Hugging Face account that accepted the model's terms; the app
-  /// can't download those.
+  /// Its publisher asks to accept a licence first: downloading needs a
+  /// Hugging Face token whose account has accepted it.
   final bool gated;
+
+  /// For a [gated] repository: whether the user's token gives access to
+  /// its files. Null when it wasn't checked (no token, or not gated).
+  final bool? accessible;
 
   /// The model's GGUF architecture ("qwen35", "gemma4"…), '' when unknown.
   final String architecture;
@@ -36,9 +40,19 @@ class HfRepoDetails {
 
   const HfRepoDetails({
     this.gated = false,
+    this.accessible,
     this.architecture = '',
     this.files = const [],
   });
+
+  /// Whether the app may download from it now.
+  bool get downloadable => !gated || accessible == true;
+
+  HfRepoDetails withAccess(bool access) => HfRepoDetails(
+      gated: gated,
+      accessible: access,
+      architecture: architecture,
+      files: files);
 
   /// The model files, without the vision file.
   List<HfFile> get models => files.where((f) => !f.isMmproj).toList();
@@ -103,7 +117,47 @@ class HfSearchService {
   static const _host = 'huggingface.co';
 
   final http.Client _client;
-  HfSearchService({http.Client? client}) : _client = client ?? http.Client();
+
+  /// The user's Hugging Face token, read on each request ('' or null: none).
+  final String? Function()? token;
+
+  HfSearchService({http.Client? client, this.token})
+      : _client = client ?? http.Client();
+
+  Map<String, String> get _headers {
+    final value = token?.call()?.trim() ?? '';
+    return value.isEmpty ? const {} : {'Authorization': 'Bearer $value'};
+  }
+
+  /// The account a token belongs to. Null when Hugging Face refuses it.
+  /// Throws when Hugging Face can't be reached.
+  Future<String?> whoAmI(String token) async {
+    final response = await _client.get(
+      Uri.https(_host, '/api/whoami-v2'),
+      headers: {'Authorization': 'Bearer ${token.trim()}'},
+    ).timeout(const Duration(seconds: 20));
+    if (response.statusCode == 401 || response.statusCode == 403) return null;
+    if (response.statusCode != 200) {
+      throw http.ClientException(
+          'Hugging Face returned ${response.statusCode}');
+    }
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    return data is Map ? '${data['name'] ?? ''}' : null;
+  }
+
+  /// Whether the user's token may download [path] of [repoId]: Hugging Face
+  /// answers a file request with the file (or a redirect to it) once the
+  /// account has accepted the licence, and with 401/403 before.
+  Future<bool> canDownload(String repoId, String path) async {
+    final request =
+        http.Request('HEAD', Uri.https(_host, '/$repoId/resolve/main/$path'))
+          ..followRedirects = false
+          ..headers.addAll(_headers);
+    final response =
+        await _client.send(request).timeout(const Duration(seconds: 20));
+    await response.stream.drain<void>();
+    return response.statusCode >= 200 && response.statusCode < 400;
+  }
 
   /// GGUF repositories matching [query], most downloaded first.
   Future<List<HfRepo>> search(String query, {int limit = 30}) async {
@@ -121,12 +175,23 @@ class HfSearchService {
   Future<HfRepoDetails> details(String repoId) async {
     // "blobs" adds the file sizes.
     final uri = Uri.https(_host, '/api/models/$repoId', {'blobs': 'true'});
-    return parseDetails(await _get(uri));
+    final details = parseDetails(await _get(uri));
+    // Behind a licence: with a token, find out whether it opens the door.
+    if (details.gated && _headers.isNotEmpty && details.models.isNotEmpty) {
+      try {
+        return details
+            .withAccess(await canDownload(repoId, details.models.first.path));
+      } catch (_) {
+        return details;
+      }
+    }
+    return details;
   }
 
   Future<String> _get(Uri uri) async {
-    final response =
-        await _client.get(uri).timeout(const Duration(seconds: 20));
+    final response = await _client
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
       throw http.ClientException(
           'Hugging Face returned ${response.statusCode}', uri);

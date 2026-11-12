@@ -31,6 +31,7 @@ Future<Map<String, dynamic>?> startNativeDownload({
   required String url,
   required String filename,
   required String modelsDir,
+  String? authToken,
 }) async =>
     null;
 

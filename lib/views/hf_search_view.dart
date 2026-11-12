@@ -5,8 +5,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../controllers/model_controller.dart';
+import '../core/constants.dart';
 import '../core/ui.dart';
 import '../services/device_info_service.dart';
+import '../services/hive_service.dart';
 import '../services/hf_search_service.dart';
 import '../services/model_fit.dart';
 import '../widgets/fit_badge.dart';
@@ -34,7 +36,8 @@ class _HfSearchViewState extends State<HfSearchView> {
     'DeepSeek',
   ];
 
-  late final HfSearchService _service = widget.service ?? HfSearchService();
+  late final HfSearchService _service =
+      widget.service ?? HfSearchService(token: savedHfToken);
   final _input = TextEditingController();
   Timer? _debounce;
 
@@ -105,7 +108,20 @@ class _HfSearchViewState extends State<HfSearchView> {
     final t = AppTokens.of(context);
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: appScreenBar(context, title: 'Hugging Face'),
+      appBar: appScreenBar(context, title: 'Hugging Face', actions: [
+        IconButton(
+          tooltip: 'Hugging Face token'.tr,
+          icon: Icon(
+              (savedHfToken() ?? '').isEmpty
+                  ? Icons.key_off_rounded
+                  : Icons.key_rounded,
+              color: t.muted),
+          onPressed: () async {
+            await showHfTokenSheet(context, _service);
+            if (mounted) setState(() {});
+          },
+        ),
+      ]),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -342,15 +358,38 @@ class _RepoFilesState extends State<_RepoFiles> {
     final mmproj = details.mmproj;
     final ram = Get.find<DeviceInfoService>().totalRamGB.value;
     final recommended = details.recommended(ram);
-    final blocked = details.gated || !details.supported;
+    final blocked = !details.downloadable || !details.supported;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (details.gated) ...[
+        if (details.gated && details.accessible == null) ...[
           AppNotice(
-            "Its publisher asks you to accept a licence on Hugging Face, so the app can't download it. The same model is often available from another publisher."
-                .tr,
+            'Its publisher asks you to accept a licence first. Accept it on huggingface.co/@repo with your account, then add your Hugging Face token here. The same model is often available from another publisher without one.'
+                .trParams({'repo': widget.repo.id}),
+            icon: Icons.lock_outline_rounded,
+            color: t.orange,
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: PillButton(
+              label: 'Add a token'.tr,
+              icon: Icons.key_rounded,
+              onPressed: () async {
+                final saved = await showHfTokenSheet(context, widget.service);
+                if (saved && mounted) {
+                  setState(() {
+                    _details = widget.service.details(widget.repo.id);
+                  });
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ] else if (details.gated && details.accessible == false) ...[
+          AppNotice(
+            "Your token doesn't open this model yet. Accept its licence on huggingface.co/@repo with the same account, then come back."
+                .trParams({'repo': widget.repo.id}),
             icon: Icons.lock_outline_rounded,
             color: t.orange,
           ),
@@ -561,6 +600,147 @@ class _FileRow extends StatelessWidget {
             );
           }),
       ]),
+    );
+  }
+}
+
+/// The user's Hugging Face token, or null.
+String? savedHfToken() => Get.isRegistered<HiveService>()
+    ? Get.find<HiveService>().getSetting<String>(AppConstants.keyHfToken)
+    : null;
+
+/// Lets the user add, check or remove their Hugging Face token. Returns
+/// true when a token was saved.
+Future<bool> showHfTokenSheet(
+    BuildContext context, HfSearchService service) async {
+  final saved = await showAppSheet<bool>(
+    context,
+    title: 'Hugging Face token'.tr,
+    subtitle:
+        'Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone\'s keystore, sent only to Hugging Face.'
+            .tr,
+    builder: (_) => HfTokenSheet(
+      service: service,
+      current: savedHfToken() ?? '',
+      save: (token) async {
+        if (Get.isRegistered<HiveService>()) {
+          await Get.find<HiveService>().setSetting(
+              AppConstants.keyHfToken, token.isEmpty ? null : token);
+        }
+      },
+    ),
+  );
+  return saved == true;
+}
+
+/// Enters and checks a Hugging Face token. Pops with true once one is
+/// saved, false once it is removed.
+class HfTokenSheet extends StatefulWidget {
+  final HfSearchService service;
+  final String current;
+  final Future<void> Function(String token) save;
+
+  const HfTokenSheet({
+    super.key,
+    required this.service,
+    required this.current,
+    required this.save,
+  });
+
+  @override
+  State<HfTokenSheet> createState() => _HfTokenSheetState();
+}
+
+class _HfTokenSheetState extends State<HfTokenSheet> {
+  late final _token = TextEditingController(text: widget.current);
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _token.dispose();
+    super.dispose();
+  }
+
+  Future<void> _check() async {
+    final token = _token.text.trim();
+    if (token.isEmpty) {
+      setState(() => _error = 'Paste your token first.'.tr);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final account = await widget.service.whoAmI(token);
+      if (!mounted) return;
+      if (account == null) {
+        setState(() {
+          _busy = false;
+          _error = 'Hugging Face refuses this token. Copy it again from huggingface.co/settings/tokens.'
+              .tr;
+        });
+        return;
+      }
+      await widget.save(token);
+      if (!mounted) return;
+      showToast('Token saved'.tr,
+          'Connected as @name.'.trParams({'name': account}),
+          tone: ToastTone.success);
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = "Couldn't reach Hugging Face".tr;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Create one with "Read" access on huggingface.co/settings/tokens, then paste it here.'
+              .tr,
+          style: t.caption,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _token,
+          obscureText: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          decoration: appInputDecoration(context, hint: 'hf_…'),
+          onSubmitted: (_) => _check(),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          AppNotice(_error!, icon: Icons.error_outline_rounded, color: t.red),
+        ],
+        const SizedBox(height: 16),
+        PrimaryButton(
+          label: 'Check and save'.tr,
+          busy: _busy,
+          onPressed: _busy ? null : _check,
+        ),
+        if (widget.current.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          TonalButton.destructive(
+            context,
+            label: 'Remove the token'.tr,
+            onTap: () async {
+              await widget.save('');
+              if (context.mounted) Navigator.pop(context, false);
+            },
+          ),
+        ],
+      ],
     );
   }
 }

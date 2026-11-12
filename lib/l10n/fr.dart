@@ -1275,8 +1275,6 @@ const Map<String, String> fr = {
   'Ideas': 'Idées',
   "Couldn't load this model's files. Check your connection and try again.":
       'Impossible de charger les fichiers de ce modèle. Vérifiez votre connexion, puis réessayez.',
-  "Its publisher asks you to accept a licence on Hugging Face, so the app can't download it. The same model is often available from another publisher.":
-      'Son éditeur demande d’accepter une licence sur Hugging Face : l’application ne peut pas le télécharger. Le même modèle est souvent proposé par un autre éditeur.',
   "The app's engine can't run this kind of model yet (@kind).":
       'Le moteur de l’application ne sait pas encore faire tourner ce type de modèle (@kind).',
   'Reads images: its vision file (@size) downloads with it.':
@@ -1397,6 +1395,23 @@ const Map<String, String> fr = {
   'The graphics card is not usable for this model.':
       'La carte graphique n’est pas utilisable pour ce modèle.',
   'Trying @setting (@index of @count)…': 'Essai : @setting (@index sur @count)…',
+  'Hugging Face token': 'Jeton Hugging Face',
+  'Its publisher asks you to accept a licence first. Accept it on huggingface.co/@repo with your account, then add your Hugging Face token here. The same model is often available from another publisher without one.':
+      'Son éditeur demande d’abord d’accepter une licence. Acceptez-la sur huggingface.co/@repo avec votre compte, puis ajoutez ici votre jeton Hugging Face. Le même modèle est souvent proposé sans licence par un autre éditeur.',
+  'Add a token': 'Ajouter un jeton',
+  "Your token doesn't open this model yet. Accept its licence on huggingface.co/@repo with the same account, then come back.":
+      'Votre jeton n’ouvre pas encore ce modèle. Acceptez sa licence sur huggingface.co/@repo avec le même compte, puis revenez.',
+  "Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone's keystore, sent only to Hugging Face.":
+      'Ouvre les modèles dont l’éditeur demande d’accepter une licence (Gemma, Llama…). Rangé dans le coffre du téléphone, envoyé uniquement à Hugging Face.',
+  'Paste your token first.': 'Collez d’abord votre jeton.',
+  'Hugging Face refuses this token. Copy it again from huggingface.co/settings/tokens.':
+      'Hugging Face refuse ce jeton. Copiez-le à nouveau depuis huggingface.co/settings/tokens.',
+  'Token saved': 'Jeton enregistré',
+  'Connected as @name.': 'Connecté en tant que @name.',
+  'Create one with "Read" access on huggingface.co/settings/tokens, then paste it here.':
+      'Créez-en un avec l’accès « Read » sur huggingface.co/settings/tokens, puis collez-le ici.',
+  'Check and save': 'Vérifier et enregistrer',
+  'Remove the token': 'Supprimer le jeton',
 };
 
 /// Download statuses the Android code reports in English (shown through

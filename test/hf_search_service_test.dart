@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:privatelm/controllers/model_controller.dart';
 import 'package:privatelm/core/constants.dart';
 import 'package:privatelm/models/ai_model.dart';
+import 'package:privatelm/services/download_service.dart';
 import 'package:privatelm/services/gguf_architectures.dart';
 import 'package:privatelm/services/hf_search_service.dart';
 
@@ -205,6 +206,91 @@ void main() {
     expect(asked.path, '/api/models/unsloth/Qwen3.5-2B-GGUF');
     expect(asked.queryParameters['blobs'], 'true');
     expect(got.files, hasLength(5));
+  });
+
+  test('sends the token only when there is one', () async {
+    final seen = <String?>[];
+    var token = '';
+    final service = HfSearchService(
+      token: () => token,
+      client: MockClient((request) async {
+        seen.add(request.headers['Authorization']);
+        return http.Response('[]', 200);
+      }),
+    );
+    await service.search('x');
+    token = 'hf_abc';
+    await service.search('x');
+    expect(seen, [null, 'Bearer hf_abc']);
+  });
+
+  test('a gated repository is opened by a token that has access', () async {
+    final gated = jsonEncode({...repoInfo, 'gated': 'manual'});
+    Future<HfRepoDetails> details(String? token, int fileStatus) async {
+      final asked = <String>[];
+      final service = HfSearchService(
+        token: () => token,
+        client: MockClient((request) async {
+          asked.add('${request.method} ${request.url.path}');
+          if (request.method == 'HEAD') return http.Response('', fileStatus);
+          return http.Response(gated, 200);
+        }),
+      );
+      final got = await service.details('google/model-GGUF');
+      if (token == null) expect(asked.any((a) => a.startsWith('HEAD')), isFalse);
+      return got;
+    }
+
+    // No token: blocked, nothing else asked.
+    final none = await details(null, 302);
+    expect(none.gated, isTrue);
+    expect(none.accessible, isNull);
+    expect(none.downloadable, isFalse);
+    // Licence accepted: Hugging Face redirects to the file.
+    final open = await details('hf_abc', 302);
+    expect(open.accessible, isTrue);
+    expect(open.downloadable, isTrue);
+    // Not accepted yet.
+    final closed = await details('hf_abc', 403);
+    expect(closed.accessible, isFalse);
+    expect(closed.downloadable, isFalse);
+    // Not gated: always downloadable.
+    expect(HfSearchService.parseDetails(jsonEncode(repoInfo)).downloadable,
+        isTrue);
+  });
+
+  test('checks whose token it is', () async {
+    final service = HfSearchService(
+      client: MockClient((request) async {
+        expect(request.url.path, '/api/whoami-v2');
+        return request.headers['Authorization'] == 'Bearer good'
+            ? http.Response(jsonEncode({'name': 'l0rk59'}), 200)
+            : http.Response('{"error":"Invalid credentials"}', 401);
+      }),
+    );
+    expect(await service.whoAmI(' good '), 'l0rk59');
+    expect(await service.whoAmI('bad'), isNull);
+  });
+
+  test('downloads carry the token to Hugging Face only', () {
+    expect(
+        DownloadService.hfTokenFor(
+            'https://huggingface.co/google/x/resolve/main/a.gguf', 'hf_abc'),
+        'hf_abc');
+    expect(
+        DownloadService.hfTokenFor(
+            'https://cdn-lfs.huggingface.co/repos/a.gguf', ' hf_abc '),
+        'hf_abc');
+    expect(DownloadService.hfTokenFor('https://example.com/a.gguf', 'hf_abc'),
+        isNull);
+    expect(
+        DownloadService.hfTokenFor(
+            'https://huggingface.co.evil.example/a.gguf', 'hf_abc'),
+        isNull);
+    expect(
+        DownloadService.hfTokenFor('https://huggingface.co/a.gguf', ''), isNull);
+    expect(DownloadService.hfTokenFor('https://huggingface.co/a.gguf', null),
+        isNull);
   });
 
   test('reports a failed request', () async {

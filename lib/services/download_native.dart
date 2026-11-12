@@ -258,6 +258,7 @@ Future<Map<String, dynamic>?> startNativeDownload({
   required String url,
   required String filename,
   required String modelsDir,
+  String? authToken,
 }) async {
   if (!Platform.isAndroid) return null;
   try {
@@ -267,6 +268,7 @@ Future<Map<String, dynamic>?> startNativeDownload({
         'url': url,
         'filename': filename,
         'modelsDir': modelsDir,
+        if (authToken != null && authToken.isNotEmpty) 'authToken': authToken,
       },
     );
     return result;

@@ -127,8 +127,9 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_DOWNLOAD", "URL, filename, or modelsDir is missing.", null)
                         return@setMethodCallHandler
                     }
+                    val authToken = call.argument<String>("authToken")
                     try {
-                        val downloadId = enqueueDownloadInApp(url, filename, modelsDir)
+                        val downloadId = enqueueDownloadInApp(url, filename, modelsDir, authToken)
                         result.success(mapOf("downloadId" to downloadId, "filename" to sanitizeFilename(filename)))
                     } catch (e: Exception) {
                         result.error("DOWNLOAD_FAILED", e.message ?: e.toString(), null)
@@ -426,7 +427,12 @@ class MainActivity : FlutterActivity() {
         return downloadId
     }
 
-    private fun enqueueDownloadInApp(url: String, filename: String, modelsDir: String): Long {
+    private fun enqueueDownloadInApp(
+        url: String,
+        filename: String,
+        modelsDir: String,
+        authToken: String? = null,
+    ): Long {
         val safeName = sanitizeFilename(filename)
         val tempDownloadsDir = File(getExternalFilesDir(null), "temp_downloads")
         tempDownloadsDir.mkdirs()
@@ -442,6 +448,10 @@ class MainActivity : FlutterActivity() {
             setDestinationUri(Uri.fromFile(destFile))
             addRequestHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
             addRequestHeader("Accept", "*/*")
+            // Models behind a licence on Hugging Face need the user's token.
+            if (!authToken.isNullOrBlank()) {
+                addRequestHeader("Authorization", "Bearer $authToken")
+            }
         }
         val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val downloadId = manager.enqueue(request)
