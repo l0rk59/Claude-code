@@ -649,12 +649,25 @@ class ModelController extends GetxController {
     _download.pauseDownload(filename);
   }
 
+  /// The entry the list already has for [model], if any.
+  AiModel? listed(AiModel model) => findListed(availableModels, model);
+
+  /// The entry of [list] for the same model as [model]: same download link,
+  /// or same file name whatever its case (the catalogue saves some files
+  /// under a lowercase name, so comparing names exactly would download a
+  /// model the phone already has a second time).
+  static AiModel? findListed(List<AiModel> list, AiModel model) {
+    final name = model.filename.toLowerCase();
+    return list.firstWhereOrNull((m) =>
+        (model.url.isNotEmpty && m.url == model.url) ||
+        m.filename.toLowerCase() == name);
+  }
+
   /// Adds a model found on Hugging Face to the list and starts downloading
   /// it. Returns its entry in the list: the one already there when the list
   /// has this file.
   Future<AiModel> addFromHub(AiModel model) async {
-    final existing =
-        availableModels.firstWhereOrNull((m) => m.filename == model.filename);
+    final existing = listed(model);
     if (existing == null) {
       customModels.add(model);
       availableModels.add(model);

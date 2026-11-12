@@ -494,6 +494,7 @@ class _FileRow extends StatelessWidget {
     final t = AppTokens.of(context);
     final controller = Get.find<ModelController>();
     final title = file.quant.isEmpty ? file.basename : file.quant;
+    final model = HfSearchService.toModel(repo, file, mmproj: mmproj);
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
       child: Row(children: [
@@ -526,7 +527,10 @@ class _FileRow extends StatelessWidget {
         const SizedBox(width: 10),
         if (!blocked)
           Obx(() {
-            if (controller.isDownloaded(file.basename)) {
+            // The catalogue may already list this file under another
+            // name: follow that entry, or it would download twice.
+            final filename = (controller.listed(model) ?? model).filename;
+            if (controller.isDownloaded(filename)) {
               return Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -537,7 +541,7 @@ class _FileRow extends StatelessWidget {
                 ]),
               );
             }
-            final progress = controller.activeDownloads[file.basename];
+            final progress = controller.activeDownloads[filename];
             if (progress != null) {
               final percent =
                   (progress.progress.value * 100).clamp(0.0, 100.0).round();

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:privatelm/controllers/model_controller.dart';
+import 'package:privatelm/core/constants.dart';
 import 'package:privatelm/models/ai_model.dart';
 import 'package:privatelm/services/gguf_architectures.dart';
 import 'package:privatelm/services/hf_search_service.dart';
@@ -140,6 +142,35 @@ void main() {
     final saved = AiModel.fromMap(model.toMap());
     expect(saved.isCustom, isTrue);
     expect(saved.mmprojUrl, model.mmprojUrl);
+  });
+
+  test('recognises a model the catalogue already lists', () {
+    final catalog = AppConstants.availableModels.map(AiModel.fromMap).toList();
+    // Same file as the catalogue's Qwen 3.5 2B, which is saved under a
+    // lowercase name.
+    final same = HfSearchService.toModel(
+      const HfRepo(id: 'unsloth/Qwen3.5-2B-GGUF'),
+      details.models.firstWhere((f) => f.quant == 'Q4_K_M'),
+      mmproj: details.mmproj,
+    );
+    expect(ModelController.findListed(catalog, same)?.filename,
+        'qwen3.5-2b-q4_k_m.gguf');
+
+    // Another publisher's copy with the same file name is the same model
+    // on disk, whatever its case.
+    final copy = HfSearchService.toModel(
+      const HfRepo(id: 'someone/Qwen3.5-2B-GGUF'),
+      const HfFile('QWEN3.5-2B-Q4_K_M.gguf', 1281000000),
+    );
+    expect(ModelController.findListed(catalog, copy)?.filename,
+        'qwen3.5-2b-q4_k_m.gguf');
+
+    // Another size of the same model is a different file.
+    final other = HfSearchService.toModel(
+      const HfRepo(id: 'unsloth/Qwen3.5-2B-GGUF'),
+      details.models.firstWhere((f) => f.quant == 'Q8_0'),
+    );
+    expect(ModelController.findListed(catalog, other), isNull);
   });
 
   test('searches GGUF repositories by downloads', () async {
