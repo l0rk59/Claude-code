@@ -17,7 +17,7 @@ première mesure sur un vrai téléphone (Dimensity 9400+, 12 Go).
 | Agents : assistants spécialisés et équipes | nouveau | tests du moteur ; parcours complet vérifié avec un modèle simulé dans la version web |
 | Clés et jetons | dans le coffre du téléphone (Keystore) | tests |
 | Identité de l'application | `com.l0rk59.privatelm`, version 1.1.0 | — |
-| Fabrication de l'APK sur GitHub | en place | premier essai lancé ; voir l'onglet Actions |
+| Fabrication de l'APK sur GitHub | en place | construit avec succès sur GitHub (environ 18 minutes) |
 | Mises à jour de l'application | pointent sur ce dépôt | aucune version publiée pour l'instant |
 | Télémétrie | inactive | aucun fichier de configuration Firebase : rien n'est envoyé |
 
