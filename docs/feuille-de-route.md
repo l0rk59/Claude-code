@@ -14,6 +14,7 @@ première mesure sur un vrai téléphone (Dimensity 9400+, 12 Go).
 | Un ordinateur fait tourner le modèle (avec clé) | en place | tests contre de faux serveurs ; options de `llama-server` vérifiées dans son code |
 | Cluster téléphones + ordinateur | en place | dialogue vérifié contre le vrai `ggml-rpc-server` b11157 ; aucun chargement réel réparti |
 | Recherche Web, Mes documents, Mémoire, Tâches, lecture à voix haute | nouveau | tests ; DuckDuckGo et Wikipédia refusent ce serveur de développement, donc pas d'essai réel d'ici |
+| Agents : assistants spécialisés et équipes | nouveau | tests du moteur ; parcours complet vérifié avec un modèle simulé dans la version web |
 | Clés et jetons | dans le coffre du téléphone (Keystore) | tests |
 | Identité de l'application | `com.l0rk59.privatelm`, version 1.1.0 | — |
 | Fabrication de l'APK sur GitHub | en place | premier essai lancé ; voir l'onglet Actions |
@@ -41,6 +42,12 @@ première mesure sur un vrai téléphone (Dimensity 9400+, 12 Go).
   lecture à voix haute.
 - **APK fabriqué par GitHub**, signé avec votre clé : voir
   [publier.md](publier.md).
+- **Agents** (menu + > Agents) : des assistants spécialisés (Chercheur,
+  Documentaliste, Analyste, Planificateur, Rédacteur, Relecteur, Traducteur,
+  Coach, et les vôtres) qui décident seuls d'utiliser leurs outils en
+  plusieurs étapes, et des équipes qui se passent le travail (Planificateur →
+  Chercheur → Relecteur…). Les outils ne font que lire : un agent ne peut ni
+  écrire, ni effacer, ni visiter votre réseau local.
 
 ## 3. Ce qui reste
 
@@ -67,7 +74,6 @@ première mesure sur un vrai téléphone (Dimensity 9400+, 12 Go).
 | Piste | Effort | Ce que ça apporte |
 | --- | --- | --- |
 | Recherche par le sens dans les documents | moyen | Trouver un passage qui répond sans reprendre les mêmes mots (aujourd'hui : recherche par mots). Demande un petit modèle d'« embeddings ». |
-| Le modèle décide lui-même de chercher sur le Web | moyen | Aujourd'hui c'est vous qui activez la recherche. Fiable seulement avec les modèles qui gèrent les « outils » (Qwen 3.5 4B et plus). |
 | L'ordinateur chef d'orchestre du cluster, depuis l'application | moyen | Garder le fichier du modèle sur l'ordinateur tout en empruntant la mémoire des téléphones, sans ligne de commande. |
 | Application pour ordinateur | élevé | Remplacer les scripts par PrivateLM lui-même sur Windows et Linux. |
 

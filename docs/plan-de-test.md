@@ -55,6 +55,20 @@ version d'Android ; système, mémoire et carte graphique de l'ordinateur.
 | 3b.5 | Toucher le haut-parleur sous une réponse | Lecture à voix haute, sans lire les liens ni le code |
 | 3b.6 | Ouvrir un dépôt Gemma officiel dans la recherche Hugging Face, ajouter un jeton (icône clé) | Après acceptation de la licence sur le site : téléchargement possible |
 
+## 3c. Agents
+
+À faire avec Qwen 3.5 4B (ou plus), ou un modèle sur l'ordinateur : avec un
+modèle 2B, les agents se trompent plus souvent d'outil.
+
+| # | À faire | Attendu |
+| --- | --- | --- |
+| 3c.1 | Menu **+ > Agents > Chercheur**, demander « Quel est le prix du litre de gazole en France cette semaine ? » | Une pastille « Chercheur » ; pendant le travail, « Recherche sur le Web : … » puis peut-être « Lecture de … » ; une réponse avec ses sources et un bloc **Réflexion** qui liste les étapes |
+| 3c.2 | **Analyste** : « Si j'épargne 85 € par mois à 3 % par an, combien ai-je au bout de 10 ans ? » | Des étapes « Calcul : … » et un résultat chiffré |
+| 3c.3 | **Documentaliste** (avec un PDF dans Mes documents) : une question sur ce PDF | Étapes « Recherche dans vos documents », réponse citant le fichier |
+| 3c.4 | **Équipe de recherche** sur une question d'actualité | « Planificateur au travail (1 sur 3) », puis Chercheur, puis Relecteur ; noter la durée totale |
+| 3c.5 | **Paramètres > Outils > Agents > Nouvel assistant** : créer « Organisateur de voyages » avec la recherche Web, l'utiliser | Il apparaît dans **Qui répond ?** et suit ses instructions |
+| 3c.6 | Arrêter un agent pendant qu'il travaille | Il s'arrête ; aucune réponse fantôme n'arrive ensuite |
+
 ## 4. Un ordinateur fait tourner le modèle
 
 Voir [ordinateur.md](ordinateur.md).
