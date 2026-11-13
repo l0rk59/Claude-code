@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
 import 'package:gal/gal.dart';
+import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
@@ -25,6 +27,9 @@ import '../services/local_image_service.dart';
 import '../services/app_log_service.dart';
 import '../services/image_generation_notification_service.dart';
 import '../services/document_extractor_service.dart';
+import '../services/agents/agent_profiles.dart';
+import '../services/agents/agent_runner.dart';
+import '../services/agents/agent_tools.dart';
 import '../services/chat_tools.dart';
 import '../services/document_library.dart';
 import '../services/document_library_service.dart';
@@ -100,6 +105,14 @@ class ChatController extends GetxController {
 
   /// For tests: replaces the web search.
   WebSearchService? webSearchService;
+
+  /// The specialised assistant or team answering ('' for the plain
+  /// assistant). See [AgentStore].
+  final activeAgent = ''.obs;
+
+  /// What an agent run shows while it works, throttled like tokens.
+  Timer? _agentDisplayTimer;
+  String? _agentDisplayPending;
   final isStreaming = false.obs;
   final streamingAttachmentType = Rxn<String>();
 
@@ -127,6 +140,7 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    activeAgent.value = AgentStore(_hive).active;
     scrollController.addListener(_handleUserScroll);
     _scrollListenerAttached = true;
     batchModeAccepted.value = _hive.getSetting<bool>(
@@ -187,6 +201,7 @@ class ChatController extends GetxController {
   @override
   void onClose() {
     _scrollTimer?.cancel();
+    _agentDisplayTimer?.cancel();
     if (_scrollListenerAttached) {
       scrollController.removeListener(_handleUserScroll);
     }
@@ -712,7 +727,7 @@ class ChatController extends GetxController {
       }
 
       // Documents and web: what they hold goes into the question.
-      final found = await _gatherContext(visibleText);
+      var found = await _gatherContext(visibleText);
       if (generationId != _generationSerial) return;
       final promptText = ChatTools.withContext(
         effectiveText,
@@ -720,13 +735,6 @@ class ChatController extends GetxController {
         'Answer the question below. Use the numbered sources when they help, cite them like [1], and say so when they do not contain the answer.'
             .tr,
       );
-      final footer = ChatTools.footer(
-        web: found.web,
-        passages: found.passages,
-        webTitle: 'Sources',
-        passagesTitle: 'Excerpts used'.tr,
-      );
-
       final tokens = TokenCoalescer(onText: (text) {
         // Ignore tokens from a generation the user already stopped.
         if (generationId != _generationSerial) return;
@@ -761,7 +769,32 @@ class ChatController extends GetxController {
         history.last['content'] = promptText;
       }
 
-      if (inferenceMode == 'local') {
+      final agentId = activeAgent.value;
+      final imageModel = inferenceMode == 'local' &&
+          Get.find<LocalImageService>().isModelLoaded.value;
+      if (agentId.isNotEmpty && !imageModel) {
+        // A specialised assistant or a team answers, with its tools.
+        tokens.flush();
+        final agentStarted = DateTime.now();
+        final agentRun = await _runAgent(
+          agentId,
+          question: promptText,
+          history: history.length > 1
+              ? history.sublist(math.max(0, history.length - 5), history.length - 1)
+              : const [],
+          isCurrent: () => generationId == _generationSerial,
+        );
+        rawResponse = agentRun.$1;
+        // The steps show as the work behind the answer, with its duration.
+        if (rawResponse.startsWith('<think>')) {
+          thoughtDurationSeconds =
+              DateTime.now().difference(agentStarted).inSeconds;
+        }
+        found = (
+          web: [...found.web, ...agentRun.$2.webSources],
+          passages: [...found.passages, ...agentRun.$2.passages],
+        );
+      } else if (inferenceMode == 'local') {
         final localImage = Get.find<LocalImageService>();
 
         if (localImage.isModelLoaded.value) {
@@ -906,6 +939,13 @@ class ChatController extends GetxController {
       imageGenDecoding.value = false;
 
       // The sources, under an answer (not under an error).
+      // (An agent may have found more on its own.)
+      final footer = ChatTools.footer(
+        web: found.web,
+        passages: found.passages,
+        webTitle: 'Sources',
+        passagesTitle: 'Excerpts used'.tr,
+      );
       if (footer.isNotEmpty &&
           !rawResponse.startsWith('ERROR') &&
           !rawResponse.startsWith('[IMAGE_BASE64]')) {
@@ -1132,6 +1172,216 @@ class ChatController extends GetxController {
       activity.value = '';
     }
     return (web: web, passages: passages);
+  }
+
+  /// Chooses the assistant or team that answers next ('' for the plain
+  /// assistant). An assistant tied to a model asks to load it.
+  Future<void> chooseAgent(String id) async {
+    final store = AgentStore(_hive);
+    activeAgent.value = id;
+    await store.setActive(id);
+    final model = store.agent(id)?.model ?? '';
+    if (model.isEmpty ||
+        _hive.getSetting(AppConstants.keyInferenceMode, defaultValue: 'local') !=
+            'local' ||
+        Get.find<InferenceService>().loadedModelName.value == model ||
+        !Get.isRegistered<ModelController>()) {
+      return;
+    }
+    final models = Get.find<ModelController>();
+    if (models.isDownloaded(model)) await models.loadModel(model);
+  }
+
+  /// Answers [question] with the assistant or team [id]. Returns the
+  /// message to save (the steps folded in a thinking block, then the
+  /// answer) and the toolbox, which holds the sources the tools found.
+  Future<(String, AgentToolbox)> _runAgent(
+    String id, {
+    required String question,
+    required List<Map<String, String>> history,
+    required bool Function() isCurrent,
+  }) async {
+    final store = AgentStore(_hive);
+    final toolbox = AgentToolbox(
+      searchWeb: (query) => (webSearchService ?? WebSearchService()).search(
+        query,
+        provider: WebSearchProvider.fromName(
+            _hive.getSetting<String>(AppConstants.keyWebSearchProvider)),
+        braveKey: _hive.getSetting<String>(AppConstants.keyBraveSearchKey) ?? '',
+        searxngUrl: _hive.getSetting<String>(AppConstants.keySearxngUrl) ?? '',
+        language: Get.locale?.languageCode == 'fr' ? 'fr' : 'en',
+      ),
+      fetchPage: AgentToolbox.readWebPage,
+      searchDocs: (query) => Get.isRegistered<DocumentLibraryService>()
+          ? Get.find<DocumentLibraryService>().library.search(query)
+          : const [],
+    );
+    // Each run gets its own conversation in engines that keep one.
+    final runId = DateTime.now().microsecondsSinceEpoch;
+    var member = 0;
+    final local = (_hive.getSetting(AppConstants.keyInferenceMode,
+            defaultValue: 'local') ??
+        'local') == 'local';
+    // A phone's context is small: fewer steps there.
+    final maxSteps = local ? 4 : 6;
+    AgentRunner runnerFor(AgentProfile a) => AgentRunner(
+          llm: (messages, {onToken, stop = const []}) =>
+              _agentLlm(messages, 'agent:$runId:$member',
+                  onToken: onToken, stop: stop),
+          tools: toolbox.tools(a.tools),
+          maxSteps: maxSteps,
+        );
+    String withMemory(String instructions) {
+      if (!Memories.enabled(_hive)) return instructions;
+      final facts = Memories.forSystemPrompt(Memories.all(_hive),
+          'What you know about the user (they asked you to remember it):'.tr);
+      return facts.isEmpty ? instructions : '$instructions\n\n$facts';
+    }
+
+    final steps = <AgentStep>[];
+    void show(String partial) => _showAgentWork(steps, partial, isCurrent);
+
+    AgentRun run;
+    final team = store.team(id);
+    if (team != null) {
+      final members = store.membersOf(team);
+      run = await TeamRunner([
+        for (final a in members)
+          TeamMember(
+              name: a.name,
+              instructions: withMemory(a.instructions),
+              runner: runnerFor(a)),
+      ]).run(
+        request: question,
+        history: history,
+        onMember: (name, index, count) {
+          member = index;
+          activity.value = '@name is working (@index of @count)…'.trParams(
+              {'name': name, 'index': '${index + 1}', 'count': '$count'});
+          show('');
+        },
+        onActivity: (a) => activity.value = a,
+        onStep: (step) {
+          steps.add(step);
+          show('');
+        },
+        onPartial: show,
+        cancelled: () => !isCurrent(),
+      );
+    } else {
+      final agent = store.agent(id);
+      if (agent == null) {
+        activeAgent.value = AgentStore.none;
+        await store.setActive(AgentStore.none);
+        return ('ERROR: This assistant no longer exists.'.tr, toolbox);
+      }
+      activity.value = agent.usesTools
+          ? '@name is working…'.trParams({'name': agent.name})
+          : '';
+      run = await runnerFor(agent).run(
+        instructions: withMemory(agent.instructions),
+        question: question,
+        history: history,
+        agentName: '',
+        onActivity: (a) => activity.value = a,
+        onStep: (step) {
+          steps.add(step);
+          show('');
+        },
+        onPartial: show,
+        cancelled: () => !isCurrent(),
+      );
+    }
+    activity.value = '';
+    _agentDisplayTimer?.cancel();
+    _agentDisplayTimer = null;
+    if (run.answer.isEmpty) {
+      return ("ERROR: The assistant didn't come to an answer.".tr, toolbox);
+    }
+    final work = agentStepsMarkdown(run.steps);
+    return (
+      work.isEmpty
+          ? run.answer
+          : '<think>\n$work\n</think>\n\n${run.answer}',
+      toolbox,
+    );
+  }
+
+  /// Asks the model in use (on this phone, or remote) for the next reply of
+  /// an agent. [owner] keeps each run's conversation apart in engines that
+  /// keep one.
+  Future<String> _agentLlm(
+    List<Map<String, String>> messages,
+    String owner, {
+    void Function(String token)? onToken,
+    List<String> stop = const [],
+  }) async {
+    final local = (_hive.getSetting(AppConstants.keyInferenceMode,
+            defaultValue: 'local') ??
+        'local') == 'local';
+    if (local) {
+      final rest = messages.sublist(1);
+      return Get.find<InferenceService>().generate(
+        prompt: rest.isEmpty ? '' : rest.last['content'] ?? '',
+        systemPrompt: messages.first['content'],
+        conversationHistory: rest,
+        source: owner,
+        stopSequences: [
+          ...Get.find<SettingsController>().stopSequences,
+          ...stop,
+        ],
+        onToken: onToken,
+      );
+    }
+    var reply = await Get.find<CloudService>()
+        .sendMessage(messages: messages, onToken: onToken);
+    // Remote models don't stop at our markers: cut there.
+    for (final s in stop) {
+      final at = reply.indexOf(s);
+      if (at >= 0) reply = reply.substring(0, at + s.length);
+    }
+    return reply;
+  }
+
+  /// Shows an agent's steps so far, folded, and its answer as it comes; a
+  /// few times a second at most, like tokens.
+  void _showAgentWork(
+      List<AgentStep> steps, String partial, bool Function() isCurrent) {
+    final work = agentStepsMarkdown(steps);
+    _agentDisplayPending = work.isEmpty
+        ? partial
+        : '<think>\n$work\n</think>\n\n$partial';
+    if (_agentDisplayTimer != null) return;
+    _agentDisplayTimer = Timer(const Duration(milliseconds: 80), () {
+      _agentDisplayTimer = null;
+      if (!isCurrent() || _agentDisplayPending == null) return;
+      streamingResponse.value = _agentDisplayPending!;
+      _scrollToBottom();
+    });
+  }
+
+  /// The steps an agent or team took, as the user reads them.
+  static String agentStepsMarkdown(List<AgentStep> steps) {
+    if (steps.isEmpty) return '';
+    String quote(String text) {
+      final short = text.length > 600 ? '${text.substring(0, 600)}…' : text;
+      return short.trim().split('\n').map((l) => '> $l').join('\n');
+    }
+
+    final lines = <String>[];
+    var n = 0;
+    for (final step in steps) {
+      n++;
+      final who = step.agent.isEmpty ? '' : '**${step.agent}** · ';
+      if (step.label == step.agent && step.agent.isNotEmpty) {
+        // A team member's contribution.
+        lines.add('$n. **${step.agent}**\n${quote(step.result)}');
+      } else {
+        lines.add(
+            '$n. $who${step.label}${step.failed ? ' ⚠️' : ''}');
+      }
+    }
+    return lines.join('\n');
   }
 
   /// A web search failure, in words for the user.

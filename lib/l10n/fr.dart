@@ -1526,6 +1526,104 @@ const Map<String, String> fr = {
   'Your own search server, for instance on your computer: the search engines see it, not your phone.':
       'Votre propre serveur de recherche, par exemple sur votre ordinateur : les moteurs de recherche voient ce serveur, pas votre téléphone.',
   'Your tasks': 'Vos tâches',
+  '@name (copy)': '@name (copie)',
+  '@name is working (@index of @count)…': '@name au travail (@index sur @count)…',
+  '@name is working…': '@name au travail…',
+  'A model of its own is loaded when you choose the assistant.':
+      'Un modèle qui lui est propre est chargé quand vous choisissez l’assistant.',
+  'Add an assistant': 'Ajouter un assistant',
+  'Agents with tools work in several steps: they are slower, and work best with a model of 4B or more, or one running on a computer.':
+      'Les agents qui ont des outils travaillent en plusieurs étapes : ils sont plus lents, et fonctionnent mieux avec un modèle de 4B ou plus, ou un modèle sur l’ordinateur.',
+  'Agents': 'Agents',
+  'An assistant has a role and, if you want, tools it decides to use on its own (web, pages, documents, calculator). A team passes a request from one assistant to the next. Choose them in the chat from the + menu.':
+      'Un assistant a un rôle et, si vous le voulez, des outils qu’il décide seul d’utiliser (Web, pages, documents, calculatrice). Une équipe fait passer une demande d’un assistant à l’autre. Choisissez-les dans la discussion, depuis le menu +.',
+  'Analyst': 'Analyste',
+  'Answers directly, without tools.': 'Répond directement, sans outils.',
+  'Answers from your documents, and says where.':
+      'Répond à partir de vos documents, et dit où.',
+  'Article team': 'Équipe article',
+  'Assistants': 'Assistants',
+  'Breaks a request down into clear steps.':
+      'Découpe une demande en étapes claires.',
+  'Calculating @expression': 'Calcul : @expression',
+  'Calculator': 'Calculatrice',
+  'Checking the date': 'Vérification de la date',
+  'Checks a draft, fixes errors, fills gaps.':
+      'Relit un brouillon, corrige les erreurs, comble les manques.',
+  'Coach': 'Coach',
+  'Copy and edit': 'Copier et modifier',
+  'Date and time': 'Date et heure',
+  'Delete this assistant?': 'Supprimer cet assistant ?',
+  'Delete this team?': 'Supprimer cette équipe ?',
+  'Document team': 'Équipe documents',
+  "ERROR: The assistant didn't come to an answer.":
+      'ERREUR : l’assistant n’est pas parvenu à une réponse.',
+  'ERROR: This assistant no longer exists.':
+      'ERREUR : cet assistant n’existe plus.',
+  'Each assistant reads the request and the work of the ones before it. A team makes several calls to the model: on a phone, expect a few minutes.':
+      'Chaque assistant lit la demande et le travail des précédents. Une équipe fait plusieurs appels au modèle : sur un téléphone, comptez quelques minutes.',
+  'Edit assistant': 'Modifier l’assistant',
+  'Edit team': 'Modifier l’équipe',
+  'Encouraging, practical plans and habits.':
+      'Des plans et des habitudes concrets, avec encouragements.',
+  'Faithful, natural translations.': 'Des traductions fidèles et naturelles.',
+  'Finds what your documents say, then checks it.':
+      'Trouve ce que disent vos documents, puis le vérifie.',
+  'Give the assistant a name and instructions.':
+      'Donnez un nom et des instructions à l’assistant.',
+  'Give the team a name and at least two assistants.':
+      'Donnez un nom à l’équipe et au moins deux assistants.',
+  'In this order': 'Dans cet ordre',
+  'Its role and how it should work, as you would explain it to someone.':
+      'Son rôle et sa façon de travailler, comme vous l’expliqueriez à quelqu’un.',
+  'Librarian': 'Documentaliste',
+  'Manage agents': 'Gérer les agents',
+  'Missing information': 'Informations manquantes',
+  'Move up': 'Monter',
+  'New assistant': 'Nouvel assistant',
+  'New team': 'Nouvelle équipe',
+  'No assistant yet.': 'Aucun assistant pour l’instant.',
+  'No tools': 'Sans outils',
+  'Numbers, budgets, conversions: computed exactly.':
+      'Chiffres, budgets, conversions : calculés exactement.',
+  'Plain assistant': 'Assistant simple',
+  'Planner': 'Planificateur',
+  'Plans trips day by day': 'Prépare des voyages jour par jour',
+  'Plans, searches the web, then checks the answer.':
+      'Planifie, cherche sur le Web, puis vérifie la réponse.',
+  'Plans, writes, then proofreads.': 'Planifie, rédige, puis relit.',
+  'Read a web page': 'Lire une page Web',
+  'Reading @site': 'Lecture de @site',
+  'Research team': 'Équipe de recherche',
+  'Researcher': 'Chercheur',
+  'Reviewer': 'Relecteur',
+  'Search my documents': 'Chercher dans mes documents',
+  'Search the web': 'Chercher sur le Web',
+  'Searches the web, reads pages, cites its sources.':
+      'Cherche sur le Web, lit les pages, cite ses sources.',
+  'Searching the web: “@query”': 'Recherche sur le Web : « @query »',
+  'Searching your documents: “@query”': 'Recherche dans vos documents : « @query »',
+  'Teams': 'Équipes',
+  'The model in use': 'Le modèle en cours',
+  'This assistant comes with the app. Copy it to change it.':
+      'Cet assistant est fourni avec l’application. Copiez-le pour le modifier.',
+  'This team comes with the app. Copy it to change it.':
+      'Cette équipe est fournie avec l’application. Copiez-la pour la modifier.',
+  'Tools it may use': 'Outils qu’il peut utiliser',
+  'Translator': 'Traducteur',
+  'Travel planner': 'Organisateur de voyages',
+  'Who answers?': 'Qui répond ?',
+  'With tools, it decides on its own when to use them, in several steps.':
+      'Avec des outils, il décide seul quand s’en servir, en plusieurs étapes.',
+  'Writer': 'Rédacteur',
+  'Writes clear, well-organised text.': 'Rédige des textes clairs et bien organisés.',
+  'Writes the final answer': 'Rédige la réponse finale',
+  'Writing team': 'Équipe de rédaction',
+  'You plan trips. Ask for the dates and budget, then give a day-by-day plan.':
+      'Tu organises des voyages. Demande les dates et le budget, puis donne un programme jour par jour.',
+  'Name': 'Nom',
+  'Description': 'Description',
+  'Instructions': 'Instructions',
 };
 
 /// Download statuses the Android code reports in English (shown through

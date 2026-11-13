@@ -17,6 +17,7 @@ import '../ffi/sd_backend.dart';
 import '../services/cluster_service.dart';
 import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
+import 'agents_view.dart';
 import 'cluster_view.dart';
 import 'documents_view.dart';
 import 'tools_settings_view.dart';
@@ -124,6 +125,12 @@ class SettingsView extends GetView<SettingsController> {
                 title: 'Memory'.tr,
                 chevron: true,
                 onTap: () => Get.to(() => const MemoryView()),
+              ),
+              AppRow(
+                icon: Icons.smart_toy_outlined,
+                title: 'Agents'.tr,
+                chevron: true,
+                onTap: () => Get.to(() => const AgentsView()),
               ),
             ]),
             SectionHeader('Performance'.tr),

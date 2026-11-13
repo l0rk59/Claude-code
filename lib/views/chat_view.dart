@@ -19,6 +19,7 @@ import '../widgets/attachment_preview.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_drawer.dart';
 import '../widgets/task_sheet.dart';
+import 'agents_view.dart';
 import 'documents_view.dart';
 import '../widgets/home_empty_state.dart';
 import '../core/ui.dart';
@@ -605,6 +606,14 @@ class ChatView extends GetView<ChatController> {
     controller.useDocuments.toggle();
   }
 
+  void _showAgents(BuildContext context) {
+    showAppSheet<void>(
+      context,
+      title: 'Who answers?'.tr,
+      builder: (_) => const AgentPickerSheet(),
+    );
+  }
+
   void _showTasks(BuildContext context) {
     showAppSheet<void>(
       context,
@@ -657,12 +666,22 @@ class ChatView extends GetView<ChatController> {
             Obx(() {
               final web = controller.webSearch.value;
               final docs = controller.useDocuments.value;
-              if (!web && !docs) return const SizedBox.shrink();
+              final agent = agentName(controller.activeAgent.value);
+              if (!web && !docs && agent == null) {
+                return const SizedBox.shrink();
+              }
               return Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Wrap(spacing: 8, runSpacing: 6, children: [
+                  if (agent != null)
+                    _ToolChip(
+                      icon: Icons.smart_toy_outlined,
+                      label: agent,
+                      onTap: () => _showAgents(context),
+                      onRemove: () => controller.chooseAgent(''),
+                    ),
                   if (web)
                     _ToolChip(
                       icon: Icons.travel_explore_rounded,
@@ -968,6 +987,7 @@ class ChatView extends GetView<ChatController> {
                       onWebSearch: () => controller.webSearch.toggle(),
                       onDocuments: () => _toggleDocuments(context),
                       onTasks: () => _showTasks(context),
+                      onAgents: () => _showAgents(context),
                       context: context,
                     );
                   }),
@@ -1262,6 +1282,7 @@ class _AttachButton extends StatelessWidget {
   final VoidCallback onWebSearch;
   final VoidCallback onDocuments;
   final VoidCallback onTasks;
+  final VoidCallback onAgents;
   final BuildContext context;
 
   const _AttachButton({
@@ -1276,6 +1297,7 @@ class _AttachButton extends StatelessWidget {
     required this.onWebSearch,
     required this.onDocuments,
     required this.onTasks,
+    required this.onAgents,
     required this.context,
   });
 
@@ -1345,6 +1367,12 @@ class _AttachButton extends StatelessWidget {
         label: 'Tasks'.tr,
         enabled: true,
         onTap: onTasks,
+      ),
+      (
+        icon: Icons.smart_toy_outlined,
+        label: 'Agents'.tr,
+        enabled: true,
+        onTap: onAgents,
       ),
     ];
 
@@ -1458,13 +1486,17 @@ class _ToolChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onRemove;
+  final VoidCallback? onTap;
   const _ToolChip(
-      {required this.icon, required this.label, required this.onRemove});
+      {required this.icon,
+      required this.label,
+      required this.onRemove,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    return Container(
+    final chip = Container(
       padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
       decoration: BoxDecoration(
         color: t.accent.withValues(alpha: t.isDark ? 0.2 : 0.1),
@@ -1485,6 +1517,7 @@ class _ToolChip extends StatelessWidget {
         ),
       ]),
     );
+    return onTap == null ? chip : GestureDetector(onTap: onTap, child: chip);
   }
 }
 
