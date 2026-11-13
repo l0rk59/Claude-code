@@ -11,8 +11,10 @@ import '../services/lan_server_finder.dart';
 /// could hold, and nothing leaves the local network. Pops with true once
 /// [onConnect] has run.
 class ComputerFinderSheet extends StatefulWidget {
-  /// Called with the computer and the model the user picked.
-  final Future<void> Function(LanServer server, String model) onConnect;
+  /// Called with the computer, the model the user picked, and the key the
+  /// computer asked for (null when it asked for none).
+  final Future<void> Function(LanServer server, String model, String? apiKey)
+      onConnect;
 
   /// Looks for computers on the network. Replaced in tests.
   final Future<List<LanServer>> Function(
@@ -22,11 +24,15 @@ class ComputerFinderSheet extends StatefulWidget {
   /// Tries the address the user typed. Replaced in tests.
   final Future<List<LanServer>> Function(String input)? find;
 
+  /// Asks a computer for its models with a key. Replaced in tests.
+  final Future<LanServer?> Function(LanServer server, String key)? unlock;
+
   const ComputerFinderSheet({
     super.key,
     required this.onConnect,
     this.scan,
     this.find,
+    this.unlock,
   });
 
   @override
@@ -45,6 +51,12 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
   bool _noWifi = false;
   String? _error;
 
+  /// Keys typed for the computers that ask for one, by address.
+  final _keyFields = <String, TextEditingController>{};
+  final _keys = <String, String>{};
+  final _keyErrors = <String, String>{};
+  String? _unlocking;
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +66,72 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
   @override
   void dispose() {
     _address.dispose();
+    for (final field in _keyFields.values) {
+      field.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _unlock(LanServer server) async {
+    final key = _keyFields[server.address]?.text.trim() ?? '';
+    if (key.isEmpty) return;
+    setState(() {
+      _unlocking = server.address;
+      _keyErrors.remove(server.address);
+    });
+    final opened = await (widget.unlock ??
+        (s, k) => LanServerFinder.probe(s.host, s.port, apiKey: k))(server, key);
+    if (!mounted) return;
+    setState(() {
+      _unlocking = null;
+      if (opened == null || opened.needsKey) {
+        _keyErrors[server.address] =
+            'The computer refuses this key. Copy it again from the window of the script.'
+                .tr;
+      } else {
+        _keys[server.address] = key;
+        _add([opened]);
+      }
+    });
+  }
+
+  Widget _keyRequest(AppTokens t, LanServer server) {
+    final field = _keyFields.putIfAbsent(
+        server.address, () => TextEditingController());
+    final busy = _unlocking == server.address;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppNotice(
+          'This computer is protected by a key. Enter the key shown by the script on the computer.'
+              .tr,
+          icon: Icons.lock_outline_rounded,
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: field,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: appInputDecoration(context, hint: 'Key'.tr),
+              onSubmitted: (_) => _unlock(server),
+            ),
+          ),
+          const SizedBox(width: 10),
+          PillButton(
+            label: busy ? 'Checking…'.tr : 'Unlock'.tr,
+            onPressed: busy ? null : () => _unlock(server),
+          ),
+        ]),
+        if (_keyErrors[server.address] != null) ...[
+          const SizedBox(height: 8),
+          AppNotice(_keyErrors[server.address]!,
+              icon: Icons.error_outline_rounded, color: t.red),
+        ],
+      ],
+    );
   }
 
   Future<List<LanServer>> _defaultScan(
@@ -115,7 +192,7 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
   Future<void> _connect(LanServer server, String model) async {
     if (_connecting) return;
     setState(() => _connecting = true);
-    await widget.onConnect(server, model);
+    await widget.onConnect(server, model, _keys[server.address]);
     if (mounted) Navigator.pop(context, true);
   }
 
@@ -160,7 +237,9 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
               ),
             ]),
           ),
-          if (server.models.isEmpty)
+          if (server.needsKey)
+            _keyRequest(t, server)
+          else if (server.models.isEmpty)
             AppNotice('This computer has no model ready yet.'.tr)
           else
             AppGroup(dividerIndent: 16, children: [

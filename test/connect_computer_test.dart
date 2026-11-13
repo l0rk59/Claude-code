@@ -52,6 +52,19 @@ void main() {
         'http://192.168.1.20:8080/v1');
   });
 
+  test('the key a computer asked for is kept with it', () async {
+    await cloud.connectComputer(
+        name: 'PC',
+        baseUrl: 'http://192.168.1.20:8080/v1',
+        model: 'a',
+        apiKey: 't8zhv9julntciu2e');
+    expect(settings.customCloudKey.value, 't8zhv9julntciu2e');
+    // Coming back to it later without typing the key again.
+    await cloud.connectComputer(
+        name: 'PC', baseUrl: 'http://192.168.1.20:8080/v1', model: 'b');
+    expect(settings.customCloudKey.value, 't8zhv9julntciu2e');
+  });
+
   test('a computer added twice is listed once; another one is added',
       () async {
     await cloud.connectComputer(

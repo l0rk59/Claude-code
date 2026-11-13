@@ -1413,6 +1413,12 @@ const Map<String, String> fr = {
   'No GGUF model the app can download here.':
       'Aucun modèle GGUF téléchargeable ici.',
   '@count files': '@count fichiers',
+  'The computer refuses this key. Copy it again from the window of the script.':
+      'L’ordinateur refuse cette clé. Recopiez-la depuis la fenêtre du script.',
+  'This computer is protected by a key. Enter the key shown by the script on the computer.':
+      'Cet ordinateur est protégé par une clé. Saisissez la clé affichée par le script sur l’ordinateur.',
+  'Key': 'Clé',
+  'Unlock': 'Déverrouiller',
 };
 
 /// Download statuses the Android code reports in English (shown through

@@ -45,7 +45,7 @@ void main() {
           onProgress(1);
           return [laptop];
         },
-        onConnect: (server, model) async =>
+        onConnect: (server, model, key) async =>
             picked.add('${server.baseUrl} $model'),
       ),
     );
@@ -69,7 +69,7 @@ void main() {
           asked.add(input);
           return input == '192.168.1.20' ? [laptop] : const [];
         },
-        onConnect: (_, __) async {},
+        onConnect: (_, __, ___) async {},
       ),
     );
     expect(find.textContaining('No computer found'), findsOneWidget);
@@ -88,13 +88,48 @@ void main() {
     expect(find.textContaining('No model server answers there'), findsNothing);
   });
 
+  testWidgets('a protected computer asks for its key, then lists its models',
+      (tester) async {
+    final connected = <String>[];
+    await open(
+      tester,
+      ComputerFinderSheet(
+        scan: (onProgress, cancelled) async => const [
+          LanServer(
+              host: '192.168.1.20',
+              port: 8080,
+              software: 'llama.cpp',
+              needsKey: true),
+        ],
+        unlock: (server, key) async => key == 'good'
+            ? laptop
+            : const LanServer(
+                host: '192.168.1.20', port: 8080, needsKey: true),
+        onConnect: (server, model, key) async => connected.add('$model $key'),
+      ),
+    );
+    expect(find.textContaining('protected by a key'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'bad');
+    await tester.tap(find.text('Unlock'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('refuses this key'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'good');
+    await tester.tap(find.text('Unlock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Qwen3.5-35B-A3B-Q4_K_M.gguf'));
+    await tester.pumpAndSettle();
+    expect(connected, ['Qwen3.5-35B-A3B-Q4_K_M.gguf good']);
+  });
+
   testWidgets('a computer with no model says so', (tester) async {
     await open(
       tester,
       ComputerFinderSheet(
         scan: (onProgress, cancelled) async =>
             const [LanServer(host: '192.168.1.30', port: 11434, software: 'Ollama')],
-        onConnect: (_, __) async {},
+        onConnect: (_, __, ___) async {},
       ),
     );
     expect(find.text('Ollama · 192.168.1.30:11434'), findsOneWidget);

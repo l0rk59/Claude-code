@@ -4,8 +4,10 @@ C'est la façon la plus simple de discuter avec un modèle vraiment gros :
 l'ordinateur le fait tourner, et PrivateLM sur le téléphone sert d'écran et de
 clavier. Tout reste sur votre réseau local, rien ne passe par Internet.
 
-> Le serveur n'a pas de mot de passe par défaut. À utiliser uniquement sur un
-> réseau de confiance (chez vous), jamais sur un Wi-Fi public.
+> Avec les scripts de ce dépôt, le serveur est protégé par une clé : les
+> autres appareils du réseau ne peuvent pas s'en servir. Les échanges ne sont
+> pas chiffrés pour autant : à utiliser sur un réseau de confiance (chez
+> vous), jamais sur un Wi-Fi public.
 
 ## Laquelle des deux méthodes choisir ?
 
@@ -38,11 +40,17 @@ de ce dépôt :
 - Linux et macOS : [`tools/serveur/start-serveur.sh`](../tools/serveur/start-serveur.sh),
   dans un terminal : `./start-serveur.sh modele.gguf`.
 
-Le script affiche l'adresse de l'ordinateur et laisse le serveur tourner.
+Le script affiche l'adresse de l'ordinateur et **une clé**, puis laisse le
+serveur tourner. La clé est créée au premier lancement et gardée dans le
+fichier `.privatelm-cle` à côté du script : elle reste la même d'une fois sur
+l'autre, et l'application ne la demande qu'une fois. Pour la choisir :
+`CLE=monsecret ./start-serveur.sh modele.gguf` (Windows : `-Cle monsecret`) ;
+pour s'en passer : `CLE=aucune` (Windows : `-Cle aucune`).
+
 Sans script, la commande est :
 
 ```
-llama-server -m modele.gguf --host 0.0.0.0 --port 8080
+llama-server -m modele.gguf --host 0.0.0.0 --port 8080 --api-key maclé
 ```
 
 Par défaut, llama.cpp place lui-même le modèle entre la carte graphique et la
@@ -63,7 +71,8 @@ dans ses réglages l'accès depuis le réseau local. Port : 1234.
 
 **Modèles > Cloud > Un ordinateur de votre réseau.** L'application cherche sur
 votre Wi-Fi les ordinateurs qui font tourner un modèle et affiche ce qu'elle
-trouve. Touchez un modèle : c'est fait, la discussion passe par l'ordinateur.
+trouve. Si l'ordinateur est protégé, saisissez la clé affichée par le script.
+Touchez un modèle : c'est fait, la discussion passe par l'ordinateur.
 
 Si la recherche ne trouve rien, saisissez l'adresse affichée par le script
 (par exemple `192.168.1.20`). Causes fréquentes : le pare-feu de l'ordinateur

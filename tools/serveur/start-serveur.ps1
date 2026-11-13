@@ -11,14 +11,20 @@
 # after these options is passed to llama-server as is.
 #
 # Windows asks once whether to let it through the firewall: allow it on
-# private networks. The server has no password: only run it on a network
-# you trust.
+# private networks.
+#
+# The server asks for a key, made up on the first run and kept in
+# .privatelm-cle next to this script: PrivateLM asks for it once. To choose
+# it, pass -Cle monsecret; to run without one, -Cle aucune. The key keeps
+# out the other devices of the network; the traffic itself is not
+# encrypted, so use a network you trust.
 #
 # Messages are in French without accents: Windows PowerShell reads a script
 # without a byte-order mark as ANSI, which garbles accented letters.
 param(
     [string]$Model = "",
     [int]$Port = 8080,
+    [string]$Cle = "",
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$More
 )
@@ -51,13 +57,32 @@ $addresses = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue 
     Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
     Select-Object -ExpandProperty IPAddress
 
+$keyFile = Join-Path $PSScriptRoot '.privatelm-cle'
+if (-not $Cle) {
+    if (-not (Test-Path $keyFile) -or -not (Get-Content $keyFile -Raw)) {
+        # 16 random letters and digits, easy to type on a phone.
+        $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'.ToCharArray()
+        $bytes = New-Object byte[] 16
+        [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+        $generated = -join ($bytes | ForEach-Object { $alphabet[$_ % $alphabet.Length] })
+        Set-Content -Path $keyFile -Value $generated -NoNewline
+    }
+    $Cle = (Get-Content $keyFile -Raw).Trim()
+}
+$keyArgs = @()
+if ($Cle -ne 'aucune') { $keyArgs = @('--api-key', $Cle) }
+
 Write-Host "PrivateLM : cet ordinateur fait tourner $(Split-Path $Model -Leaf)."
 Write-Host ""
 Write-Host "Dans l'application : Modeles > Cloud > Un ordinateur de votre reseau."
 Write-Host "La recherche le trouve seule. Sinon, saisissez son adresse :"
 foreach ($address in $addresses) { Write-Host "    ${address}:$Port" }
+if ($Cle -ne 'aucune') {
+    Write-Host ""
+    Write-Host "Cle a saisir dans l'application (une seule fois) :  $Cle"
+}
 Write-Host ""
 Write-Host "Laissez cette fenetre ouverte. Ctrl+C pour arreter."
 Write-Host ""
 
-& $server -m $Model --host 0.0.0.0 --port $Port @More
+& $server -m $Model --host 0.0.0.0 --port $Port @keyArgs @More

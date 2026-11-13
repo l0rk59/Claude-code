@@ -17,6 +17,31 @@ Future<HttpServer> _serve(Object answer, {int status = 200}) async {
   return server;
 }
 
+/// Behaves like llama-server started with --api-key: the models need the
+/// key, the health check doesn't.
+Future<HttpServer> _serveWithKey(String key) async {
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  server.listen((request) async {
+    final response = request.response..headers.contentType = ContentType.json;
+    if (request.uri.path == '/health') {
+      response.write('{"status":"ok"}');
+    } else if (request.headers.value('authorization') != 'Bearer $key') {
+      response.statusCode = 401;
+      response.write(jsonEncode({
+        'error': {
+          'message': 'Invalid API Key',
+          'type': 'authentication_error',
+          'code': 401
+        }
+      }));
+    } else {
+      response.write(jsonEncode(_models(['big.gguf'], 'llamacpp')));
+    }
+    await response.close();
+  });
+  return server;
+}
+
 Map<String, Object> _models(List<String> ids, String owner) => {
       'object': 'list',
       'data': [
@@ -52,9 +77,12 @@ void main() {
     addTearDown(() => web.close(force: true));
     expect(await LanServerFinder.probe('127.0.0.1', web.port), isNull);
 
+    // A refusal in the API's own words is a server asking for a key, not
+    // something to ignore (see the key tests below).
     final locked = await _serve({'error': 'key required'}, status: 401);
     addTearDown(() => locked.close(force: true));
-    expect(await LanServerFinder.probe('127.0.0.1', locked.port), isNull);
+    expect((await LanServerFinder.probe('127.0.0.1', locked.port))!.needsKey,
+        isTrue);
 
     final other = await _serve({'data': 'not a list'});
     addTearDown(() => other.close(force: true));
@@ -100,6 +128,32 @@ void main() {
     expect(others, isNot(contains('192.168.1.42')));
     expect(LanServerFinder.neighbours('not an address'), isEmpty);
     expect(LanServerFinder.neighbours('fe80::1'), isEmpty);
+  });
+
+  test('a server with a key is found, and opens with the right key',
+      () async {
+    final server = await _serveWithKey('t8zhv9julntciu2e');
+    addTearDown(() => server.close(force: true));
+
+    final locked = await LanServerFinder.probe('127.0.0.1', server.port);
+    expect(locked!.needsKey, isTrue);
+    expect(locked.software, 'llama.cpp');
+    expect(locked.models, isEmpty);
+
+    final wrong = await LanServerFinder.probe('127.0.0.1', server.port,
+        apiKey: 'nope');
+    expect(wrong!.needsKey, isTrue);
+
+    final open = await LanServerFinder.probe('127.0.0.1', server.port,
+        apiKey: ' t8zhv9julntciu2e ');
+    expect(open!.needsKey, isFalse);
+    expect(open.models, ['big.gguf']);
+  });
+
+  test('a login page that refuses is not taken for a model server', () async {
+    final router = await _serve('<html>Login required</html>', status: 401);
+    addTearDown(() => router.close(force: true));
+    expect(await LanServerFinder.probe('127.0.0.1', router.port), isNull);
   });
 
   test('tells a computer at home from a server on the Internet', () {

@@ -11,14 +11,20 @@ class LanServer {
   /// "llama.cpp", "Ollama", "LM Studio", or '' when it can't be told.
   final String software;
 
-  /// The models it offers, as it names them.
+  /// The models it offers, as it names them. Empty until the key is given
+  /// when [needsKey].
   final List<String> models;
+
+  /// It answers, but only to whoever gives its key: [models] can't be read
+  /// without it.
+  final bool needsKey;
 
   const LanServer({
     required this.host,
     required this.port,
     this.software = '',
     this.models = const [],
+    this.needsKey = false,
   });
 
   String get address => '$host:$port';
@@ -38,30 +44,60 @@ class LanServerFinder {
     1234: 'LM Studio',
   };
 
-  /// Asks [host]:[port] which models it serves. Null when nothing there
-  /// answers the OpenAI-compatible API (or it wants a key).
+  /// Asks [host]:[port] which models it serves, with [apiKey] if given.
+  /// Null when nothing there answers the OpenAI-compatible API. A server
+  /// that wants a key it wasn't given comes back with [LanServer.needsKey].
   static Future<LanServer?> probe(
     String host,
     int port, {
+    String? apiKey,
     Duration timeout = const Duration(seconds: 2),
   }) async {
     final client = HttpClient()..connectionTimeout = timeout;
-    try {
+    Future<(int, String)> get(String path, {bool withKey = false}) async {
       final request = await client
-          .getUrl(Uri(scheme: 'http', host: host, port: port, path: '/v1/models'))
+          .getUrl(Uri(scheme: 'http', host: host, port: port, path: path))
           .timeout(timeout);
-      final response = await request.close().timeout(timeout);
-      if (response.statusCode != 200) {
-        await response.drain<void>().timeout(timeout);
-        return null;
+      if (withKey && apiKey != null && apiKey.trim().isNotEmpty) {
+        request.headers.set('Authorization', 'Bearer ${apiKey.trim()}');
       }
+      final response = await request.close().timeout(timeout);
       final body =
           await response.transform(utf8.decoder).join().timeout(timeout);
-      return parse(host, port, body);
+      return (response.statusCode, body);
+    }
+
+    try {
+      final (status, body) = await get('/v1/models', withKey: true);
+      if (status == 200) return parse(host, port, body);
+      if (status != 401 && status != 403) return null;
+      // Refused: a model server says so in the API's own words. A router's
+      // login page refuses too, so ask for that proof.
+      if (!_isApiError(body)) return null;
+      // llama.cpp keeps its health check open to all.
+      var software = knownPorts[port] ?? '';
+      try {
+        final (healthStatus, healthBody) = await get('/health');
+        if (healthStatus == 200 && healthBody.contains('ok')) {
+          software = 'llama.cpp';
+        }
+      } catch (_) {}
+      return LanServer(
+          host: host, port: port, software: software, needsKey: true);
     } catch (_) {
       return null;
     } finally {
       client.close(force: true);
+    }
+  }
+
+  /// `{"error": …}`: how OpenAI-compatible servers phrase a refusal.
+  static bool _isApiError(String body) {
+    try {
+      final data = jsonDecode(body);
+      return data is Map && data.containsKey('error');
+    } catch (_) {
+      return false;
     }
   }
 

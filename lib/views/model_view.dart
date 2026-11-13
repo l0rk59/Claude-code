@@ -683,7 +683,7 @@ class ModelView extends GetView<ModelController> {
       subtitle:
           'Computers running llama.cpp, Ollama or LM Studio on your Wi-Fi.'.tr,
       builder: (_) => ComputerFinderSheet(
-        onConnect: (LanServer server, String model) async {
+        onConnect: (LanServer server, String model, String? apiKey) async {
           picked = model;
           await cloud.connectComputer(
             name: server.software.isEmpty
@@ -691,6 +691,7 @@ class ModelView extends GetView<ModelController> {
                 : '${server.software} · ${server.host}',
             baseUrl: server.baseUrl,
             model: model,
+            apiKey: apiKey,
           );
         },
       ),

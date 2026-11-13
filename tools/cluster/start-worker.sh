@@ -33,7 +33,7 @@ fi
 
 # The addresses phones on the same network can use.
 if command -v ip >/dev/null 2>&1; then
-  ADDRESSES="$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1)"
+  ADDRESSES="$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 || true)"
 else
   ADDRESSES="$(ifconfig 2>/dev/null | awk '/inet /{print $2}' | grep -v '^127\.' || true)"
 fi

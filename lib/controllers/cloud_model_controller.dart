@@ -338,10 +338,13 @@ class CloudModelController extends GetxController {
     required String name,
     required String baseUrl,
     required String model,
+    String? apiKey,
   }) async {
     final url = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     final known = customProfiles.indexWhere((p) => p['baseUrl'] == url);
-    final key = known >= 0 ? customProfiles[known]['apiKey'] ?? '' : '';
+    // The key the computer asked for, or the one saved with it before.
+    final key = apiKey ??
+        (known >= 0 ? customProfiles[known]['apiKey'] ?? '' : '');
     if (known >= 0) {
       await _settings.selectCustomCloudProfile(known);
     } else {
