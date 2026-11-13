@@ -34,7 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
+      # stable-diffusion.cpp (image generation) is a git submodule, with
+      # ggml and libwebp as its own.
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
