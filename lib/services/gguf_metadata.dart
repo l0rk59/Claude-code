@@ -52,6 +52,21 @@ class GgufInfo {
       400 * _mb + (fileBytes * 0.2).round() + contextTokens * 4 * _kb;
 
   /// Estimated resident memory to load the model and use [contextTokens].
+  /// The same model, weighing [bytes]: for a model in parts, whose header
+  /// sits in the first one.
+  GgufInfo withFileBytes(int bytes) => GgufInfo(
+        architecture: architecture,
+        name: name,
+        layers: layers,
+        trainedContext: trainedContext,
+        embeddingLength: embeddingLength,
+        headCount: headCount,
+        headCountKv: headCountKv,
+        keyLength: keyLength,
+        valueLength: valueLength,
+        fileBytes: bytes,
+      );
+
   int estimateBytes(int contextTokens) =>
       fileBytes + kvCacheBytes(contextTokens) + overheadBytes(contextTokens);
 

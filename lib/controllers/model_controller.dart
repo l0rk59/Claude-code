@@ -11,6 +11,7 @@ import '../services/local_image_service.dart';
 import '../services/hive_service.dart';
 import '../services/app_log_service.dart';
 import '../services/device_info_service.dart';
+import '../services/gguf_split.dart';
 import '../services/model_fit.dart';
 import '../models/ai_model.dart';
 import '../core/constants.dart';
@@ -137,7 +138,9 @@ class ModelController extends GetxController {
           .clamp(0.0, 1.0)
           .toDouble();
 
-  int get downloadedCount => downloadedFiles.length;
+  /// Models on the phone; a model in several parts counts once.
+  int get downloadedCount =>
+      downloadedFiles.where((f) => !GgufSplit.isLaterPart(f)).length;
 
   String get activeLocalModelName => _inference.loadedModelName.value;
 
@@ -182,6 +185,13 @@ class ModelController extends GetxController {
     for (final file in files) {
       fileSizes[file] = await _download.getModelSize(file);
     }
+    // A model in parts weighs all of them.
+    for (final file in files) {
+      final split = GgufSplit.parse(file);
+      if (split == null || split.index != 1) continue;
+      fileSizes[file] = split.names
+          .fold<int>(0, (sum, part) => sum + (fileSizes[part] ?? 0));
+    }
 
     // Add any downloaded files that are not in availableModels
     final existingFilenames = availableModels.map((m) {
@@ -191,6 +201,8 @@ class ModelController extends GetxController {
       return m.filename;
     }).toSet();
     for (final file in files) {
+      // The later parts of a model are shown under its first part.
+      if (GgufSplit.isLaterPart(file)) continue;
       if (!existingFilenames.contains(file)) {
         // An imported copy of a catalogue vision model (any capitalisation,
         // e.g. the original Hugging Face name) keeps the catalogue's vision
@@ -227,7 +239,7 @@ class ModelController extends GetxController {
 
     // Remove any imported models that are no longer downloaded
     availableModels.removeWhere(
-        (model) => model.isImported && !files.contains(model.filename));
+        (model) => model.isImported && !isDownloaded(model.filename));
 
     if (localFilter.value.isEmpty) {
       localFilter.value = defaultLocalFilter;
@@ -299,7 +311,8 @@ class ModelController extends GetxController {
       return downloadedFiles
           .contains(filename.substring(0, filename.length - 4));
     }
-    return downloadedFiles.contains(filename);
+    // A model in parts is only usable once every part is here.
+    return GgufSplit.filesOf(filename).every(downloadedFiles.contains);
   }
 
   bool _isVisionProjectorFile(String filename) {
@@ -380,8 +393,8 @@ class ModelController extends GetxController {
   DownloadProgress? getDownloadProgress(String filename) =>
       _download.activeDownloads[filename];
 
-  bool isDownloadingModel(String filename) =>
-      _download.activeDownloads.containsKey(filename);
+  bool isDownloadingModel(String filename) => GgufSplit.filesOf(filename)
+      .any(_download.activeDownloads.containsKey);
 
   void setLocalFilter(String filter) {
     if (filter == 'npu' && !supportsAppleNpu) return;
@@ -523,10 +536,19 @@ class ModelController extends GetxController {
           !_download.activeDownloads.containsKey(model.mmprojFilename)) {
         unawaited(_downloadVisionFile(model));
       }
-      await _download.downloadModel(
-        url: model.url,
-        filename: model.filename,
-      );
+      // A model in parts: fetch every part (they download side by side).
+      for (final part in GgufSplit.filesOf(model.filename)) {
+        if (await _download.isModelDownloaded(part) ||
+            _download.activeDownloads.containsKey(part)) {
+          continue;
+        }
+        await _download.downloadModel(
+          url: part == model.filename
+              ? model.url
+              : GgufSplit.urlOf(model.url, part),
+          filename: part,
+        );
+      }
       await refreshDownloaded();
     } catch (e) {
       Get.find<AppLogService>().error('Model download failed', details: e);
@@ -730,7 +752,9 @@ class ModelController extends GetxController {
         await _download.deleteModel(model.mmprojFilename);
       } catch (_) {}
     }
-    await _download.deleteModel(filename);
+    for (final file in GgufSplit.filesOf(filename)) {
+      await _download.deleteModel(file);
+    }
     await refreshDownloaded();
     // Unload if this was the active model
     if (_inference.loadedModelName.value == filename) {
@@ -933,7 +957,8 @@ class ModelController extends GetxController {
     try {
       final file = File(path);
       if (await file.exists()) {
-        final bytes = await file.length();
+        // All its parts, for a model in several files.
+        final bytes = await GgufSplit.bytesOnDisk(path);
         fileSizes[filename] = bytes;
         return bytes;
       }
@@ -1050,7 +1075,11 @@ class ModelController extends GetxController {
 
     // For GGUF, estimate real usage from the file's header: weights plus the
     // KV cache for the configured context, which file size alone ignores.
-    final gguf = lower.endsWith('.gguf') ? await readGgufInfo(path) : null;
+    // The header is read from the first part; the weights are all of them.
+    final header = lower.endsWith('.gguf') ? await readGgufInfo(path) : null;
+    final gguf = header == null || GgufSplit.parse(filename) == null
+        ? header
+        : header.withFileBytes(fileBytes);
     final contextTokens = _settings.contextSize.value;
     // A speculative-decoding draft model loads next to this one: count its
     // weights (its own small KV cache fits in the estimate's margin).

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show File, InternetAddressType, NetworkInterface;
+import 'dart:io' show InternetAddressType, NetworkInterface;
 import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -11,6 +11,7 @@ import 'package:llama_flutter_android/llama_flutter_android.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
 import 'app_log_service.dart';
+import 'gguf_split.dart';
 import 'hive_service.dart';
 import 'rpc_probe.dart';
 import '../core/app_platform.dart';
@@ -473,7 +474,7 @@ class ClusterService extends GetxService {
           'Not reachable, loading without: @names'.trParams({'names': names}));
     }
 
-    final modelMb = await File(modelPath).length() / (1024 * 1024);
+    final modelMb = await GgufSplit.bytesOnDisk(modelPath) / (1024 * 1024);
     final needMb = modelMb * 1.1; // + KV cache and working buffers
     _localSpeed ??= await LlamaCluster.benchmark();
     // Free RAM: workers report theirs when they start. The master also runs
@@ -663,7 +664,7 @@ class ClusterService extends GetxService {
               : worker.model ?? endpoint;
       remote[name] = (remote[name] ?? 0) + b.mb;
     }
-    final fileMb = await File(modelPath).length() / (1024 * 1024);
+    final fileMb = await GgufSplit.bytesOnDisk(modelPath) / (1024 * 1024);
     final remoteMb = remote.values.fold<double>(0, (a, b) => a + b);
     split.assignAll([
       ClusterShare(deviceName.isEmpty ? 'This phone'.tr : deviceName,

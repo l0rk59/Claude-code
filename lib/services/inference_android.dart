@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_litert_lm/flutter_litert_lm.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 
+import 'gguf_split.dart';
 import 'sampling_presets.dart';
 
 /// Whether the current platform supports local inference.
@@ -149,7 +150,7 @@ class InferenceEngine {
         // weights into GPU buffers (CPU mode maps the file instead). If the
         // model + vision file won't fit in free RAM with that copy, Android's
         // low-memory killer closes the app — so stay on the CPU.
-        final modelBytes = await _fileLength(modelPath);
+        final modelBytes = await GgufSplit.bytesOnDisk(modelPath);
         final visionBytes =
             mmprojPath == null ? 0 : await _fileLength(mmprojPath);
         final needed = ((modelBytes + visionBytes) * 1.25).round();

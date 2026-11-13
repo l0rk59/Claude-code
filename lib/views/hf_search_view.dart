@@ -412,7 +412,7 @@ class _RepoFilesState extends State<_RepoFiles> {
         ],
         if (models.isEmpty)
           AppNotice(
-            "No file the app can download here. Models split in several parts aren't supported yet."
+            'No GGUF model the app can download here.'
                 .tr,
           )
         else ...[
@@ -556,6 +556,11 @@ class _FileRow extends StatelessWidget {
                           fontWeight: FontWeight.w600),
                     ),
                   TextSpan(text: HfSearchService.catalogSize(file.bytes)),
+                  if (file.parts > 1)
+                    TextSpan(
+                        text: ' · ${'@count files'.trParams({
+                          'count': '${file.parts}'
+                        })}'),
                 ]),
                 style: t.small.copyWith(
                     fontFeatures: const [FontFeature.tabularFigures()]),

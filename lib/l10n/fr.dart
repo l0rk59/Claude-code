@@ -1279,8 +1279,6 @@ const Map<String, String> fr = {
       'Le moteur de l’application ne sait pas encore faire tourner ce type de modèle (@kind).',
   'Reads images: its vision file (@size) downloads with it.':
       'Lit les images : son fichier de vision (@size) est téléchargé avec lui.',
-  "No file the app can download here. Models split in several parts aren't supported yet.":
-      'Aucun fichier téléchargeable ici. Les modèles découpés en plusieurs parties ne sont pas encore pris en charge.',
   'Too big for this phone': 'Trop gros pour ce téléphone',
   'This file needs more memory than this phone has, so it will probably not load. Download it anyway?':
       'Ce fichier demande plus de mémoire que n’en a ce téléphone : il ne se chargera sans doute pas. Le télécharger quand même ?',
@@ -1412,6 +1410,9 @@ const Map<String, String> fr = {
       'Créez-en un avec l’accès « Read » sur huggingface.co/settings/tokens, puis collez-le ici.',
   'Check and save': 'Vérifier et enregistrer',
   'Remove the token': 'Supprimer le jeton',
+  'No GGUF model the app can download here.':
+      'Aucun modèle GGUF téléchargeable ici.',
+  '@count files': '@count fichiers',
 };
 
 /// Download statuses the Android code reports in English (shown through

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/ai_model.dart';
 import 'gguf_architectures.dart';
+import 'gguf_split.dart';
 import 'model_fit.dart';
 
 /// A model repository on Hugging Face.
@@ -91,9 +92,16 @@ class HfRepoDetails {
 
 /// A GGUF file in a repository.
 class HfFile {
+  /// For a model in parts, its first part.
   final String path;
+
+  /// The whole model's size: all parts together.
   final int bytes;
-  const HfFile(this.path, this.bytes);
+
+  /// How many files the model is published in (1: a single file).
+  final int parts;
+
+  const HfFile(this.path, this.bytes, {this.parts = 1});
 
   String get basename => path.split('/').last;
 
@@ -218,22 +226,39 @@ class HfSearchService {
   static HfRepoDetails parseDetails(String body) {
     final data = jsonDecode(body);
     if (data is! Map) return const HfRepoDetails();
-    final split = RegExp(r'-\d{5}-of-\d{5}\.gguf$', caseSensitive: false);
-    final files = [
-      for (final item
-          in (data['siblings'] as List? ?? const []).whereType<Map>())
-        if (item['rfilename'] case final String path
-            when path.toLowerCase().endsWith('.gguf') &&
-                !split.hasMatch(path) &&
-                !path.toLowerCase().contains('imatrix'))
-          HfFile(
-            path,
-            ((item['lfs'] as Map?)?['size'] as num? ??
-                    item['size'] as num? ??
-                    0)
-                .toInt(),
-          ),
-    ];
+    final files = <HfFile>[];
+    // Parts of the same model, by first part: present parts and size.
+    final parts = <String, ({int found, int count, int bytes})>{};
+    for (final item
+        in (data['siblings'] as List? ?? const []).whereType<Map>()) {
+      final path = item['rfilename'];
+      if (path is! String) continue;
+      final lower = path.toLowerCase();
+      if (!lower.endsWith('.gguf') || lower.contains('imatrix')) continue;
+      final bytes = ((item['lfs'] as Map?)?['size'] as num? ??
+              item['size'] as num? ??
+              0)
+          .toInt();
+      final split = GgufSplit.parse(path);
+      if (split == null) {
+        files.add(HfFile(path, bytes));
+        continue;
+      }
+      final slash = path.lastIndexOf('/');
+      final first = '${path.substring(0, slash + 1)}${split.names.first}';
+      final seen = parts[first];
+      parts[first] = (
+        found: (seen?.found ?? 0) + 1,
+        count: split.count,
+        bytes: (seen?.bytes ?? 0) + bytes,
+      );
+    }
+    // A model whose parts aren't all there can't be loaded.
+    for (final e in parts.entries) {
+      if (e.value.found == e.value.count) {
+        files.add(HfFile(e.key, e.value.bytes, parts: e.value.count));
+      }
+    }
     files.sort((a, b) => a.bytes.compareTo(b.bytes));
     return HfRepoDetails(
       // false, or "auto" / "manual" when gated.
