@@ -147,6 +147,11 @@ Here is how you can install the app using AltStore and AltServer:
 - Python 3, to embed the OpenCL (Adreno) GPU kernels; without it the app
   builds without the OpenCL backend
 
+Clone with the submodules (stable-diffusion.cpp, used for image
+generation, and its own dependencies):
+`git clone --recurse-submodules …`, or `git submodule update --init
+--recursive` in an existing clone.
+
 The native build downloads the Vulkan, SPIR-V and OpenCL headers from
 GitHub. Behind a firewall, set `LLAMA_ANDROID_FETCH_DIR` to a folder that
 holds `vulkan_headers/`, `spirv_headers/` and `opencl_headers/` checkouts.
