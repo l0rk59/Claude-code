@@ -30,6 +30,7 @@ version d'Android ; système, mémoire et carte graphique de l'ordinateur.
 | 2.3 | Avec un modèle « Vision » : envoyer d'abord un message texte, puis une photo | Le texte répond tout de suite ; la première photo prend quelques secondes de plus (le fichier de vision se charge à ce moment) |
 | 2.4 | **Paramètres > Performances > Mesurer la vitesse** | Un résultat en tokens/s ; le noter |
 | 2.5 | Changer **GGUF & LiteRT** (CPU sûr, Auto rapide, GPU rapide), recharger le modèle, mesurer à nouveau | Trois résultats listés côte à côte ; noter le meilleur réglage pour ce téléphone |
+| 2.5b | **Mesurer la vitesse > Trouver le meilleur réglage** | Trois essais (carte graphique, processeur, processeur 4 cœurs), puis le réglage retenu ; noter les trois résultats |
 | 2.6 | Sur un téléphone Snapdragon récent : dans **GGUF & LiteRT**, choisir le moteur GPU **OpenCL**, recharger, mesurer | Noter le résultat face à Vulkan (expérimental : peut planter) |
 
 ## 3. Modèles et Hugging Face
@@ -43,15 +44,26 @@ version d'Android ; système, mémoire et carte graphique de l'ordinateur.
 | 3.5 | Chercher « LFM3 », ouvrir un dépôt GGUF | Un message dit que le moteur ne sait pas encore faire tourner ce type de modèle |
 | 3.6 | Lancer un téléchargement plus gros que la place libre | Refus immédiat avec la place nécessaire et la place libre |
 
+## 3b. Outils de la discussion
+
+| # | À faire | Attendu |
+| --- | --- | --- |
+| 3b.1 | Menu **+ > Recherche Web**, demander « Quel temps fera-t-il demain à Lille ? » | Une ligne « Recherche sur le Web… », puis une réponse suivie de **Sources** avec des liens ; sinon, un message disant pourquoi (noter lequel) |
+| 3b.2 | **Paramètres > Outils > Mes documents**, ajouter un PDF ; puis menu **+ > Mes documents**, poser une question dont la réponse est dans le PDF | Réponse tirée du PDF, avec **Extraits utilisés** et le nom du fichier |
+| 3b.3 | Écrire « Souviens-toi que je suis végétarien », puis dans une **nouvelle** discussion demander une recette | Un message « Mémorisé », puis une recette végétarienne |
+| 3b.4 | Menu **+ > Tâches > Résumer**, coller un texte, envoyer | Un résumé en cinq points |
+| 3b.5 | Toucher le haut-parleur sous une réponse | Lecture à voix haute, sans lire les liens ni le code |
+| 3b.6 | Ouvrir un dépôt Gemma officiel dans la recherche Hugging Face, ajouter un jeton (icône clé) | Après acceptation de la licence sur le site : téléchargement possible |
+
 ## 4. Un ordinateur fait tourner le modèle
 
 Voir [ordinateur.md](ordinateur.md).
 
 | # | À faire | Attendu |
 | --- | --- | --- |
-| 4.1 | Sur l'ordinateur, lancer `start-serveur` avec un modèle | Le script affiche l'adresse de l'ordinateur |
+| 4.1 | Sur l'ordinateur, lancer `start-serveur` avec un modèle | Le script affiche l'adresse de l'ordinateur et une clé |
 | 4.2 | Sur le téléphone : **Modèles > Cloud > Un ordinateur de votre réseau** | L'ordinateur est trouvé en quelques secondes, avec son modèle |
-| 4.3 | Toucher le modèle, poser une question | La réponse vient de l'ordinateur ; noter la vitesse |
+| 4.3 | Saisir la clé affichée, toucher le modèle, poser une question | La réponse vient de l'ordinateur ; noter la vitesse |
 | 4.4 | Si 4.2 ne trouve rien : saisir l'adresse à la main | L'ordinateur est trouvé ; noter que la recherche automatique a échoué |
 | 4.5 | Même chose depuis un deuxième téléphone en même temps | Les deux discutent avec le même ordinateur |
 
