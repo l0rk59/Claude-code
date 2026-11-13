@@ -2,6 +2,7 @@
 #
 # - Started by hand (Actions > APK > Run workflow): builds it and attaches
 #   it to the run, to download and try.
+# - Changing this file: builds it, as a check.
 # - Pushing a version tag (git tag v1.1.0 && git push origin v1.1.0):
 #   builds it and publishes a release with it, which the app's update
 #   check then offers. Only an APK signed with the release key is ever
@@ -15,7 +16,11 @@ name: APK
 on:
   workflow_dispatch:
   push:
+    # Version tags publish; on branches it only runs when this file
+    # changes, to check the build still works.
     tags: ['v*']
+    branches: ['**']
+    paths: ['.github/workflows/apk.yml']
 
 permissions:
   contents: write
