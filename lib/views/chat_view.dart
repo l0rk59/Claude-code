@@ -660,7 +660,9 @@ class ChatView extends GetView<ChatController> {
               if (!web && !docs) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                child: Wrap(spacing: 8, runSpacing: 6, children: [
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(spacing: 8, runSpacing: 6, children: [
                   if (web)
                     _ToolChip(
                       icon: Icons.travel_explore_rounded,
@@ -674,6 +676,7 @@ class ChatView extends GetView<ChatController> {
                       onRemove: () => controller.useDocuments.value = false,
                     ),
                 ]),
+                ),
               );
             }),
             // STT listening indicator
