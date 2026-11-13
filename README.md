@@ -22,7 +22,7 @@ _Generated on pixel 6 with 20 step_
 - **Smart Auto-Configuration** — On first launch, the app detects your device's RAM and recommends optimal context size and token limits automatically.
 - **A Computer On Your Network** — Run a big model on a PC or a Mac (llama.cpp, Ollama, LM Studio) and chat from the phone: the app finds it on the Wi-Fi. See [docs/ordinateur.md](docs/ordinateur.md) (French).
 - **Phone Cluster** — Spread one GGUF model across several phones, and a computer running llama.cpp's `ggml-rpc-server`, on the same Wi-Fi, to run models too big for one device. See [docs/cluster-ordinateur.md](docs/cluster-ordinateur.md) (French).
-- **Task Management (in development)** — A task view for structured, multi-step AI workflows is being built. It is not available in the app yet.
+- **Tools in the chat** — From the + menu: web search (DuckDuckGo, Brave Search or your own SearXNG) and questions about your own documents (searched on the phone), with the sources listed under the answer; ready-made and custom tasks to start a message; answers read aloud. The assistant remembers what you ask it to ("Remember that…"), on the phone only.
 
 ---
 

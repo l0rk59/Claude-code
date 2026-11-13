@@ -25,7 +25,12 @@ import '../services/local_image_service.dart';
 import '../services/app_log_service.dart';
 import '../services/image_generation_notification_service.dart';
 import '../services/document_extractor_service.dart';
+import '../services/chat_tools.dart';
+import '../services/document_library.dart';
+import '../services/document_library_service.dart';
+import '../services/memory_service.dart';
 import '../services/token_coalescer.dart';
+import '../services/web_search_service.dart';
 import '../utils/thought_parser.dart';
 
 const int _visionImageMaxSide = 768;
@@ -82,6 +87,19 @@ class ChatController extends GetxController {
   /// Groups the tokens of the reply in progress before they reach
   /// [streamingResponse]. Null when nothing is being generated.
   TokenCoalescer? _tokenStream;
+
+  /// Look up the web before answering, and give the model what it found.
+  final webSearch = false.obs;
+
+  /// Look up the user's documents before answering.
+  final useDocuments = false.obs;
+
+  /// What the assistant is doing before it starts writing ("Searching the
+  /// web…"), '' otherwise.
+  final activity = ''.obs;
+
+  /// For tests: replaces the web search.
+  WebSearchService? webSearchService;
   final isStreaming = false.obs;
   final streamingAttachmentType = Rxn<String>();
 
@@ -686,6 +704,29 @@ class ChatController extends GetxController {
       // Tokens reach the screen a few times a second, not one by one:
       // every update re-reads the whole reply on the UI thread, which
       // slows the model down (see TokenCoalescer).
+      // "Remember that…": kept for the next conversations too.
+      final fact = Memories.requested(visibleText);
+      if (fact != null && Memories.enabled(_hive)) {
+        await Memories.add(_hive, fact);
+        showToast('Remembered'.tr, fact, tone: ToastTone.success);
+      }
+
+      // Documents and web: what they hold goes into the question.
+      final found = await _gatherContext(visibleText);
+      if (generationId != _generationSerial) return;
+      final promptText = ChatTools.withContext(
+        effectiveText,
+        ChatTools.context(found.web, found.passages),
+        'Answer the question below. Use the numbered sources when they help, cite them like [1], and say so when they do not contain the answer.'
+            .tr,
+      );
+      final footer = ChatTools.footer(
+        web: found.web,
+        passages: found.passages,
+        webTitle: 'Sources',
+        passagesTitle: 'Excerpts used'.tr,
+      );
+
       final tokens = TokenCoalescer(onText: (text) {
         // Ignore tokens from a generation the user already stopped.
         if (generationId != _generationSerial) return;
@@ -709,10 +750,16 @@ class ChatController extends GetxController {
           .map((m) => {
                 'role': m.role,
                 'content': m.role == 'assistant'
-                    ? splitThoughtTags(m.content).answer
+                    ? ChatTools.stripFooter(splitThoughtTags(m.content).answer)
                     : m.content,
               })
           .toList();
+      // The model reads this turn's question with what was found for it.
+      if (promptText != effectiveText &&
+          history.isNotEmpty &&
+          history.last['role'] == 'user') {
+        history.last['content'] = promptText;
+      }
 
       if (inferenceMode == 'local') {
         final localImage = Get.find<LocalImageService>();
@@ -812,7 +859,7 @@ class ChatController extends GetxController {
           // returns a clear unsupported message from the inference layer.
 
           rawResponse = await inference.generate(
-            prompt: effectiveText,
+            prompt: promptText,
             systemPrompt: _effectiveSystemPrompt,
             conversationHistory: history,
             source: 'chat',
@@ -857,6 +904,13 @@ class ChatController extends GetxController {
       imageGenStep.value = 0;
       imageGenTotal.value = 0;
       imageGenDecoding.value = false;
+
+      // The sources, under an answer (not under an error).
+      if (footer.isNotEmpty &&
+          !rawResponse.startsWith('ERROR') &&
+          !rawResponse.startsWith('[IMAGE_BASE64]')) {
+        rawResponse = '${rawResponse.trimRight()}$footer';
+      }
 
       String? outImageBase64;
       if (rawResponse.startsWith('[IMAGE_BASE64]')) {
@@ -1032,10 +1086,67 @@ class ChatController extends GetxController {
     final modelName = settings.inferenceMode.value == 'local'
         ? inference.loadedModelName.value
         : settings.selectedCloudModelName;
-    return settings.effectiveSystemPromptForModel(
-      modelName,
+    final base = settings.effectiveSystemPromptForModel(modelName);
+    // What the user asked to be remembered, in every conversation.
+    if (!Memories.enabled(_hive)) return base;
+    final facts = Memories.forSystemPrompt(
+      Memories.all(_hive),
+      'What you know about the user (they asked you to remember it):'.tr,
     );
+    return facts.isEmpty ? base : '$base\n\n$facts';
   }
+
+  /// Looks up the user's documents and the web for [question], as switched
+  /// on. A search that fails says why and leaves the question as it is.
+  Future<({List<WebResult> web, List<DocChunk> passages})> _gatherContext(
+      String question) async {
+    var passages = <DocChunk>[];
+    var web = <WebResult>[];
+    try {
+      if (useDocuments.value && Get.isRegistered<DocumentLibraryService>()) {
+        activity.value = 'Searching your documents…'.tr;
+        passages = Get.find<DocumentLibraryService>().library.search(question);
+      }
+      if (webSearch.value) {
+        activity.value = 'Searching the web…'.tr;
+        try {
+          web = await (webSearchService ?? WebSearchService()).search(
+            question,
+            provider: WebSearchProvider.fromName(_hive
+                .getSetting<String>(AppConstants.keyWebSearchProvider)),
+            braveKey:
+                _hive.getSetting<String>(AppConstants.keyBraveSearchKey) ?? '',
+            searxngUrl:
+                _hive.getSetting<String>(AppConstants.keySearxngUrl) ?? '',
+            language: Get.locale?.languageCode == 'fr' ? 'fr' : 'en',
+          );
+          if (web.isEmpty) {
+            showToast('Web search'.tr, 'Nothing found on the web for this.'.tr);
+          }
+        } on WebSearchException catch (e) {
+          showToast('Web search unavailable'.tr, webSearchProblem(e.message),
+              tone: ToastTone.warning, duration: const Duration(seconds: 6));
+        }
+      }
+    } finally {
+      activity.value = '';
+    }
+    return (web: web, passages: passages);
+  }
+
+  /// A web search failure, in words for the user.
+  static String webSearchProblem(String code) => switch (code) {
+        'busy' =>
+          'The search engine turned the search away (too many requests). Try again in a moment, or choose another engine in Settings.'
+              .tr,
+        'refused' => 'The search engine refused the key. Check it in Settings.'.tr,
+        'brave-key' => 'Add your Brave Search key in Settings.'.tr,
+        'searxng-url' => 'Enter the address of your SearXNG server in Settings.'.tr,
+        'searxng-json' =>
+          'Your SearXNG server refuses JSON answers. Add "json" to its search formats.'
+              .tr,
+        _ => "Couldn't reach the search engine. Check your connection.".tr,
+      };
 
   String _attachmentTypeForExtension(String extension) {
     const imageExtensions = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'heic'};

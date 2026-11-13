@@ -21,7 +21,9 @@ import 'services/hive_service.dart';
 import 'services/inference_service.dart';
 import 'services/cluster_service.dart';
 import 'services/cloud_service.dart';
+import 'services/document_library_service.dart';
 import 'services/download_service.dart';
+import 'services/speech_service.dart';
 import 'services/update_service.dart';
 import 'services/device_info_service.dart';
 import 'services/local_image_service.dart';
@@ -133,6 +135,16 @@ void main() {
     appLog.info('Notifications initialized');
     Get.put(ServerController(), permanent: true);
     Get.put(ModelController());
+    Get.put(SpeechService(), permanent: true);
+    // Documents for the chat to search (the web build has no file storage).
+    if (!kIsWeb) {
+      try {
+        await Get.putAsync(() => DocumentLibraryService().init(),
+            permanent: true);
+      } catch (e) {
+        appLog.error('Document library unavailable', details: e);
+      }
+    }
     appLog.info('All services initialized, launching app');
 
     // Auto-configure inference settings based on device RAM

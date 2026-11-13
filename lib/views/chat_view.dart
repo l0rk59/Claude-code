@@ -10,6 +10,7 @@ import '../controllers/settings_controller.dart';
 import '../controllers/model_controller.dart';
 import '../controllers/home_controller.dart';
 import '../services/cluster_service.dart';
+import '../services/document_library_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
 import '../ffi/sd_backend.dart';
@@ -17,6 +18,8 @@ import '../utils/thought_parser.dart';
 import '../widgets/attachment_preview.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_drawer.dart';
+import '../widgets/task_sheet.dart';
+import 'documents_view.dart';
 import '../widgets/home_empty_state.dart';
 import '../core/ui.dart';
 import '../widgets/thought_disclosure.dart';
@@ -569,11 +572,14 @@ class ChatView extends GetView<ChatController> {
 
   Widget _typingHint(BuildContext context, bool isDark,
       {String? attachmentType}) {
-    final msg = attachmentType == 'image'
-        ? 'Reading image…'.tr
-        : attachmentType == 'audio'
-            ? 'Listening to audio…'.tr
-            : null;
+    final activity = controller.activity.value;
+    final msg = activity.isNotEmpty
+        ? activity
+        : attachmentType == 'image'
+            ? 'Reading image…'.tr
+            : attachmentType == 'audio'
+                ? 'Listening to audio…'.tr
+                : null;
     if (msg == null) return _TypingDots(isDark: isDark);
     return Row(mainAxisSize: MainAxisSize.min, children: [
       _TypingDots(isDark: isDark),
@@ -585,6 +591,38 @@ class ChatView extends GetView<ChatController> {
                   color: Theme.of(context).hintColor,
                   fontWeight: FontWeight.w400))),
     ]);
+  }
+
+  /// "My documents": switched on, or the documents page when there are
+  /// none to search yet.
+  void _toggleDocuments(BuildContext context) {
+    final hasDocuments = Get.isRegistered<DocumentLibraryService>() &&
+        Get.find<DocumentLibraryService>().documents.isNotEmpty;
+    if (!controller.useDocuments.value && !hasDocuments) {
+      Get.to(() => const DocumentsView());
+      return;
+    }
+    controller.useDocuments.toggle();
+  }
+
+  void _showTasks(BuildContext context) {
+    showAppSheet<void>(
+      context,
+      title: 'Tasks'.tr,
+      subtitle: 'Start your message with a ready-made request.'.tr,
+      builder: (_) => TaskSheet(
+        current: controller.textController.text,
+        onPick: (prompt) {
+          final typed = controller.textController.text.trim();
+          final text = typed.isEmpty ? prompt : '$prompt$typed';
+          controller.textController.value = TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          );
+          controller.inputText.value = text;
+        },
+      ),
+    );
   }
 
   // ── Input Bar ──
@@ -614,6 +652,29 @@ class ChatView extends GetView<ChatController> {
                       controller.clearFile();
                     },
                   ));
+            }),
+            // Tools switched on for the next message
+            Obx(() {
+              final web = controller.webSearch.value;
+              final docs = controller.useDocuments.value;
+              if (!web && !docs) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                child: Wrap(spacing: 8, runSpacing: 6, children: [
+                  if (web)
+                    _ToolChip(
+                      icon: Icons.travel_explore_rounded,
+                      label: 'Web search'.tr,
+                      onRemove: () => controller.webSearch.value = false,
+                    ),
+                  if (docs)
+                    _ToolChip(
+                      icon: Icons.folder_open_rounded,
+                      label: 'My documents'.tr,
+                      onRemove: () => controller.useDocuments.value = false,
+                    ),
+                ]),
+              );
             }),
             // STT listening indicator
             Obx(() {
@@ -899,6 +960,11 @@ class ChatView extends GetView<ChatController> {
                       onImage: controller.pickImage,
                       onFile: () =>
                           controller.pickFile(documentsOnly: !audioOk),
+                      webSearch: controller.webSearch.value,
+                      useDocuments: controller.useDocuments.value,
+                      onWebSearch: () => controller.webSearch.toggle(),
+                      onDocuments: () => _toggleDocuments(context),
+                      onTasks: () => _showTasks(context),
                       context: context,
                     );
                   }),
@@ -1186,6 +1252,13 @@ class _AttachButton extends StatelessWidget {
   final VoidCallback onCamera;
   final VoidCallback onImage;
   final VoidCallback onFile;
+
+  /// Tools for the next message: on or off, and what tapping them does.
+  final bool webSearch;
+  final bool useDocuments;
+  final VoidCallback onWebSearch;
+  final VoidCallback onDocuments;
+  final VoidCallback onTasks;
   final BuildContext context;
 
   const _AttachButton({
@@ -1195,6 +1268,11 @@ class _AttachButton extends StatelessWidget {
     required this.onCamera,
     required this.onImage,
     required this.onFile,
+    required this.webSearch,
+    required this.useDocuments,
+    required this.onWebSearch,
+    required this.onDocuments,
+    required this.onTasks,
     required this.context,
   });
 
@@ -1246,6 +1324,24 @@ class _AttachButton extends StatelessWidget {
         label: 'Files'.tr,
         enabled: true,
         onTap: onFile,
+      ),
+      (
+        icon: Icons.travel_explore_rounded,
+        label: webSearch ? 'Web search: on'.tr : 'Web search'.tr,
+        enabled: true,
+        onTap: onWebSearch,
+      ),
+      (
+        icon: Icons.folder_open_rounded,
+        label: useDocuments ? 'My documents: on'.tr : 'My documents'.tr,
+        enabled: true,
+        onTap: onDocuments,
+      ),
+      (
+        icon: Icons.bolt_rounded,
+        label: 'Tasks'.tr,
+        enabled: true,
+        onTap: onTasks,
       ),
     ];
 
@@ -1350,6 +1446,41 @@ class _AttachButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// A tool switched on for the next message, with a way to switch it off.
+class _ToolChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onRemove;
+  const _ToolChip(
+      {required this.icon, required this.label, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
+      decoration: BoxDecoration(
+        color: t.accent.withValues(alpha: t.isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 15, color: t.accent),
+        const SizedBox(width: 6),
+        Text(label,
+            style: t.small.copyWith(color: t.accent, fontWeight: FontWeight.w600)),
+        InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onRemove,
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Icon(Icons.close_rounded, size: 14, color: t.accent),
+          ),
+        ),
+      ]),
     );
   }
 }

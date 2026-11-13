@@ -28,6 +28,12 @@ class AppConstants {
   /// publisher asks to accept a licence first (Gemma, Llama…).
   static const String keyHfToken = 'hf_token';
 
+  /// Web search for the chat: provider (duckDuckGo, brave, searxng), the
+  /// Brave Search key and the SearXNG server's address.
+  static const String keyWebSearchProvider = 'web_search_provider';
+  static const String keyBraveSearchKey = 'brave_search_key';
+  static const String keySearxngUrl = 'searxng_url';
+
   /// Settings that hold secrets. They live in the phone's keystore, never
   /// in the ordinary settings file (see HiveService).
   static const secretKeys = {
@@ -43,6 +49,7 @@ class AppConstants {
     keyCustomCloudProfiles,
     keyServerApiKey,
     keyHfToken,
+    keyBraveSearchKey,
   };
   static const String keyCustomCloudProfileIndex = 'custom_cloud_profile_index';
   static const String keyOpenaiModel = 'openai_model';

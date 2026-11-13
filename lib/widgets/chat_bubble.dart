@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/chat_message.dart';
+import '../services/speech_service.dart';
 import '../utils/thought_parser.dart';
 import 'attachment_preview.dart';
 import 'image_viewer.dart';
@@ -156,6 +157,8 @@ class ChatBubble extends StatelessWidget {
             child: Row(children: [
               if (answerContent.isNotEmpty)
                 _CopyButton(text: answerContent, color: muted),
+                _SpeakButton(
+                    id: message.id, text: answerContent, color: muted),
               if (meta.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 Text(meta.join(' · '),
@@ -390,5 +393,39 @@ class _CopyButtonState extends State<_CopyButton> {
         ),
       ),
     );
+  }
+}
+
+/// Reads the answer aloud, or stops reading it.
+class _SpeakButton extends StatelessWidget {
+  final String id;
+  final String text;
+  final Color color;
+  const _SpeakButton(
+      {required this.id, required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<SpeechService>()) return const SizedBox.shrink();
+    final speech = Get.find<SpeechService>();
+    return Obx(() {
+      final speaking = speech.speaking.value == id;
+      return Tooltip(
+        message: speaking ? 'Stop reading'.tr : 'Read aloud'.tr,
+        child: InkResponse(
+          onTap: () => speech.toggle(id, text,
+              language: Get.locale?.languageCode == 'fr' ? 'fr-FR' : 'en-US'),
+          radius: 18,
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Icon(
+              speaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
+              size: 17,
+              color: color,
+            ),
+          ),
+        ),
+      );
+    });
   }
 }

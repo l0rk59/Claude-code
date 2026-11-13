@@ -79,6 +79,11 @@
     </application>
 
     <queries>
+        <!-- The speech engine that reads answers aloud (Android 11+ hides
+             it from apps that don't declare it). -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

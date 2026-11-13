@@ -18,6 +18,8 @@ import '../services/cluster_service.dart';
 import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
 import 'cluster_view.dart';
+import 'documents_view.dart';
+import 'tools_settings_view.dart';
 import 'speed_test_sheet.dart';
 import 'log_view.dart';
 import '../core/haptics.dart';
@@ -101,6 +103,27 @@ class SettingsView extends GetView<SettingsController> {
                       SectionHeader('Stop sequences'.tr),
                       _buildStopSequencesGroup(ctx),
                     ]),
+              ),
+            ]),
+            SectionHeader('Tools'.tr),
+            AppGroup(dividerIndent: 60, children: [
+              AppRow(
+                icon: Icons.travel_explore_rounded,
+                title: 'Web search'.tr,
+                chevron: true,
+                onTap: () => Get.to(() => const WebSearchSettingsView()),
+              ),
+              AppRow(
+                icon: Icons.folder_open_rounded,
+                title: 'My documents'.tr,
+                chevron: true,
+                onTap: () => Get.to(() => const DocumentsView()),
+              ),
+              AppRow(
+                icon: Icons.psychology_outlined,
+                title: 'Memory'.tr,
+                chevron: true,
+                onTap: () => Get.to(() => const MemoryView()),
               ),
             ]),
             SectionHeader('Performance'.tr),

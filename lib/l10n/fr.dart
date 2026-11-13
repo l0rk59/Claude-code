@@ -1419,6 +1419,113 @@ const Map<String, String> fr = {
       'Cet ordinateur est protégé par une clé. Saisissez la clé affichée par le script sur l’ordinateur.',
   'Key': 'Clé',
   'Unlock': 'Déverrouiller',
+  '@count documents': '@count documents',
+  '@name will no longer be searched. The file itself stays on the phone.':
+      '@name ne sera plus consulté. Le fichier lui-même reste sur le téléphone.',
+  'Add a fact': 'Ajouter une information',
+  'Add documents': 'Ajouter des documents',
+  'Add your Brave Search key in Settings.':
+      'Ajoutez votre clé Brave Search dans les Paramètres.',
+  'Add your files (PDF, Word, text): when "My documents" is on, the passages that answer your question are given to the model with it. Everything stays on the phone.':
+      'Ajoutez vos fichiers (PDF, Word, texte) : quand « Mes documents » est activé, les passages qui répondent à votre question sont donnés au modèle avec elle. Tout reste sur le téléphone.',
+  'Address of the SearXNG server': 'Adresse du serveur SearXNG',
+  'Answer the question below. Use the numbered sources when they help, cite them like [1], and say so when they do not contain the answer.':
+      'Réponds à la question ci-dessous. Appuie-toi sur les sources numérotées quand elles aident, cite-les ainsi : [1], et dis-le quand elles ne contiennent pas la réponse.',
+  'Brave Search key': 'Clé Brave Search',
+  'Correct the spelling and grammar of this text without changing its meaning, then list the changes:\n\n':
+      'Corrige l’orthographe et la grammaire de ce texte sans en changer le sens, puis liste les corrections :\n\n',
+  'Correct the spelling': 'Corriger l’orthographe',
+  "Couldn't reach the search engine. Check your connection.":
+      'Impossible de joindre le moteur de recherche. Vérifiez votre connexion.',
+  'Documents added': 'Documents ajoutés',
+  'Documents need the phone app.':
+      'Les documents nécessitent l’application sur téléphone.',
+  'Enter the address of your SearXNG server in Settings.':
+      'Saisissez l’adresse de votre serveur SearXNG dans les Paramètres.',
+  'Excerpts used': 'Extraits utilisés',
+  'Explain simply': 'Expliquer simplement',
+  'Explain this simply, as to someone who knows nothing about it, with an example:\n\n':
+      'Explique ceci simplement, comme à quelqu’un qui n’y connaît rien, avec un exemple :\n\n',
+  'For example http://192.168.1.20:8888. Its settings must allow the "json" format.':
+      'Par exemple http://192.168.1.20:8888. Ses réglages doivent autoriser le format « json ».',
+  'Forget everything': 'Tout oublier',
+  'Forget everything?': 'Tout oublier ?',
+  'Forget': 'Oublier',
+  'Give the pros and cons, then your recommendation, for:\n\n':
+      'Donne les avantages et les inconvénients, puis ta recommandation, pour :\n\n',
+  'I am vegetarian': 'Je suis végétarien',
+  'Key points and actions': 'Points clés et actions',
+  'List the key points, then the actions to take, from this text:\n\n':
+      'Liste les points clés, puis les actions à mener, à partir de ce texte :\n\n',
+  'Make a plan': 'Faire un plan',
+  'Make a step-by-step plan, with what to do first, for:\n\n':
+      'Fais un plan étape par étape, en commençant par le plus urgent, pour :\n\n',
+  'Memory': 'Mémoire',
+  'My documents': 'Mes documents',
+  'My documents: on': 'Mes documents : activé',
+  'Name of the task': 'Nom de la tâche',
+  'Needs a key (a free plan exists on brave.com/search/api). Dependable.':
+      'Demande une clé (une formule gratuite existe sur brave.com/search/api). Fiable.',
+  'No account. It sometimes turns searches away when there are too many.':
+      'Sans compte. Refuse parfois les recherches quand il y en a trop.',
+  'No documents yet': 'Aucun document pour l’instant',
+  'No text could be read from this file.':
+      'Aucun texte n’a pu être lu dans ce fichier.',
+  'Not available here': 'Indisponible ici',
+  'Nothing found on the web for this.': 'Rien trouvé sur le Web pour cette question.',
+  'Nothing remembered yet': 'Rien de mémorisé pour l’instant',
+  'Pros and cons': 'Avantages et inconvénients',
+  'Read aloud': 'Lire à voix haute',
+  'Ready-made': 'Prêtes à l’emploi',
+  'Remembered · @count': 'Mémorisé · @count',
+  'Remembered': 'Mémorisé',
+  'Remove this document?': 'Retirer ce document ?',
+  'Reply to a message': 'Répondre à un message',
+  'Save as a task': 'Enregistrer comme tâche',
+  'Save this message as a task': 'Enregistrer ce message comme tâche',
+  'Say "Remember that…" in a chat, or add a fact here: the assistant knows it in every conversation. Nothing is remembered without being asked, and it stays on the phone.':
+      'Dites « Souviens-toi que… » dans une discussion, ou ajoutez une information ici : l’assistant la connaîtra dans toutes les conversations. Rien n’est retenu sans que vous le demandiez, et tout reste sur le téléphone.',
+  'Search engine': 'Moteur de recherche',
+  'Searching the web…': 'Recherche sur le Web…',
+  'Searching your documents…': 'Recherche dans vos documents…',
+  'Start your message with a ready-made request.':
+      'Commencez votre message par une demande toute prête.',
+  'Stop reading': 'Arrêter la lecture',
+  "Stored in the phone's keystore.": 'Rangée dans le coffre du téléphone.',
+  'Summarise the following text in five short points:\n\n':
+      'Résume le texte suivant en cinq points courts :\n\n',
+  'Summarise': 'Résumer',
+  'Switch on "My documents" in the + menu to ask about them.':
+      'Activez « Mes documents » dans le menu + pour poser des questions dessus.',
+  'Switched on from the + menu of the chat. Only your question goes to the search engine; the results are given to the model with it, and the answer lists its sources.':
+      'S’active depuis le menu + de la discussion. Seule votre question part au moteur de recherche ; les résultats sont donnés au modèle avec elle, et la réponse cite ses sources.',
+  'The search engine refused the key. Check it in Settings.':
+      'Le moteur de recherche a refusé la clé. Vérifiez-la dans les Paramètres.',
+  'The search engine turned the search away (too many requests). Try again in a moment, or choose another engine in Settings.':
+      'Le moteur de recherche a refusé la recherche (trop de demandes). Réessayez dans un instant, ou choisissez un autre moteur dans les Paramètres.',
+  'Tools': 'Outils',
+  'Translate into English': 'Traduire en anglais',
+  'Translate into French': 'Traduire en français',
+  'Translate the following text into natural English:\n\n':
+      'Traduis le texte suivant dans un anglais naturel :\n\n',
+  'Translate the following text into natural French:\n\n':
+      'Traduis le texte suivant dans un français naturel :\n\n',
+  'Use the memory': 'Utiliser la mémoire',
+  'Web search unavailable': 'Recherche Web indisponible',
+  'Web search': 'Recherche Web',
+  'Web search: on': 'Recherche Web : activée',
+  'What you know about the user (they asked you to remember it):':
+      'Ce que tu sais de la personne avec qui tu parles (elle t’a demandé de le retenir) :',
+  'Write a reply to this message. Tone: friendly and brief.\n\n':
+      'Rédige une réponse à ce message. Ton : aimable et bref.\n\n',
+  'Write a short, polite email that says:\n\n':
+      'Rédige un e-mail court et poli qui dit :\n\n',
+  'Write an email': 'Rédiger un e-mail',
+  'Your SearXNG server refuses JSON answers. Add "json" to its search formats.':
+      'Votre serveur SearXNG refuse les réponses JSON. Ajoutez « json » à ses formats de recherche.',
+  'Your own search server, for instance on your computer: the search engines see it, not your phone.':
+      'Votre propre serveur de recherche, par exemple sur votre ordinateur : les moteurs de recherche voient ce serveur, pas votre téléphone.',
+  'Your tasks': 'Vos tâches',
 };
 
 /// Download statuses the Android code reports in English (shown through
