@@ -10,6 +10,7 @@ import '../ffi/sd_ffi_bindings.dart';
 import 'app_log_service.dart';
 import 'hive_service.dart';
 import 'sd_isolate_processor.dart';
+import '../core/app_dirs.dart';
 
 class LocalImageService extends GetxService {
   final HiveService _hive = Get.find<HiveService>();
@@ -150,7 +151,7 @@ class LocalImageService extends GetxService {
         await unloadModel();
       }
 
-      loadingModelName.value = modelName ?? modelPath.split('/').last;
+      loadingModelName.value = modelName ?? baseName(modelPath);
       isLoadingModel.value = true;
       progress.value = 0.0;
 
@@ -189,7 +190,7 @@ class LocalImageService extends GetxService {
             isUsingGpu.value = true;
             isModelLoaded.value = true;
             isLoadingModel.value = false;
-            loadedModelName.value = modelName ?? modelPath.split('/').last;
+            loadedModelName.value = modelName ?? baseName(modelPath);
             await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
             await _hive.setSetting(
                 AppConstants.keyImageModelName, loadedModelName.value);
@@ -217,7 +218,7 @@ class LocalImageService extends GetxService {
           isUsingGpu.value = true;
           isModelLoaded.value = true;
           isLoadingModel.value = false;
-          loadedModelName.value = modelName ?? modelPath.split('/').last;
+          loadedModelName.value = modelName ?? baseName(modelPath);
           await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
           await _hive.setSetting(
               AppConstants.keyImageModelName, loadedModelName.value);
@@ -299,7 +300,7 @@ class LocalImageService extends GetxService {
         isUsingGpu.value = backend != Backend.cpu;
         isModelLoaded.value = true;
         isLoadingModel.value = false;
-        loadedModelName.value = modelName ?? modelPath.split('/').last;
+        loadedModelName.value = modelName ?? baseName(modelPath);
         await _hive.setSetting(AppConstants.keyImageModelPath, modelPath);
         await _hive.setSetting(
             AppConstants.keyImageModelName, loadedModelName.value);
@@ -315,7 +316,7 @@ class LocalImageService extends GetxService {
       Get.find<AppLogService>().error(
         'Image model load failed',
         details:
-            'All backend candidates failed. model=${modelName ?? modelPath.split('/').last}, vendor=$vendor, sizeMb=$modelSizeMb',
+            'All backend candidates failed. model=${modelName ?? baseName(modelPath)}, vendor=$vendor, sizeMb=$modelSizeMb',
       );
       return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
           .trParams({'error': 'All backend candidates failed.'});
@@ -323,7 +324,7 @@ class LocalImageService extends GetxService {
       isModelLoaded.value = false;
       isLoadingModel.value = false;
       Get.find<AppLogService>().error('Image model load exception',
-          details: 'model=${modelName ?? modelPath.split('/').last}, error=$e');
+          details: 'model=${modelName ?? baseName(modelPath)}, error=$e');
       return 'Could not load this model. Try CyberRealistic, Realistic Vision, or AbsoluteReality - these work reliably on most devices.\n\nTechnical detail: @error'
           .trParams({'error': '$e'});
     }

@@ -8,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-// import 'firebase_options.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/cloud_model_controller.dart';
 import 'controllers/server_controller.dart';
@@ -21,6 +20,7 @@ import 'services/hive_service.dart';
 import 'services/inference_service.dart';
 import 'services/cluster_service.dart';
 import 'services/cloud_service.dart';
+import 'services/desktop/desktop_engine_service.dart';
 import 'services/document_library_service.dart';
 import 'services/download_service.dart';
 import 'services/speech_service.dart';
@@ -30,6 +30,8 @@ import 'services/local_image_service.dart';
 import 'services/app_log_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/image_generation_notification_service.dart';
+import 'core/app_dirs.dart';
+import 'core/app_platform.dart';
 import 'core/constants.dart';
 
 void main() {
@@ -50,17 +52,8 @@ void main() {
 
     appLog.info('App started');
 
-    // Initialize Firebase before any Firebase-dependent services
-    try {
-      // await Firebase.initializeApp(
-      //   options: DefaultFirebaseOptions.currentPlatform,
-      // );
-    } catch (e) {
-      appLog.error('[Firebase] Initialization failed', details: e);
-    }
-
     // Support phones and tablets in portrait or landscape.
-    if (!kIsWeb) {
+    if (AppPlatform.isMobile) {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.landscapeLeft,
@@ -68,8 +61,13 @@ void main() {
       ]);
     }
 
-    // Initialize Hive
-    await Hive.initFlutter();
+    // Initialize Hive (on a computer, in the app's data folder rather than
+    // the user's Documents).
+    if (AppPlatform.isDesktop) {
+      Hive.init('${(await AppDirs.data()).path}/hive');
+    } else {
+      await Hive.initFlutter();
+    }
 
     // Register global services
     await Get.putAsync(() => HiveService().init().timeout(
@@ -96,6 +94,14 @@ void main() {
     Intl.defaultLocale = Get.locale.toString();
     Get.put(CloudModelController());
 
+    if (AppPlatform.isDesktop) {
+      // Settings > Models folder: a folder the user chose for the models.
+      final modelsDir = Get.find<HiveService>()
+              .getSetting<String>(AppConstants.keyModelsDir) ??
+          '';
+      if (modelsDir.isNotEmpty) AppDirs.modelsOverride = modelsDir;
+      await Get.putAsync(() => DesktopEngineService().init(), permanent: true);
+    }
     if (ClusterService.isSupported) Get.put(ClusterService(), permanent: true);
     Get.put(InferenceService());
     Get.put(CloudService());
@@ -160,6 +166,9 @@ void main() {
       settingsController.setThemeMode(settingsController.themeMode.value);
     });
   }, (error, stack) async {
+    // Also on the console: an error before the first screen leaves an
+    // empty window and nothing in the in-app log.
+    debugPrint('Uncaught error: $error\n$stack');
     if (Get.isRegistered<AppLogService>()) {
       Get.find<AppLogService>().error(
         'Uncaught zone error: $error',
@@ -237,8 +246,36 @@ void _autoConfigureForDevice() {
       'maxTokens=${device.recommendedMaxTokens} for ${device.totalRamGB.value.toStringAsFixed(1)}GB RAM');
 }
 
-class PrivateLMApp extends StatelessWidget {
+class PrivateLMApp extends StatefulWidget {
   const PrivateLMApp({super.key});
+
+  @override
+  State<PrivateLMApp> createState() => _PrivateLMAppState();
+}
+
+class _PrivateLMAppState extends State<PrivateLMApp> {
+  AppLifecycleListener? _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // On a computer the model runs in a separate program: stop it with the
+    // window, or it keeps the graphics card's memory.
+    if (AppPlatform.isDesktop) {
+      _lifecycle = AppLifecycleListener(onExitRequested: () async {
+        if (Get.isRegistered<DesktopEngineService>()) {
+          await Get.find<DesktopEngineService>().stop();
+        }
+        return AppExitResponse.exit;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _lifecycle?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

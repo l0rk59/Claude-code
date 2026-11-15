@@ -18,7 +18,6 @@ _Generated on pixel 6 with 20 step_
 - **Cloud API Fallback** — Seamlessly switch to OpenAI, Anthropic, Google Gemini, or Kimi (Moonshot AI) when you need more power or are on unsupported platforms.
 - **Multimodal Chat** — Send text and images in conversations. Vision support works with both local models (Qwen2-VL) and cloud providers.
 - **Persistent Sessions** — All chats and settings are stored locally via Hive. Nothing leaves your device unless you explicitly choose cloud mode.
-- **Background Services** — Firebase Cloud Messaging integration for push updates and background task handling.
 - **Smart Auto-Configuration** — On first launch, the app detects your device's RAM and recommends optimal context size and token limits automatically.
 - **A Computer On Your Network** — Run a big model on a PC or a Mac (llama.cpp, Ollama, LM Studio) and chat from the phone: the app finds it on the Wi-Fi. See [docs/ordinateur.md](docs/ordinateur.md) (French).
 - **Phone Cluster** — Spread one GGUF model across several phones, and a computer running llama.cpp's `ggml-rpc-server`, on the same Wi-Fi, to run models too big for one device. See [docs/cluster-ordinateur.md](docs/cluster-ordinateur.md) (French).
@@ -38,7 +37,6 @@ Where the project stands and what comes next: [docs/feuille-de-route.md](docs/fe
 - **Local Storage:** Hive
 - **Networking:** Dio + `package:http`
 - **Background Execution:** `flutter_background_service` + `flutter_local_notifications`
-- **Push Notifications:** Firebase Core + Firebase Messaging
 
 ### Inference Pipeline
 

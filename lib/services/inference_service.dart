@@ -11,6 +11,7 @@ import 'stop_sequence_filter.dart';
 // Conditionally import llama_flutter_android — only on Android
 import 'inference_android.dart' if (dart.library.html) 'inference_stub.dart'
     as platform;
+import '../core/app_dirs.dart';
 
 /// Cross-platform inference service.
 /// - Android / iOS: uses llama_flutter_android for local GGUF models
@@ -127,7 +128,7 @@ class InferenceService extends GetxService {
 
       await unloadModel();
       isLoadingModel.value = true;
-      loadingModelName.value = modelName ?? modelPath.split('/').last;
+      loadingModelName.value = modelName ?? baseName(modelPath);
       modelLoadProgress.value = 0.0;
 
       _engine = platform.InferenceEngine();
@@ -156,7 +157,7 @@ class InferenceService extends GetxService {
             .applyForNextLoad(modelPath, modelName: modelName);
       }
 
-      final requestedModelName = modelName ?? modelPath.split('/').last;
+      final requestedModelName = modelName ?? baseName(modelPath);
       var activeModelName = requestedModelName;
       // How this model was measured to run fastest, if it was.
       final choice =
@@ -502,9 +503,8 @@ class InferenceService extends GetxService {
   Future<void> _loadDraftModel(String modelPath) async {
     final draft =
         _hive.getSetting<String>(AppConstants.keySpeculativeDraftModel) ?? '';
-    if (draft.isEmpty || modelPath.endsWith('/$draft')) return;
-    final draftPath =
-        '${modelPath.substring(0, modelPath.lastIndexOf('/'))}/$draft';
+    if (draft.isEmpty || baseName(modelPath) == draft) return;
+    final draftPath = '${dirName(modelPath)}/$draft';
     final error = await _engine!.loadDraftModel(draftPath);
     if (error != null) {
       Get.find<AppLogService>()

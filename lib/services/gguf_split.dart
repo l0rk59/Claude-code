@@ -20,7 +20,7 @@ class GgufSplit {
 
   /// The split [filename] belongs to, or null when it is a whole model.
   static GgufSplit? parse(String filename) {
-    final name = filename.split('/').last;
+    final name = filename.split(RegExp(r'[/\\]')).last;
     final match = _pattern.firstMatch(name);
     if (match == null) return null;
     final index = int.parse(match[2]!);
@@ -56,7 +56,7 @@ class GgufSplit {
   /// The size of the model whose first file is at [path]: the sum of its
   /// parts on disk. Missing parts count as nothing.
   static Future<int> bytesOnDisk(String path) async {
-    final slash = path.lastIndexOf('/');
+    final slash = path.lastIndexOf(RegExp(r'[/\\]'));
     final dir = slash < 0 ? '' : path.substring(0, slash + 1);
     var total = 0;
     for (final name in filesOf(path.substring(slash + 1))) {

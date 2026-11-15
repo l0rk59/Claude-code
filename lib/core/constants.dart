@@ -28,6 +28,16 @@ class AppConstants {
   /// publisher asks to accept a licence first (Gemma, Llama…).
   static const String keyHfToken = 'hf_token';
 
+  // Computer app (Windows, Linux, macOS)
+  static const String keyDesktopEngineVariant = 'desktop_engine_variant';
+  static const String keyDesktopServerPath = 'desktop_server_path';
+  static const String keyDesktopShare = 'desktop_share';
+  static const String keyDesktopShareKey = 'desktop_share_key';
+  static const String keyDesktopClusterOn = 'desktop_cluster_on';
+  static const String keyDesktopRpcWorkers = 'desktop_rpc_workers';
+  static const String keyModelsDir = 'models_dir';
+  static const String keyAgentWorkspace = 'agent_workspace';
+
   /// Web search for the chat: provider (duckDuckGo, brave, searxng), the
   /// Brave Search key and the SearXNG server's address.
   static const String keyWebSearchProvider = 'web_search_provider';
@@ -50,6 +60,7 @@ class AppConstants {
     keyServerApiKey,
     keyHfToken,
     keyBraveSearchKey,
+    keyDesktopShareKey,
   };
   static const String keyCustomCloudProfileIndex = 'custom_cloud_profile_index';
   static const String keyOpenaiModel = 'openai_model';

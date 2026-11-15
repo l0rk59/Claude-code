@@ -1665,6 +1665,11 @@ class ModelController extends GetxController {
   }
 
   String _getFriendlyErrorMessage(String rawError) {
+    // The computer engine's messages already say what happened and what
+    // to do.
+    if (AppPlatform.isDesktop) {
+      return rawError.replaceFirst(RegExp(r'^(ERROR|ERREUR)\s*:\s*'), '');
+    }
     final lower = rawError.toLowerCase();
     if (_isClusterError(rawError)) {
       // "ERROR: Failed to load model — Exception: <message>"

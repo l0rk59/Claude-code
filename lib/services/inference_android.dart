@@ -1,19 +1,27 @@
 import 'dart:async';
 import 'dart:ffi' show Abi;
 import 'dart:io' show Platform, Directory, File;
-import 'package:get/get.dart' show Trans;
+import 'package:get/get.dart' show Get, Inst, Trans;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_litert_lm/flutter_litert_lm.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 
+
+import 'desktop/desktop_engine_service.dart';
+import 'desktop/desktop_inference.dart';
 import 'gguf_split.dart';
 import 'sampling_presets.dart';
 
-/// Whether the current platform supports local inference.
-bool get supportsLocalInference => Platform.isAndroid || Platform.isIOS;
+/// The computer app (the model runs in llama.cpp's llama-server).
+bool get _isDesktop => Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
-/// Threads a GGUF model uses on the processor unless told otherwise.
-int? defaultCpuThreads() => performanceCoreCount();
+/// Whether the current platform supports local inference.
+bool get supportsLocalInference =>
+    Platform.isAndroid || Platform.isIOS || _isDesktop;
+
+/// Threads a GGUF model uses on the processor unless told otherwise. On a
+/// computer, llama.cpp picks them itself.
+int? defaultCpuThreads() => _isDesktop ? null : performanceCoreCount();
 
 /// True when the app runs as a 32-bit process (32-bit Android, e.g. Android
 /// Go phones). LiteRT ships 64-bit only, and the address space limits model
@@ -58,7 +66,10 @@ class InferenceEngine {
   // The loaded GGUF model can read images: its vision file is on the
   // phone, in memory or waiting to be loaded with the first image.
   bool _ggufVisionLoaded = false;
-  bool get ggufVisionLoaded => _ggufVisionLoaded;
+  bool get ggufVisionLoaded => _desktop?.hasVision ?? _ggufVisionLoaded;
+
+  /// On a computer: the model runs in llama-server.
+  DesktopInference? _desktop;
 
   /// The vision file, until the first image needs it. Loading it copies its
   /// weights into memory (0.2 to 0.9 GB), which a text-only chat never uses.
@@ -90,6 +101,26 @@ class InferenceEngine {
     void Function(double)? onProgress,
   }) async {
     _disposed = false;
+    if (_isDesktop) {
+      _desktop ??= DesktopInference(Get.find<DesktopEngineService>());
+      final r = await _desktop!.loadModel(
+        modelPath: modelPath,
+        contextSize: contextSize,
+        useGpu: allowGgufGpu,
+        threads: ggufThreads,
+        mmprojPath: mmprojPath,
+        onProgress: onProgress,
+      );
+      _hasLoadedModel = r.success;
+      return LoadResult(
+        success: r.success,
+        message: r.message,
+        gpuName: r.gpuName,
+        gpuLayers: r.gpuLayers,
+        runtime: r.success ? 'llama' : '',
+        backend: r.backend,
+      );
+    }
     final runtime = _runtimeFor(modelPath, modelRuntime);
     if (runtime == 'litert') {
       return _loadLiteRtModel(
@@ -408,6 +439,22 @@ class InferenceEngine {
     String source = 'chat',
     void Function(String token)? onToken,
   }) async {
+    if (_desktop != null) {
+      if (audioPath != null && audioPath.isNotEmpty) {
+        return 'GGUF audio input is not available in this build yet. Text files can be read when their content is attached, but audio needs a model/runtime path that supports audio input.'
+            .tr;
+      }
+      return _desktop!.generate(
+        prompt: prompt,
+        conversationHistory: conversationHistory,
+        systemPrompt: systemPrompt,
+        modelName: modelName,
+        maxTokens: maxTokens,
+        temperature: temperature,
+        imagePath: imagePath,
+        onToken: onToken,
+      );
+    }
     if (_isLiteRt) {
       return _generateLiteRt(
         prompt: prompt,
@@ -784,6 +831,7 @@ class InferenceEngine {
 
   Future<void> stop() async {
     if (_disposed) return;
+    if (_desktop != null) return _desktop!.stop();
     _idleTimer?.cancel();
     final stopCallback = _onStop;
     _onStop = null;
@@ -806,6 +854,7 @@ class InferenceEngine {
   /// Speculative decoding: a small GGUF model with the same vocabulary as
   /// the loaded one. Returns an error message, or null when it's in use.
   Future<String?> loadDraftModel(String path) async {
+    if (_desktop != null) return _desktop!.draftResult(path);
     if (!Platform.isAndroid) return 'Speculative decoding is Android only';
     if (_isLiteRt || _controller == null) return 'No GGUF model loaded';
     if (!await File(path).exists()) return 'Draft model file not found';
@@ -833,6 +882,15 @@ class InferenceEngine {
   }
 
   Future<ContextInfo?> getContextInfo() async {
+    if (_desktop != null) {
+      final info = _desktop!.contextInfo();
+      if (info == null || info.$2 <= 0) return null;
+      return ContextInfo(
+        tokensUsed: info.$1,
+        contextSize: info.$2,
+        usagePercentage: info.$1 * 100 / info.$2,
+      );
+    }
     if (_isLiteRt) return null;
     try {
       return await _controller?.getContextInfo();
@@ -845,6 +903,12 @@ class InferenceEngine {
     if (_disposed) return;
     await stop();
     _disposed = true;
+    if (_desktop != null) {
+      await _desktop!.dispose();
+      _desktop = null;
+      _hasLoadedModel = false;
+      return;
+    }
     if (_hasLoadedModel) {
       try {
         await _controller?.dispose();

@@ -15,6 +15,7 @@ import 'gguf_split.dart';
 import 'hive_service.dart';
 import 'rpc_probe.dart';
 import '../core/app_platform.dart';
+import '../core/app_dirs.dart';
 
 /// What this phone does in a phone cluster.
 enum ClusterRole {
@@ -511,7 +512,7 @@ class ClusterService extends GetxService {
     }
     if (needMb <= master.capacityMb) {
       final share = await _askFitsHere(
-          modelName ?? modelPath.split('/').last, modelMb, available.length);
+          modelName ?? baseName(modelPath), modelMb, available.length);
       if (!share) {
         await LlamaCluster.clear();
         return 0;

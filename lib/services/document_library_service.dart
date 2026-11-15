@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'document_extractor_service.dart';
 import 'document_library.dart';
+import '../core/app_dirs.dart';
 
 /// The app's [DocumentLibrary], kept in the app's private storage.
 class DocumentLibraryService extends GetxService {
@@ -14,7 +14,7 @@ class DocumentLibraryService extends GetxService {
   final documents = <LibraryDocument>[].obs;
 
   Future<DocumentLibraryService> init() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await AppDirs.data();
     library = DocumentLibrary(File('${dir.path}/documents/library.json'));
     await library.load();
     documents.assignAll(library.documents);

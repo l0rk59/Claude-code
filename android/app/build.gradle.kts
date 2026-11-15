@@ -27,11 +27,6 @@ if (isReleaseBuild && !hasReleaseKeystore && !allowDebugReleaseSigning) {
     )
 }
 
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
-}
-
 // compilerOptions replaces android { kotlinOptions { } }, which Kotlin 2.3
 // rejects in .kts scripts.
 kotlin {

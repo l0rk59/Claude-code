@@ -1624,6 +1624,46 @@ const Map<String, String> fr = {
   'Name': 'Nom',
   'Description': 'Description',
   'Instructions': 'Instructions',
+  // Computer app: engine
+  'Downloading the engine (@size MB)…': 'Téléchargement du moteur (@size Mo)…',
+  'Unpacking the engine…': 'Installation du moteur…',
+  'llama-server was not found in the download.':
+      "llama-server est introuvable dans le téléchargement.",
+  'Starting the engine…': 'Démarrage du moteur…',
+  'Loading the model…': 'Chargement du modèle…',
+  'Preparing the memory…': 'Préparation de la mémoire…',
+  'The engine took too long to start.': 'Le moteur a mis trop de temps à démarrer.',
+  "This engine doesn't know this type of model yet.":
+      'Ce moteur ne connaît pas encore ce type de modèle.',
+  'Not enough memory for this model. Try a smaller model, a smaller context, or the processor only.':
+      "Pas assez de mémoire pour ce modèle. Essayez un modèle plus petit, un contexte plus court, ou le processeur seul.",
+  'The network port is already used by another program.':
+      'Le port réseau est déjà utilisé par un autre programme.',
+  "The model file couldn't be read: it may be incomplete or damaged.":
+      "Le fichier du modèle n'a pas pu être lu : il est peut-être incomplet ou abîmé.",
+  "A phone lending its memory can't be reached.":
+      'Un téléphone qui prête sa mémoire est injoignable.',
+  'The engine stopped.': "Le moteur s'est arrêté.",
+  'Graphics card (Vulkan)': 'Carte graphique (Vulkan)',
+  'NVIDIA graphics card (CUDA)': 'Carte graphique NVIDIA (CUDA)',
+  'Apple chip (Metal)': 'Puce Apple (Metal)',
+  'Processor only': 'Processeur seul',
+  'Works with NVIDIA, AMD and Intel cards, and on the processor without one.':
+      'Fonctionne avec les cartes NVIDIA, AMD et Intel, et sur le processeur sans carte.',
+  'Fastest on NVIDIA cards. Bigger download.':
+      'Le plus rapide sur les cartes NVIDIA. Téléchargement plus gros.',
+  'Uses the graphics part of Apple chips.': 'Utilise la partie graphique des puces Apple.',
+  'For computers whose graphics card causes problems.':
+      'Pour les ordinateurs dont la carte graphique pose problème.',
+  'ERROR: LiteRT models run on phones only. On the computer, use a GGUF model.':
+      "ERREUR : les modèles LiteRT ne fonctionnent que sur téléphone. Sur l'ordinateur, utilisez un modèle GGUF.",
+  "ERROR: The engine couldn't be downloaded: @error":
+      "ERREUR : le moteur n'a pas pu être téléchargé : @error",
+  'Model loaded (@accel) with @count phones lending their memory.':
+      'Modèle chargé (@accel), avec @count téléphones qui prêtent leur mémoire.',
+  'ERROR: @error': 'ERREUR : @error',
+  'ERROR: The engine is not running. Load the model again.':
+      "ERREUR : le moteur ne tourne pas. Chargez à nouveau le modèle.",
 };
 
 /// Download statuses the Android code reports in English (shown through
