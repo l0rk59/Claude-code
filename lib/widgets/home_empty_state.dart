@@ -162,9 +162,6 @@ String providerLabel(SettingsController s) {
   }
 }
 
-String _prettyModel(String name) => name.replaceAll(
-    RegExp(r'\.(gguf|litertlm|task|bin)$', caseSensitive: false), '');
-
 // ── First launch: one-tap install ───────────────────────────────────────
 
 /// Nothing on the phone yet: suggests the model that suits this phone and
@@ -345,7 +342,8 @@ class _Resume extends StatelessWidget {
       if (name.isEmpty) return const _PickLocalModel();
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PrimaryButton(
-          label: 'Load @name'.trParams({'name': _prettyModel(name)}),
+          label: 'Load @name'
+              .trParams({'name': Get.find<ModelController>().displayName(name)}),
           icon: Icons.play_arrow_rounded,
           onPressed: () {
             Haptics.lightImpact();

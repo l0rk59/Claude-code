@@ -471,6 +471,19 @@ class ModelController extends GetxController {
     return model.size;
   }
 
+  /// The name to show for the model file [filename]: its catalogue name
+  /// without the quantisation ("Qwen 3.5 9B"), or the file name without
+  /// its extension.
+  String displayName(String filename) {
+    final model = availableModels.firstWhereOrNull((m) => m.filename == filename) ??
+        customModels.firstWhereOrNull((m) => m.filename == filename);
+    if (model != null && model.name.trim().isNotEmpty) {
+      return model.name.replaceAll(RegExp(r'\s*\([^)]*\)\s*$'), '');
+    }
+    return filename.replaceAll(
+        RegExp(r'\.(gguf|litertlm|task|bin|safetensors)$', caseSensitive: false), '');
+  }
+
   /// Whether [model] suits this phone's memory.
   ModelFit fitOf(AiModel model) => modelFit(
         modelBytes: _knownModelBytes(model),

@@ -217,8 +217,7 @@ class ChatView extends GetView<ChatController> {
     final img = Get.find<LocalImageService>();
     const green = AppColors.success;
     const orange = AppColors.warning;
-    String pretty(String n) => n.replaceAll(
-        RegExp(r'\.(gguf|litertlm|task|bin)$', caseSensitive: false), '');
+    String pretty(String n) => Get.find<ModelController>().displayName(n);
 
     if (settings.inferenceMode.value != 'local') {
       final m = settings.selectedCloudModelName;
