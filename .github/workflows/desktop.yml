@@ -1,0 +1,118 @@
+# Builds the computer app for Windows and Linux.
+#
+# - Started by hand (Actions > Computer app > Run workflow): builds both
+#   and attaches them to the run, to download and try.
+# - Changing the computer app's code or this file: builds them, as a check.
+# - Pushing a version tag (git tag v1.2.0 && git push origin v1.2.0): adds
+#   them to that version's release, next to the APK.
+#
+# The model engine (llama.cpp's llama-server) is not in these files: the
+# app downloads the build that suits the computer with the first model.
+name: Computer app
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+    branches: ['**']
+    paths:
+      - '.github/workflows/desktop.yml'
+      - 'windows/**'
+      - 'linux/**'
+      - 'lib/services/desktop/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+
+      - name: Build
+        run: flutter build windows --release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = ((Select-String -Path pubspec.yaml -Pattern '^version:').Line -replace 'version:\s*', '' -replace '\+.*', '').Trim()
+          $name = "PrivateLM-$version-windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path "dist/PrivateLM" | Out-Null
+          Copy-Item -Recurse -Force "build/windows/x64/runner/Release/*" "dist/PrivateLM/"
+          Compress-Archive -Path "dist/PrivateLM" -DestinationPath $name
+          "ARCHIVE=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 30
+
+      - name: Add to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/attach-to-release.sh "$GITHUB_REF_NAME" "$VERSION" "$ARCHIVE"
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build tools and libraries
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q clang cmake ninja-build pkg-config \
+            libgtk-3-dev libsecret-1-dev liblzma-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+
+      - name: Build
+        run: flutter build linux --release
+
+      - name: Package
+        run: |
+          version="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          name="PrivateLM-${version}-linux-x64.tar.gz"
+          mkdir -p dist
+          cp -r build/linux/x64/release/bundle dist/PrivateLM
+          tar -czf "$name" -C dist PrivateLM
+          echo "ARCHIVE=$name" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 30
+
+      - name: Add to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/attach-to-release.sh "$GITHUB_REF_NAME" "$VERSION" "$ARCHIVE"

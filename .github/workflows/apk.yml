@@ -20,7 +20,7 @@ on:
     # changes, to check the build still works.
     tags: ['v*']
     branches: ['**']
-    paths: ['.github/workflows/apk.yml']
+    paths: ['.github/workflows/apk.yml', '.github/scripts/attach-to-release.sh']
 
 permissions:
   contents: write
@@ -120,9 +120,5 @@ jobs:
             echo "::error::No release key in the repository's secrets: an APK signed with a debug key is never published. See docs/publier.md."
             exit 1
           fi
-          tag="${GITHUB_REF_NAME}"
-          if [ "${tag#v}" != "$VERSION" ]; then
-            echo "::error::The tag ($tag) and pubspec.yaml's version ($VERSION) differ: the update check compares them."
-            exit 1
-          fi
-          gh release create "$tag" "$APK" --title "PrivateLM $VERSION" --generate-notes
+          # The computer app's build adds its files to the same release.
+          bash .github/scripts/attach-to-release.sh "$GITHUB_REF_NAME" "$VERSION" "$APK"
