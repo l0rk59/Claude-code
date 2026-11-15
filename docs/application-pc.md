@@ -9,8 +9,8 @@ tout se règle depuis l'application.
 > écran virtuel, avec un faux `llama-server` (mêmes commandes et mêmes
 > réponses que le vrai) ; la page « Moteur de l'ordinateur » ; l'ajout d'un
 > téléphone auxiliaire contre le vrai `ggml-rpc-server` de llama.cpp.
-> **Pas encore testé** : la version Windows sur un vrai PC, et un vrai modèle
-> avec le vrai moteur. Voir la partie 7 du [plan de test](plan-de-test.md).
+> La version Windows se compile sur GitHub. **Pas encore testé** : la lancer
+> sur un vrai PC, et un vrai modèle avec le vrai moteur. Voir la partie 7 du [plan de test](plan-de-test.md).
 
 ## 1. Installer
 

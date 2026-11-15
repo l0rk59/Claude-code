@@ -16,13 +16,13 @@ l'application pour ordinateur et les agents avancés.
 | Recherche Web, Mes documents, Mémoire, Tâches, lecture à voix haute | nouveau | tests ; DuckDuckGo et Wikipédia refusent ce serveur de développement, donc pas d'essai réel d'ici |
 | Agents : assistants spécialisés et équipes | en place | tests du moteur ; parcours complet vérifié avec un modèle simulé dans la version web |
 | **Agents avancés** : outils appelés par le modèle, mode approfondi (plan, vérification), délégation, fichiers, Python, mémoire | nouveau | tests ; parcours vérifié dans l'application Linux avec un faux `llama-server` (plan → délégation → vérification, Python après accord) |
-| **Application pour ordinateur** (Windows, Linux) | nouveau | version Linux compilée et utilisée de bout en bout sur un écran virtuel avec un faux `llama-server` ; pas encore sur un vrai PC ni avec un vrai modèle |
+| **Application pour ordinateur** (Windows, Linux) | nouveau | compilée pour Windows et Linux sur GitHub ; version Linux utilisée de bout en bout sur un écran virtuel avec un faux `llama-server` ; pas encore lancée sur un vrai PC ni avec un vrai modèle |
 | Moteur de l'ordinateur (llama.cpp b11157 `llama-server`) | nouveau | noms des fichiers vérifiés sur GitHub ; installation, démarrage, discussion et arrêt testés contre un faux serveur ; options vérifiées dans la documentation de b11157 |
 | L'ordinateur chef du cluster (téléphones en Auxiliaire) | nouveau | dialogue avec le vrai `ggml-rpc-server` b11157 vérifié ; aucun chargement réel réparti |
 | Clés et jetons | dans le coffre du téléphone (Keystore) | tests |
 | Identité de l'application | `com.l0rk59.privatelm`, version 1.1.0 | — |
 | Fabrication de l'APK sur GitHub | en place | construit avec succès sur GitHub (environ 18 minutes) |
-| Fabrication de l'application pour ordinateur sur GitHub | nouveau | Windows (zip) et Linux (tar.gz) à chaque exécution, ajoutés à la version publiée |
+| Fabrication de l'application pour ordinateur sur GitHub | en place | construite avec succès : Windows (zip, 16 Mo, 9 minutes) et Linux (tar.gz, 19 Mo, 3 minutes) ; ajoutées à la version publiée |
 | Mises à jour de l'application | pointent sur ce dépôt | aucune version publiée pour l'instant |
 | Télémétrie | retirée | Firebase, inactif, a été enlevé : il bloquait la version Windows ; les erreurs restent dans Paramètres > Journaux |
 
