@@ -9,7 +9,10 @@ class ToolCall {
   /// thinking tags.
   final String before;
 
-  const ToolCall(this.name, this.arguments, {this.before = ''});
+  /// The model's id for the call (models that call tools natively).
+  final String id;
+
+  const ToolCall(this.name, this.arguments, {this.before = '', this.id = ''});
 }
 
 /// Finds a tool call in a model's reply. Models are trained on different

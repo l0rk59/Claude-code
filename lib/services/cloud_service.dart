@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import 'hive_service.dart';
 import 'app_log_service.dart';
+import 'openai_chat_client.dart';
 
 /// Cloud API service supporting native and OpenAI-compatible providers.
 class CloudService extends GetxService {
@@ -163,6 +164,22 @@ class CloudService extends GetxService {
       return 'ERROR: Cloud API request failed — @error'
           .trParams({'error': '$e'});
     }
+  }
+
+  /// A client for agents whose model calls tools itself, when the
+  /// provider speaks OpenAI's API; null otherwise (agents then work through
+  /// text).
+  OpenAiChatClient? agentClient() {
+    if (!isConfigured || !_supportsStreaming) return null;
+    const suffix = '/chat/completions';
+    final endpoint = _openAICompatibleEndpoint;
+    if (!endpoint.endsWith(suffix)) return null;
+    return OpenAiChatClient(
+      baseUrl: endpoint.substring(0, endpoint.length - suffix.length),
+      apiKey: _apiKey,
+      model: _model,
+      headers: _openAICompatibleExtraHeaders,
+    );
   }
 
   bool get _supportsStreaming =>

@@ -1535,8 +1535,6 @@ const Map<String, String> fr = {
   'Agents with tools work in several steps: they are slower, and work best with a model of 4B or more, or one running on a computer.':
       'Les agents qui ont des outils travaillent en plusieurs étapes : ils sont plus lents, et fonctionnent mieux avec un modèle de 4B ou plus, ou un modèle sur l’ordinateur.',
   'Agents': 'Agents',
-  'An assistant has a role and, if you want, tools it decides to use on its own (web, pages, documents, calculator). A team passes a request from one assistant to the next. Choose them in the chat from the + menu.':
-      'Un assistant a un rôle et, si vous le voulez, des outils qu’il décide seul d’utiliser (Web, pages, documents, calculatrice). Une équipe fait passer une demande d’un assistant à l’autre. Choisissez-les dans la discussion, depuis le menu +.',
   'Analyst': 'Analyste',
   'Answers directly, without tools.': 'Répond directement, sans outils.',
   'Answers from your documents, and says where.':
@@ -1751,6 +1749,62 @@ const Map<String, String> fr = {
       "Pour une mesure juste, fermez les autres programmes et gardez l'ordinateur branché.",
   '@ram GB RAM · @vram GB graphics': '@ram Go de RAM · @vram Go graphiques',
   'Right-click a chat to delete it': 'Clic droit sur une discussion pour la supprimer',
+  // Advanced agents
+  'Waiting for your answer…': 'En attente de votre réponse…',
+  'Files written in the work folder: @files':
+      'Fichiers écrits dans le dossier de travail : @files',
+  'Planning the work…': 'Planification du travail…',
+  'Checking the answer…': 'Vérification de la réponse…',
+  'It runs on this computer, with your rights, in the work folder. Allow only code you understand or trust.':
+      "Il s'exécute sur cet ordinateur, avec vos droits, dans le dossier de travail. N'autorisez que du code que vous comprenez ou en qui vous avez confiance.",
+  'In the work folder of the agents.': 'Dans le dossier de travail des agents.',
+  'Kept in Settings > Memory.': 'Conservé dans Paramètres > Mémoire.',
+  'Allow': 'Autoriser',
+  'Refuse': 'Refuser',
+  'Plan': 'Plan',
+  'Answer checked': 'Réponse vérifiée',
+  'Check: something is missing, more research':
+      'Vérification : il manque quelque chose, nouvelle recherche',
+  'Answer checked and corrected': 'Réponse vérifiée et corrigée',
+  'Remember facts about me': 'Retenir des choses sur moi',
+  'See the files of its work folder': 'Voir les fichiers de son dossier de travail',
+  'Read a file of its work folder': 'Lire un fichier de son dossier de travail',
+  'Write a file in its work folder': 'Écrire un fichier dans son dossier de travail',
+  'Run Python code (computer)': 'Exécuter du code Python (ordinateur)',
+  'Ask the other assistants': 'Faire appel aux autres assistants',
+  'Remembering: “@fact”': 'Mémorisation : « @fact »',
+  'Remember this?': 'Retenir ceci ?',
+  'Looking at the files': 'Consultation des fichiers',
+  'Reading @file': 'Lecture de @file',
+  'Writing @file': 'Écriture de @file',
+  'Replace @file?': 'Remplacer @file ?',
+  'Write @file?': 'Écrire @file ?',
+  'Running Python': 'Exécution de Python',
+  'Run this Python code?': 'Exécuter ce code Python ?',
+  'Asking @name': 'Demande à @name',
+  'Project manager': 'Chef de projet',
+  'Splits a big request between the other assistants, then puts their work together.':
+      'Répartit une grosse demande entre les autres assistants, puis rassemble leur travail.',
+  'Deep researcher': 'Chercheur approfondi',
+  'Plans its research, reads several sources, checks its answer.':
+      'Planifie sa recherche, lit plusieurs sources, vérifie sa réponse.',
+  'Programmer': 'Programmeur',
+  'Writes and runs Python to compute, analyse your files and check its work.':
+      'Écrit et exécute du Python pour calculer, analyser vos fichiers et vérifier son travail.',
+  'File assistant': 'Assistant fichiers',
+  'Reads, sums up and writes files in its work folder.':
+      'Lit, résume et écrit des fichiers dans son dossier de travail.',
+  'Work folder of the agents': 'Dossier de travail des agents',
+  'Deep mode': 'Mode approfondi',
+  'An assistant has a role and, if you want, tools it decides to use on its own (web, pages, documents, files, code, the other assistants). In deep mode it plans first and checks its answer. A team passes a request from one assistant to the next. Choose them in the chat from the + menu.':
+      "Un assistant a un rôle et, si vous le voulez, des outils qu'il décide seul d'utiliser (Web, pages, documents, fichiers, code, les autres assistants). En mode approfondi, il planifie d'abord et vérifie sa réponse. Une équipe se passe la demande d'un assistant à l'autre. Choisissez-les dans la discussion, depuis le menu +.",
+  'Work folder': 'Dossier de travail',
+  'The only folder their file tools can read and write. They ask before writing or running code.':
+      "Le seul dossier que leurs outils de fichiers peuvent lire et écrire. Ils demandent avant d'écrire ou d'exécuter du code.",
+  'How it works': 'Fonctionnement',
+  'Plans before working, then checks its answer against what it found, and searches again if something is missing. Slower, more reliable.':
+      "Planifie avant de travailler, vérifie ensuite sa réponse avec ce qu'il a trouvé, et cherche à nouveau s'il manque quelque chose. Plus lent, plus fiable.",
+  'Asks you first': 'Vous demande avant',
 };
 
 /// Download statuses the Android code reports in English (shown through

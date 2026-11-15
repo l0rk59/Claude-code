@@ -27,6 +27,10 @@ class AgentProfile {
   /// Comes with the app (read-only, but can be copied).
   final bool builtIn;
 
+  /// Deep mode: plans before working and checks its answer at the end.
+  /// Slower, more reliable.
+  final bool deep;
+
   const AgentProfile({
     required this.id,
     required this.name,
@@ -35,7 +39,11 @@ class AgentProfile {
     this.tools = const [],
     this.model = '',
     this.builtIn = false,
+    this.deep = false,
   });
+
+  /// Can hand work to the other assistants.
+  bool get delegates => tools.contains(AgentToolbox.askAssistant);
 
   bool get usesTools => tools.isNotEmpty;
 
@@ -46,6 +54,7 @@ class AgentProfile {
         'instructions': instructions,
         'tools': tools,
         'model': model,
+        'deep': deep,
       };
 
   factory AgentProfile.fromMap(Map<dynamic, dynamic> m) => AgentProfile(
@@ -58,6 +67,7 @@ class AgentProfile {
             if (AgentToolbox.all.contains(t)) '$t',
         ],
         model: '${m['model'] ?? ''}',
+        deep: m['deep'] == true,
       );
 
   AgentProfile copyWith({
@@ -67,6 +77,7 @@ class AgentProfile {
     String? instructions,
     List<String>? tools,
     String? model,
+    bool? deep,
   }) =>
       AgentProfile(
         id: id ?? this.id,
@@ -75,6 +86,7 @@ class AgentProfile {
         instructions: instructions ?? this.instructions,
         tools: tools ?? this.tools,
         model: model ?? this.model,
+        deep: deep ?? this.deep,
       );
 }
 
@@ -179,6 +191,69 @@ class AgentStore {
           description: 'Faithful, natural translations.'.tr,
           instructions:
               'You are a professional translator. Translate faithfully and naturally, keep the formatting, and ask which language to translate into when it is not clear. Give only the translation unless asked for more.',
+          builtIn: true,
+        ),
+        AgentProfile(
+          id: 'builtin:manager',
+          name: 'Project manager'.tr,
+          description:
+              'Splits a big request between the other assistants, then puts their work together.'
+                  .tr,
+          instructions:
+              'You lead a team of assistants. For a request that needs several kinds of work, hand each part to the assistant best suited for it, with a precise task, several at once when the parts are independent. Then check what they returned, ask again if something is missing or wrong, and write the final answer yourself, complete and well organised, keeping their sources. For a simple request, answer directly.',
+          tools: const [
+            AgentToolbox.askAssistant,
+            AgentToolbox.calculator,
+            AgentToolbox.dateTime,
+          ],
+          deep: true,
+          builtIn: true,
+        ),
+        AgentProfile(
+          id: 'builtin:deep_researcher',
+          name: 'Deep researcher'.tr,
+          description:
+              'Plans its research, reads several sources, checks its answer.'.tr,
+          instructions:
+              'You are a meticulous researcher. Search the web with several different queries, read the most relevant pages in full, cross-check the facts between sources, and note dates and figures precisely. Give a structured answer: the short answer first, then the details, then the points of uncertainty. Cite every fact with its source number.',
+          tools: const [
+            AgentToolbox.webSearch,
+            AgentToolbox.readPage,
+            AgentToolbox.calculator,
+            AgentToolbox.dateTime,
+          ],
+          deep: true,
+          builtIn: true,
+        ),
+        AgentProfile(
+          id: 'builtin:programmer',
+          name: 'Programmer'.tr,
+          description:
+              'Writes and runs Python to compute, analyse your files and check its work.'
+                  .tr,
+          instructions:
+              'You are an expert programmer. To compute, transform data or analyse a file, write a short Python program and run it rather than guessing; read the files you need first; fix the code when it fails. Explain the result simply, and show the code when it helps. Save results as files in the work folder when asked.',
+          tools: const [
+            AgentToolbox.runPython,
+            AgentToolbox.listFiles,
+            AgentToolbox.readFile,
+            AgentToolbox.writeFile,
+            AgentToolbox.calculator,
+          ],
+          deep: true,
+          builtIn: true,
+        ),
+        AgentProfile(
+          id: 'builtin:files',
+          name: 'File assistant'.tr,
+          description: 'Reads, sums up and writes files in its work folder.'.tr,
+          instructions:
+              'You work with the files of the work folder: look at what is there, read the files the request is about, and answer from them, naming the files. When asked to produce something (a summary, a plan, a table), write it as a well-named Markdown or CSV file in the work folder.',
+          tools: const [
+            AgentToolbox.listFiles,
+            AgentToolbox.readFile,
+            AgentToolbox.writeFile,
+          ],
           builtIn: true,
         ),
         AgentProfile(

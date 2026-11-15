@@ -94,6 +94,17 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(f'{len(line):x}\r\n'.encode() + line + b'\r\n')
         self.wfile.flush()
 
+    def _say(self, answer):
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/event-stream')
+        self.send_header('Transfer-Encoding', 'chunked')
+        self.end_headers()
+        self._chunk({'content': answer})
+        self._chunk(finish='stop')
+        line = b'data: [DONE]\n\n'
+        self.wfile.write(f'{len(line):x}\r\n'.encode() + line + b'\r\n0\r\n\r\n')
+        self.wfile.flush()
+
     def do_POST(self):
         length = int(self.headers.get('Content-Length', '0'))
         req = json.loads(self.rfile.read(length) or b'{}')
@@ -104,15 +115,25 @@ class Handler(BaseHTTPRequestHandler):
         messages = req.get('messages', [])
         last = messages[-1] if messages else {}
         text = last.get('content') if isinstance(last.get('content'), str) else json.dumps(last.get('content'))
+        tools = [t['function']['name'] for t in req.get('tools', [])]
+        system = messages[0].get('content', '') if messages else ''
+        if isinstance(system, str) and system.startswith('You check answers'):
+            return self._say('APPROVED')
+        if isinstance(text, str) and 'write a short plan' in text:
+            return self._say('1. Hand the calculation to the Analyst.\n2. Write the answer.')
         self.send_response(200)
         self.send_header('Content-Type', 'text/event-stream')
         self.send_header('Transfer-Encoding', 'chunked')
         self.end_headers()
-        tools = [t['function']['name'] for t in req.get('tools', [])]
         if tools and not tool_result_in(messages):
-            # Asks for the first tool, arguments split over two chunks.
-            name = tools[0]
-            args = json.dumps({'query': 'fake search'} if 'search' in name else {'expression': '6*7'})
+            # Asks for a tool (handing work over first, when it can),
+            # arguments split over two chunks.
+            name = next((t for t in ('ask_assistant', 'run_python') if t in tools), tools[0])
+            args = json.dumps(
+                {'query': 'fake search'} if 'search' in name
+                else {'assistant': 'Analyst', 'task': 'Compute 6*7'} if name == 'ask_assistant'
+                else {'code': 'print(6*7)'} if name == 'run_python'
+                else {'expression': '6*7'})
             self._chunk({'reasoning_content': f'I should use {name}.'})
             self._chunk({'tool_calls': [{'index': 0, 'id': 'call_1', 'type': 'function',
                                           'function': {'name': name, 'arguments': args[:5]}}]})

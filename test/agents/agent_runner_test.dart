@@ -65,7 +65,8 @@ void main() {
     expect(run.steps[0].thought, 'Je cherche d’abord.');
     expect(run.steps[0].result, contains('[1] CRE'));
     expect(run.steps[1].result, '100 * (1 - 0,026) = 97.4');
-    expect(activities, hasLength(2));
+    // A label per tool; '' while the model writes (nothing running).
+    expect(activities.where((a) => a.isNotEmpty), hasLength(2));
     expect(box.webSources.single.url, 'https://www.cre.fr/tarifs');
 
     // The model saw the tools, its own calls and their results.

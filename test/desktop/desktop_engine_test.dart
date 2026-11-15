@@ -47,7 +47,8 @@ void main() {
         ..mode = 0x1ed)
       ..add(ArchiveFile.bytes('llama-b11157/libllama.so.0', [1, 2, 3]))
       ..add(ArchiveFile.symlink('llama-b11157/libllama.so', 'libllama.so.0'));
-    final tarGz = GZipEncoder().encodeBytes(TarEncoder().encodeBytes(archive));
+    final tarGz =
+        const GZipEncoder().encodeBytes(TarEncoder().encodeBytes(archive));
     final http = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => http.close(force: true));
     final asked = <String>[];

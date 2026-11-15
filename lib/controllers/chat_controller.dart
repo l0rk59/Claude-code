@@ -15,6 +15,8 @@ import 'package:uuid/uuid.dart';
 import 'package:gal/gal.dart';
 import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../core/app_dirs.dart';
+import '../core/app_platform.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
 import '../models/chat_message.dart';
@@ -23,6 +25,8 @@ import '../ffi/sd_backend.dart';
 import '../services/hive_service.dart';
 import '../services/inference_service.dart';
 import '../services/cloud_service.dart';
+import '../services/desktop/desktop_engine_service.dart';
+import '../services/openai_chat_client.dart';
 import '../services/local_image_service.dart';
 import '../services/app_log_service.dart';
 import '../services/image_generation_notification_service.dart';
@@ -1044,6 +1048,10 @@ class ChatController extends GetxController {
     imageGenStartTime.value = null;
     imageGenDecoding.value = false;
     _batchCancelled = true;
+    for (final client in _agentClients) {
+      client.cancel();
+    }
+    _agentClients.clear();
     unawaited(Get.find<InferenceService>().stopGeneration());
     Get.find<LocalImageService>().cancelGeneration();
     Get.find<CloudService>().cancel();
@@ -1202,7 +1210,74 @@ class ChatController extends GetxController {
     required bool Function() isCurrent,
   }) async {
     final store = AgentStore(_hive);
-    final toolbox = AgentToolbox(
+    final local = (_hive.getSetting(AppConstants.keyInferenceMode,
+            defaultValue: 'local') ??
+        'local') == 'local';
+    final desktop = AppPlatform.isDesktop;
+    // A phone's context is small: fewer steps and shorter results there.
+    final onPhone = local && !desktop;
+    final maxSteps = onPhone ? 4 : 10;
+    final python = desktop ? await _findPython() : null;
+    final steps = <AgentStep>[];
+    void show(String partial) => _showAgentWork(steps, partial, isCurrent);
+    // Each run gets its own conversation in engines that keep one.
+    final runId = DateTime.now().microsecondsSinceEpoch;
+    var turn = 0;
+
+    late final AgentToolbox toolbox;
+    AgentRunner runnerFor(AgentProfile a) => AgentRunner(
+          backend: _agentBackend('agent:$runId:${turn++}'),
+          tools: toolbox.tools(a.tools),
+          maxSteps: maxSteps,
+          deep: a.deep,
+          contextBudget: onPhone ? 3000 : 24000,
+        );
+    String withMemory(String instructions) {
+      if (!Memories.enabled(_hive)) return instructions;
+      final facts = Memories.forSystemPrompt(Memories.all(_hive),
+          'What you know about the user (they asked you to remember it):'.tr);
+      return facts.isEmpty ? instructions : '$instructions\n\n$facts';
+    }
+
+    // Assistants a manager can hand work to: not the ones that delegate
+    // themselves, so work can't go round in circles.
+    final helpers = {
+      for (final a in store.agents())
+        if (!a.delegates && a.id != id && a.description.isNotEmpty)
+          a.name: a.description,
+    };
+    // A delegation shows as "Asking X", then X's own steps under it.
+    final announced = <String>[];
+    void addStep(AgentStep step) {
+      if (announced.remove(step.label)) return;
+      steps.add(step);
+      show('');
+    }
+
+    Future<String> delegate(String name, String task) async {
+      final helper = store.agents().firstWhereOrNull((a) => a.name == name);
+      if (helper == null) return 'Unknown assistant.';
+      final header = 'Asking @name'.trParams({'name': helper.name});
+      announced.add(header);
+      steps.add(AgentStep(label: header));
+      show('');
+      activity.value = '@name is working…'.trParams({'name': helper.name});
+      final run = await runnerFor(helper).run(
+        instructions: withMemory(helper.instructions),
+        question: task,
+        agentName: helper.name,
+        onActivity: (a) => activity.value = _agentActivity(a, helper.name),
+        onStep: (step) {
+          steps.add(step);
+          show('');
+        },
+        cancelled: () => !isCurrent(),
+      );
+      if (run.error != null) return 'Error: ${run.error}';
+      return run.answer.isEmpty ? '(no answer)' : run.answer;
+    }
+
+    toolbox = AgentToolbox(
       searchWeb: (query) => (webSearchService ?? WebSearchService()).search(
         query,
         provider: WebSearchProvider.fromName(
@@ -1215,31 +1290,23 @@ class ChatController extends GetxController {
       searchDocs: (query) => Get.isRegistered<DocumentLibraryService>()
           ? Get.find<DocumentLibraryService>().library.search(query)
           : const [],
+      maxResultChars: onPhone ? 2000 : 8000,
+      workspace: kIsWeb ? null : agentWorkspace,
+      confirm: (request) async {
+        if (!isCurrent()) return false;
+        final before = activity.value;
+        activity.value = 'Waiting for your answer…'.tr;
+        final ok = await confirmAgentAction(request);
+        activity.value = before;
+        return ok && isCurrent();
+      },
+      delegate: delegate,
+      assistants: helpers,
+      saveMemory: (fact) async {
+        await Memories.add(_hive, fact);
+      },
+      python: python,
     );
-    // Each run gets its own conversation in engines that keep one.
-    final runId = DateTime.now().microsecondsSinceEpoch;
-    var member = 0;
-    final local = (_hive.getSetting(AppConstants.keyInferenceMode,
-            defaultValue: 'local') ??
-        'local') == 'local';
-    // A phone's context is small: fewer steps there.
-    final maxSteps = local ? 4 : 6;
-    AgentRunner runnerFor(AgentProfile a) => AgentRunner(
-          llm: (messages, {onToken, stop = const []}) =>
-              _agentLlm(messages, 'agent:$runId:$member',
-                  onToken: onToken, stop: stop),
-          tools: toolbox.tools(a.tools),
-          maxSteps: maxSteps,
-        );
-    String withMemory(String instructions) {
-      if (!Memories.enabled(_hive)) return instructions;
-      final facts = Memories.forSystemPrompt(Memories.all(_hive),
-          'What you know about the user (they asked you to remember it):'.tr);
-      return facts.isEmpty ? instructions : '$instructions\n\n$facts';
-    }
-
-    final steps = <AgentStep>[];
-    void show(String partial) => _showAgentWork(steps, partial, isCurrent);
 
     AgentRun run;
     final team = store.team(id);
@@ -1255,16 +1322,14 @@ class ChatController extends GetxController {
         request: question,
         history: history,
         onMember: (name, index, count) {
-          member = index;
           activity.value = '@name is working (@index of @count)…'.trParams(
               {'name': name, 'index': '${index + 1}', 'count': '$count'});
           show('');
         },
-        onActivity: (a) => activity.value = a,
-        onStep: (step) {
-          steps.add(step);
-          show('');
+        onActivity: (a) {
+          if (a.isNotEmpty) activity.value = _agentActivity(a, '');
         },
+        onStep: addStep,
         onPartial: show,
         cancelled: () => !isCurrent(),
       );
@@ -1275,19 +1340,18 @@ class ChatController extends GetxController {
         await store.setActive(AgentStore.none);
         return ('ERROR: This assistant no longer exists.'.tr, toolbox);
       }
-      activity.value = agent.usesTools
+      final working = agent.usesTools
           ? '@name is working…'.trParams({'name': agent.name})
           : '';
+      activity.value = working;
       run = await runnerFor(agent).run(
         instructions: withMemory(agent.instructions),
         question: question,
         history: history,
         agentName: '',
-        onActivity: (a) => activity.value = a,
-        onStep: (step) {
-          steps.add(step);
-          show('');
-        },
+        onActivity: (a) =>
+            activity.value = a.isEmpty ? working : _agentActivity(a, ''),
+        onStep: addStep,
         onPartial: show,
         cancelled: () => !isCurrent(),
       );
@@ -1295,16 +1359,138 @@ class ChatController extends GetxController {
     activity.value = '';
     _agentDisplayTimer?.cancel();
     _agentDisplayTimer = null;
+    // Every step, the delegated assistants' included.
+    final work = agentStepsMarkdown(steps);
+    if (run.error != null) {
+      return (run.error!.startsWith('ERR') ? run.error! : 'ERROR: ${run.error}', toolbox);
+    }
     if (run.answer.isEmpty) {
       return ("ERROR: The assistant didn't come to an answer.".tr, toolbox);
     }
-    final work = agentStepsMarkdown(run.steps);
+    final files = toolbox.filesWritten.toSet();
+    final answer = files.isEmpty
+        ? run.answer
+        : '${run.answer}\n\n${'Files written in the work folder: @files'.trParams({'files': files.join(', ')})}';
     return (
-      work.isEmpty
-          ? run.answer
-          : '<think>\n$work\n</think>\n\n${run.answer}',
+      work.isEmpty ? answer : '<think>\n$work\n</think>\n\n$answer',
       toolbox,
     );
+  }
+
+  /// What the user reads for an agent's activity code.
+  static String _agentActivity(String code, String who) {
+    final text = switch (code) {
+      'PLAN' => 'Planning the work…'.tr,
+      'VERIFY' => 'Checking the answer…'.tr,
+      _ => code,
+    };
+    return who.isEmpty || code.isEmpty ? text : '$who · $text';
+  }
+
+  String? _python;
+  bool _pythonChecked = false;
+  Future<String?> _findPython() async {
+    if (!_pythonChecked) {
+      _python = await AgentToolbox.findPython();
+      _pythonChecked = true;
+    }
+    return _python;
+  }
+
+  /// The folder the agents' file tools work in: the one chosen in
+  /// Settings > Agents, or the app's own.
+  Future<Directory> agentWorkspace() async {
+    final chosen = _hive.getSetting<String>(AppConstants.keyAgentWorkspace) ?? '';
+    final dir = Directory(
+        chosen.isNotEmpty ? chosen : '${(await AppDirs.data()).path}/workspace');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Requests the agents send to their model, to stop them with the chat.
+  final _agentClients = <OpenAiChatClient>{};
+
+  /// How agents talk to the model in use: natively (tools called by the
+  /// model) with the computer's engine or an OpenAI-compatible cloud
+  /// provider, through text otherwise.
+  AgentBackend _agentBackend(String owner) {
+    final text = TextAgentBackend((messages, {onToken, stop = const []}) =>
+        _agentLlm(messages, owner, onToken: onToken, stop: stop));
+    final local = (_hive.getSetting(AppConstants.keyInferenceMode,
+            defaultValue: 'local') ??
+        'local') == 'local';
+    OpenAiChatClient? Function()? factory;
+    if (local && Get.isRegistered<DesktopEngineService>()) {
+      final engine = Get.find<DesktopEngineService>();
+      if (engine.client() != null) factory = engine.client;
+    } else if (!local && Get.find<CloudService>().agentClient() != null) {
+      factory = Get.find<CloudService>().agentClient;
+    }
+    if (factory == null) return text;
+    final make = factory;
+    return NativeAgentBackend(
+      () {
+        final client = make()!;
+        _agentClients.add(client);
+        return client;
+      },
+      temperature: _hive.getSetting<double>(AppConstants.keyTemperature),
+      maxTokens: _hive.getSetting<int>(AppConstants.keyMaxTokens),
+      fallback: text,
+    );
+  }
+
+  /// Asks the user whether an agent may do [request] (write a file, run
+  /// code, remember a fact).
+  Future<bool> confirmAgentAction(AgentConfirmation request) async {
+    final context = Get.context;
+    if (context == null) return false;
+    final t = AppTokens.of(context);
+    final note = switch (request.tool) {
+      AgentToolbox.runPython =>
+        'It runs on this computer, with your rights, in the work folder. Allow only code you understand or trust.'
+            .tr,
+      AgentToolbox.writeFile => 'In the work folder of the agents.'.tr,
+      AgentToolbox.remember => 'Kept in Settings > Memory.'.tr,
+      _ => '',
+    };
+    final ok = await showAppSheet<bool>(
+      context,
+      title: request.title,
+      subtitle: note.isEmpty ? null : note,
+      builder: (ctx) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            constraints: const BoxConstraints(maxHeight: 320),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: t.fill,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                request.detail,
+                style: TextStyle(
+                    fontFamily: 'monospace', fontSize: 12.5, color: t.text),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          PrimaryButton(
+            label: 'Allow'.tr,
+            icon: Icons.check_rounded,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Refuse'.tr),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   /// Asks the model in use (on this phone, or remote) for the next reply of
@@ -1363,25 +1549,36 @@ class ChatController extends GetxController {
   /// The steps an agent or team took, as the user reads them.
   static String agentStepsMarkdown(List<AgentStep> steps) {
     if (steps.isEmpty) return '';
-    String quote(String text) {
-      final short = text.length > 600 ? '${text.substring(0, 600)}…' : text;
+    String quote(String text, {int max = 600}) {
+      final short = text.length > max ? '${text.substring(0, max)}…' : text;
       return short.trim().split('\n').map((l) => '> $l').join('\n');
     }
 
     final lines = <String>[];
     var n = 0;
     for (final step in steps) {
-      n++;
       final who = step.agent.isEmpty ? '' : '**${step.agent}** · ';
-      if (step.label == step.agent && step.agent.isNotEmpty) {
-        // A team member's contribution.
-        lines.add('$n. **${step.agent}**\n${quote(step.result)}');
-      } else {
-        lines.add(
-            '$n. $who${step.label}${step.failed ? ' ⚠️' : ''}');
+      switch (step.kind) {
+        case AgentStepKind.plan:
+          lines.add('$who**${'Plan'.tr}**\n${quote(step.result, max: 900)}');
+        case AgentStepKind.verify:
+          lines.add(switch (step.label) {
+            'APPROVED' => '$who✓ ${'Answer checked'.tr}',
+            'MISSING' => '$who↻ ${'Check: something is missing, more research'.tr}\n${quote(step.result, max: 300)}',
+            _ => '$who✎ ${'Answer checked and corrected'.tr}',
+          });
+        case AgentStepKind.member || AgentStepKind.tool
+            when step.agent.isNotEmpty && step.label == step.agent:
+          // A team member's contribution.
+          n++;
+          lines.add('$n. **${step.agent}**\n${quote(step.result)}');
+        case AgentStepKind.member || AgentStepKind.tool:
+          n++;
+          lines.add('$n. $who${step.label}${step.failed ? ' ⚠️' : ''}');
       }
     }
-    return lines.join('\n');
+    // A blank line between steps: Markdown would run them together.
+    return lines.join('\n\n');
   }
 
   /// A web search failure, in words for the user.

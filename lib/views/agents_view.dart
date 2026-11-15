@@ -1,8 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/chat_controller.dart';
 import '../controllers/model_controller.dart';
+import '../core/app_platform.dart';
+import '../core/constants.dart';
 import '../core/ui.dart';
 import '../services/agents/agent_profiles.dart';
 import '../services/agents/agent_tools.dart';
@@ -95,6 +98,28 @@ class AgentsView extends StatefulWidget {
 }
 
 class _AgentsViewState extends State<AgentsView> {
+  String _workspace = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkspace();
+  }
+
+  Future<void> _loadWorkspace() async {
+    if (!Get.isRegistered<ChatController>()) return;
+    final dir = await Get.find<ChatController>().agentWorkspace();
+    if (mounted) setState(() => _workspace = dir.path);
+  }
+
+  Future<void> _pickWorkspace() async {
+    final dir =
+        await FilePicker.getDirectoryPath(dialogTitle: 'Work folder of the agents'.tr);
+    if (dir == null) return;
+    await Get.find<HiveService>().setSetting(AppConstants.keyAgentWorkspace, dir);
+    await _loadWorkspace();
+  }
+
   Future<void> _open(Widget page) async {
     await Get.to(() => page);
     if (mounted) setState(() {});
@@ -104,9 +129,12 @@ class _AgentsViewState extends State<AgentsView> {
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final store = _store;
-    String toolsLine(AgentProfile a) => a.usesTools
-        ? a.tools.map(AgentToolbox.title).join(', ')
-        : 'No tools'.tr;
+    String toolsLine(AgentProfile a) => [
+          if (a.deep) 'Deep mode'.tr,
+          a.usesTools
+              ? a.tools.map(AgentToolbox.title).join(', ')
+              : 'No tools'.tr,
+        ].join(' · ');
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Agents'.tr),
@@ -114,10 +142,22 @@ class _AgentsViewState extends State<AgentsView> {
         padding: kPagePadding,
         children: [
           Text(
-            'An assistant has a role and, if you want, tools it decides to use on its own (web, pages, documents, calculator). A team passes a request from one assistant to the next. Choose them in the chat from the + menu.'
+            'An assistant has a role and, if you want, tools it decides to use on its own (web, pages, documents, files, code, the other assistants). In deep mode it plans first and checks its answer. A team passes a request from one assistant to the next. Choose them in the chat from the + menu.'
                 .tr,
             style: t.caption,
           ),
+          SectionHeader('Work folder'.tr),
+          AppGroup(dividerIndent: 60, children: [
+            AppRow(
+              icon: Icons.folder_special_outlined,
+              title: _workspace.isEmpty ? '…' : _workspace,
+              subtitle:
+                  'The only folder their file tools can read and write. They ask before writing or running code.'
+                      .tr,
+              chevron: AppPlatform.isDesktop,
+              onTap: AppPlatform.isDesktop ? _pickWorkspace : null,
+            ),
+          ]),
           SectionHeader('Assistants'.tr),
           AppGroup(dividerIndent: 60, children: [
             for (final a in store.agents())
@@ -186,6 +226,7 @@ class _AgentEditorViewState extends State<AgentEditorView> {
       TextEditingController(text: _source?.instructions ?? '');
   late final Set<String> _tools = {...?_source?.tools};
   late String _model = _source?.model ?? '';
+  late bool _deep = _source?.deep ?? false;
 
   @override
   void dispose() {
@@ -209,6 +250,7 @@ class _AgentEditorViewState extends State<AgentEditorView> {
       instructions: _instructions.text.trim(),
       tools: [for (final tool in AgentToolbox.all) if (_tools.contains(tool)) tool],
       model: _model,
+      deep: _deep,
     ));
     Get.back();
   }
@@ -300,11 +342,29 @@ class _AgentEditorViewState extends State<AgentEditorView> {
                           .tr),
             ),
           ),
+          SectionHeader('How it works'.tr),
+          AppGroup(dividerIndent: 16, children: [
+            AppRow(
+              title: 'Deep mode'.tr,
+              subtitle:
+                  'Plans before working, then checks its answer against what it found, and searches again if something is missing. Slower, more reliable.'
+                      .tr,
+              trailing: Switch(
+                value: _deep,
+                onChanged: _readOnly ? null : (v) => setState(() => _deep = v),
+              ),
+            ),
+          ]),
           SectionHeader('Tools it may use'.tr),
           AppGroup(dividerIndent: 16, children: [
             for (final tool in AgentToolbox.all)
+              // Python runs on a computer only.
+              if (tool != AgentToolbox.runPython || AppPlatform.isDesktop)
               AppRow(
                 title: AgentToolbox.title(tool),
+                subtitle: AgentToolbox.asksFirst.contains(tool)
+                    ? 'Asks you first'.tr
+                    : null,
                 trailing: Checkbox(
                   value: _tools.contains(tool),
                   onChanged: _readOnly

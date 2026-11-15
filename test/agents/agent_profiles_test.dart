@@ -91,8 +91,8 @@ void main() {
     ]);
     expect(
         text,
-        '1. **Planner**\n> 1. Chercher.\n> 2. Conclure.\n'
-        '2. **Researcher** · Searching the web: “tarif”\n'
+        '1. **Planner**\n> 1. Chercher.\n> 2. Conclure.\n\n'
+        '2. **Researcher** · Searching the web: “tarif”\n\n'
         '3. Calculating 1/0 ⚠️');
   });
 }

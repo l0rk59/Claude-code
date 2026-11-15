@@ -1342,12 +1342,14 @@ class _AttachButton extends StatelessWidget {
     final dark = Theme.of(ctx).brightness == Brightness.dark;
 
     final items = [
-      (
-        icon: Icons.photo_camera_outlined,
-        label: 'Camera'.tr,
-        enabled: allowMedia,
-        onTap: onCamera,
-      ),
+      // A computer has no camera the app can use.
+      if (!AppPlatform.isDesktop)
+        (
+          icon: Icons.photo_camera_outlined,
+          label: 'Camera'.tr,
+          enabled: allowMedia,
+          onTap: onCamera,
+        ),
       (
         icon: Icons.photo_outlined,
         label: 'Photos'.tr,
@@ -1942,12 +1944,17 @@ Widget _desktopEnterSends(ChatController controller, Widget field) {
   return CallbackShortcuts(
     bindings: {
       const SingleActivator(LogicalKeyboardKey.enter): () {
-        if (!controller.isLoading.value &&
-            (controller.inputText.value.trim().isNotEmpty ||
-                controller.selectedImagePath.value != null ||
-                controller.selectedFileName.value != null)) {
-          controller.sendMessage();
-        }
+        // The keyboard's last letters can still be on their way to the
+        // field: send once they are in.
+        Future<void>.delayed(const Duration(milliseconds: 80), () {
+          if (!controller.isLoading.value &&
+              (controller.textController.text.trim().isNotEmpty ||
+                  controller.selectedImagePath.value != null ||
+                  controller.selectedFileName.value != null)) {
+            controller.inputText.value = controller.textController.text;
+            controller.sendMessage();
+          }
+        });
       },
     },
     child: field,

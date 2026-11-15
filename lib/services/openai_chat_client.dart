@@ -168,7 +168,7 @@ class OpenAiChatClient {
       }
       final lines = response.stream
           .timeout(idleTimeout)
-          .transform(utf8.decoder)
+          .transform(const Utf8Decoder(allowMalformed: true))
           .transform(const LineSplitter());
       await for (final line in lines) {
         // Stopped: what is already received is not shown either.
