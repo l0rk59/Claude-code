@@ -117,6 +117,15 @@ class Handler(BaseHTTPRequestHandler):
         text = last.get('content') if isinstance(last.get('content'), str) else json.dumps(last.get('content'))
         tools = [t['function']['name'] for t in req.get('tools', [])]
         system = messages[0].get('content', '') if messages else ''
+        # "[ctx:N]" in the system prompt: a context of N characters, refused
+        # beyond it as llama-server does.
+        import re
+        limit = re.search(r'\[ctx:(\d+)\]', system) if isinstance(system, str) else None
+        if limit and sum(len(json.dumps(m)) for m in messages) > int(limit.group(1)):
+            return self._json(400, {'error': {
+                'code': 400,
+                'message': 'request (9000 tokens) exceeds the available context size (4096 tokens), try increasing it',
+                'type': 'exceed_context_size_error'}})
         if isinstance(system, str) and system.startswith('You check answers'):
             return self._say('APPROVED')
         if isinstance(text, str) and 'write a short plan' in text:

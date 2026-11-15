@@ -135,18 +135,22 @@ class DesktopInference {
       final layers = server.offloaded;
       final onGpu = useGpu && gpu != null && (layers == null || layers.$1 > 0);
       final workers = server.config.rpc.length;
+      final skipped = engine.skippedWorkers;
       final accel = onGpu
           ? (layers != null
               ? 'GPU (@layers layers, @gpu)'
                   .trParams({'layers': '${layers.$1}', 'gpu': gpu.name})
               : gpu.name)
           : 'Processor'.tr;
+      final loaded = workers > 0
+          ? 'Model loaded (@accel) with @count phones lending their memory.'
+              .trParams({'accel': accel, 'count': '$workers'})
+          : 'Model loaded (@accel).'.trParams({'accel': accel});
       return DesktopLoad(
         success: true,
-        message: workers > 0
-            ? 'Model loaded (@accel) with @count phones lending their memory.'
-                .trParams({'accel': accel, 'count': '$workers'})
-            : 'Model loaded (@accel).'.trParams({'accel': accel}),
+        message: skipped.isEmpty
+            ? loaded
+            : '$loaded ${'Not reachable, loading without: @names'.trParams({'names': skipped.join(', ')})}',
         gpuName: onGpu ? gpu.name : '',
         gpuLayers: onGpu ? (layers?.$1 ?? 1) : 0,
         backend: onGpu ? 'gpu' : 'cpu',
@@ -211,12 +215,74 @@ class DesktopInference {
       onToken?.call(s);
     }
 
+    // A long conversation can outgrow the context: the server refuses it
+    // whole, so the oldest turns are left out until it fits.
+    ChatReply reply;
+    var keep = 40;
+    while (true) {
+      reply = await _complete(client, prompt, systemPrompt,
+          conversationHistory, imagePath, keep, temperature, maxTokens, preset,
+          onReasoning: (t) {
+        if (!thinking) {
+          thinking = true;
+          emit('<think>');
+        }
+        emit(t);
+      }, onText: (t) {
+        if (thinking) {
+          thinking = false;
+          emit('</think>\n\n');
+        }
+        emit(t);
+      });
+      if (reply.ok || out.isNotEmpty || keep == 0 || !isContextOverflow(reply.error!)) {
+        break;
+      }
+      keep = keep > 8 ? keep ~/ 3 : 0;
+    }
+    if (thinking) emit('</think>\n\n');
+    if (identical(_active, client)) _active = null;
+    if (reply.promptTokens + reply.completionTokens > 0) {
+      _tokensUsed = reply.promptTokens + reply.completionTokens;
+    }
+    if (!reply.ok && out.isEmpty) {
+      return isContextOverflow(reply.error!)
+          ? 'ERROR: This message is too long for the context of the model. Shorten it, or raise the context in Settings > Chat > Model parameters.'
+              .tr
+          : 'ERROR: Generation failed — @error'.trParams({'error': reply.error!});
+    }
+    if (!reply.ok) {
+      emit('\n\n⚠️ ${'The answer was cut off: @error'.trParams({'error': reply.error!})}');
+    }
+    return out.toString();
+  }
+
+  /// The server's refusal of a request longer than the context.
+  static bool isContextOverflow(String error) => RegExp(
+          r'exceed_context_size|exceeds the available context|context size|n_ctx',
+          caseSensitive: false)
+      .hasMatch(error);
+
+  Future<ChatReply> _complete(
+    OpenAiChatClient client,
+    String prompt,
+    String systemPrompt,
+    List<Map<String, String>>? history,
+    String? imagePath,
+    int keep,
+    double temperature,
+    int maxTokens,
+    SamplingPreset preset, {
+    required void Function(String) onReasoning,
+    required void Function(String) onText,
+  }) async {
     final reply = await client.complete(
       messages: await buildMessages(
         prompt: prompt,
         systemPrompt: systemPrompt,
-        history: conversationHistory,
+        history: keep == 0 ? const [] : history,
         imagePath: imagePath,
+        maxHistory: keep == 0 ? 1 : keep,
       ),
       temperature: temperature,
       maxTokens: maxTokens,
@@ -230,30 +296,10 @@ class DesktopInference {
         'cache_prompt': true,
       },
       // The chat shows thinking between <think> tags, as phones send it.
-      onReasoning: (t) {
-        if (!thinking) {
-          thinking = true;
-          emit('<think>');
-        }
-        emit(t);
-      },
-      onText: (t) {
-        if (thinking) {
-          thinking = false;
-          emit('</think>\n\n');
-        }
-        emit(t);
-      },
+      onReasoning: onReasoning,
+      onText: onText,
     );
-    if (thinking) emit('</think>\n\n');
-    if (identical(_active, client)) _active = null;
-    if (reply.promptTokens + reply.completionTokens > 0) {
-      _tokensUsed = reply.promptTokens + reply.completionTokens;
-    }
-    if (!reply.ok && out.isEmpty) {
-      return 'ERROR: Generation failed — @error'.trParams({'error': reply.error!});
-    }
-    return out.toString();
+    return reply;
   }
 
   Future<void> stop() async {

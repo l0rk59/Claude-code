@@ -167,6 +167,37 @@ void main() {
       expect(engine.running.value, isFalse);
     });
 
+    test('a conversation too long for the context: the oldest turns go',
+        () async {
+      final inference = DesktopInference(engine);
+      await inference.loadModel(modelPath: model.path, contextSize: 4096);
+      final history = [
+        for (var i = 0; i < 30; i++)
+          {'role': i.isEven ? 'user' : 'assistant', 'content': 'Message $i ${'x' * 200}'},
+      ];
+      final answer = await inference.generate(
+        prompt: 'Dernière question',
+        systemPrompt: 'Be brief. [ctx:2500]',
+        conversationHistory: history,
+        modelName: 'm',
+        maxTokens: 50,
+        temperature: 0.3,
+      );
+      expect(answer, contains('Echo from'));
+      expect(answer, contains('Dernière question'));
+
+      // Even the question alone is too long: a clear message.
+      final tooLong = await inference.generate(
+        prompt: 'y' * 3000,
+        systemPrompt: '[ctx:2500]',
+        modelName: 'm',
+        maxTokens: 50,
+        temperature: 0.3,
+      );
+      expect(tooLong, startsWith('ERROR'));
+      expect(tooLong, contains('too long for the context'));
+    });
+
     test('on the processor only: no layers on the graphics card', () async {
       final inference = DesktopInference(engine);
       final load = await inference.loadModel(

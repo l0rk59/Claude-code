@@ -78,10 +78,11 @@ class DesktopEngineService extends GetxService {
 
   /// A llama-server the user installed themselves, instead of ours (the
   /// PRIVATELM_LLAMA_SERVER environment variable wins, for developers).
-  String get customBinary =>
-      Platform.environment['PRIVATELM_LLAMA_SERVER'] ??
-      hive.getSetting<String>(AppConstants.keyDesktopServerPath) ??
-      '';
+  String get customBinary {
+    final env = Platform.environment['PRIVATELM_LLAMA_SERVER'] ?? '';
+    if (env.isNotEmpty) return env;
+    return hive.getSetting<String>(AppConstants.keyDesktopServerPath) ?? '';
+  }
 
   Future<Directory> _engineRoot() async =>
       root ?? Directory('${(await AppDirs.data()).path}/engine');
@@ -266,6 +267,22 @@ class DesktopEngineService extends GetxService {
   /// Phones lending their memory (host:port), when the cluster is on.
   List<String> get rpcWorkers => clusterOn ? savedWorkers : const [];
 
+  /// Phones left out of the last load because they didn't answer.
+  final skippedWorkers = <String>[];
+
+  static Future<bool> _answers(String endpoint) async {
+    final i = endpoint.lastIndexOf(':');
+    try {
+      final socket = await Socket.connect(
+          endpoint.substring(0, i), int.parse(endpoint.substring(i + 1)),
+          timeout: const Duration(seconds: 2));
+      socket.destroy();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// "192.168.1.20" or "192.168.1.20:50052" → "192.168.1.20:50052".
   static String? workerEndpoint(String input) {
     final text = input.trim();
@@ -343,7 +360,19 @@ class DesktopEngineService extends GetxService {
   }) async {
     await stop();
     final bin = await binary();
-    if (bin == null) throw EngineStartException('ENGINE_MISSING');
+    if (bin == null) {
+      throw EngineStartException(customBinary.isNotEmpty
+          ? 'Your llama-server is no longer at @path. Choose it again in Settings > Computer engine.'
+              .trParams({'path': customBinary})
+          : 'The engine is missing. Install it in Settings > Computer engine.'.tr);
+    }
+    // A phone that is off doesn't stop the load: the model may fit
+    // without it.
+    final workers = <String>[];
+    skippedWorkers.clear();
+    for (final w in rpcWorkers) {
+      (await _answers(w) ? workers : skippedWorkers).add(w);
+    }
     final share = sharing.value;
     final config = ServerConfig(
       modelPath: modelPath,
@@ -357,7 +386,7 @@ class DesktopEngineService extends GetxService {
       threads: threads,
       mmprojPath: mmprojPath,
       draftPath: draftPath,
-      rpc: rpcWorkers,
+      rpc: workers,
     );
     final log = _log;
     log?.info('[Engine] ${LlamaEngine.serverArgs(config).where((a) => a != config.apiKey).join(' ')}');

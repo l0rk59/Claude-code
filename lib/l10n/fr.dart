@@ -1812,6 +1812,13 @@ const Map<String, String> fr = {
   'Version @version': 'Version @version',
   'Download it, then replace the old folder with the new one. Your models and chats stay.':
       "Téléchargez-la, puis remplacez l'ancien dossier par le nouveau. Vos modèles et discussions restent.",
+  'ERROR: This message is too long for the context of the model. Shorten it, or raise the context in Settings > Chat > Model parameters.':
+      'ERREUR : ce message est trop long pour le contexte du modèle. Raccourcissez-le, ou augmentez le contexte dans Paramètres > Discussion > Paramètres du modèle.',
+  'The answer was cut off: @error': 'La réponse a été interrompue : @error',
+  'Your llama-server is no longer at @path. Choose it again in Settings > Computer engine.':
+      "Votre llama-server n'est plus à l'emplacement @path. Choisissez-le à nouveau dans Paramètres > Moteur de l'ordinateur.",
+  'The engine is missing. Install it in Settings > Computer engine.':
+      "Le moteur est absent. Installez-le dans Paramètres > Moteur de l'ordinateur.",
 };
 
 /// Download statuses the Android code reports in English (shown through
