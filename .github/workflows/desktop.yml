@@ -1,6 +1,6 @@
-# Builds the computer app for Windows and Linux.
+# Builds the computer app for Windows, Linux and macOS.
 #
-# - Started by hand (Actions > Computer app > Run workflow): builds both
+# - Started by hand (Actions > Computer app > Run workflow): builds them
 #   and attaches them to the run, to download and try.
 # - Changing the computer app's code or this file: builds them, as a check.
 # - Pushing a version tag (git tag v1.2.0 && git push origin v1.2.0): adds
@@ -19,6 +19,7 @@ on:
       - '.github/workflows/desktop.yml'
       - 'windows/**'
       - 'linux/**'
+      - 'macos/**'
       - 'lib/services/desktop/**'
 
 permissions:
@@ -102,6 +103,47 @@ jobs:
           mkdir -p dist
           cp -r build/linux/x64/release/bundle dist/PrivateLM
           tar -czf "$name" -C dist PrivateLM
+          echo "ARCHIVE=$name" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 30
+
+      - name: Add to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/attach-to-release.sh "$GITHUB_REF_NAME" "$VERSION" "$ARCHIVE"
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+
+      # Not signed with an Apple certificate: the first time, open it with
+      # a right click > Open (see docs/application-pc.md).
+      - name: Build
+        run: flutter build macos --release
+
+      - name: Package
+        run: |
+          version="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          name="PrivateLM-${version}-macos.zip"
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/macos/Build/Products/Release/PrivateLM.app "$name"
           echo "ARCHIVE=$name" >> "$GITHUB_ENV"
           echo "VERSION=$version" >> "$GITHUB_ENV"
 
