@@ -3,7 +3,8 @@
 Tout ce qui suit a été vérifié par des tests automatiques et par la
 compilation de l'APK, mais **jamais sur un vrai téléphone**. Ce plan dit quoi
 essayer, dans quel ordre, et ce qu'il est utile de noter. Comptez une heure
-pour les parties 1 à 4, une heure de plus pour les parties 5 et 6.
+pour les parties 1 à 4, une heure de plus pour les parties 5 et 6, et une heure
+pour l'ordinateur (partie 7).
 
 Pour chaque ligne, notez : ✅ fonctionne, ❌ ne fonctionne pas (avec le message
 affiché), ou ⚠️ fonctionne mal (lent, plantage). En cas de plantage, les
@@ -69,6 +70,20 @@ modèle 2B, les agents se trompent plus souvent d'outil.
 | 3c.5 | **Paramètres > Outils > Agents > Nouvel assistant** : créer « Organisateur de voyages » avec la recherche Web, l'utiliser | Il apparaît dans **Qui répond ?** et suit ses instructions |
 | 3c.6 | Arrêter un agent pendant qu'il travaille | Il s'arrête ; aucune réponse fantôme n'arrive ensuite |
 
+## 3d. Agents avancés
+
+Voir [agents.md](agents.md). Avec Qwen 3.5 4B sur le téléphone, ou mieux sur
+l'ordinateur (partie 7) avec gpt-oss 20B.
+
+| # | À faire | Attendu |
+| --- | --- | --- |
+| 3d.1 | **Chercheur approfondi** : « Compare les forfaits mobiles 100 Go en France cette semaine » | Dans **Réflexion** : un **Plan**, plusieurs recherches et lectures, puis **Réponse vérifiée** (ou corrigée, ou « il manque quelque chose » suivi d'une nouvelle recherche) |
+| 3d.2 | **Chef de projet** : « Prépare un week-end à Lyon pour deux avec 400 € : activités, budget détaillé » | « Demande à Chercheur », « Demande à Analyste », avec leurs étapes en dessous ; une réponse qui rassemble les deux |
+| 3d.3 | **Assistant fichiers** : « Écris une liste de courses pour la semaine dans courses.md » | Une demande d'accord montrant le texte ; **Autoriser** ; la réponse indique le fichier écrit |
+| 3d.4 | Refaire 3d.3 et **Refuser** | L'agent dit que le fichier n'a pas été écrit |
+| 3d.5 | N'importe quel agent avec l'outil Mémoire : « Retiens que je suis allergique aux noix » | Une demande d'accord ; ensuite le fait apparaît dans **Paramètres > Outils > Mémoire** |
+| 3d.6 | Arrêter le Chef de projet pendant qu'un assistant travaille pour lui | Tout s'arrête ; aucune réponse n'arrive ensuite |
+
 ## 4. Un ordinateur fait tourner le modèle
 
 Voir [ordinateur.md](ordinateur.md).
@@ -104,8 +119,27 @@ Voir [cluster-ordinateur.md](cluster-ordinateur.md).
 | 6.2 | Laisser un auxiliaire écran éteint pendant une réponse | Ralentissement possible : le noter |
 | 6.3 | Passer de français à anglais dans **Paramètres > Langue** | Tout l'écran change, sans redémarrage |
 
+## 7. L'application sur ordinateur
+
+Voir [application-pc.md](application-pc.md). Noter le système, la mémoire et
+la carte graphique.
+
+| # | À faire | Attendu |
+| --- | --- | --- |
+| 7.1 | Télécharger et lancer la version Windows (ou Linux) | La fenêtre PrivateLM s'ouvre ; l'accueil dit « Recommandé pour cet ordinateur » avec la mémoire (et celle de la carte graphique une fois le moteur installé) |
+| 7.2 | **Installer et démarrer** le modèle proposé | Téléchargement du modèle, puis du moteur (environ 30 Mo), puis chargement ; le message dit **GPU (… couches, nom de la carte)** ou Processeur ; noter la durée |
+| 7.3 | Poser une question longue, puis **Mesurer la vitesse** | Réponse fluide ; noter les tokens/s |
+| 7.4 | **Paramètres > Performances > Moteur de l'ordinateur** | Le moteur installé, la carte graphique et sa mémoire |
+| 7.5 | Sur une carte NVIDIA : choisir **NVIDIA (CUDA)**, recharger, mesurer | Noter la vitesse face à Vulkan |
+| 7.6 | **Partager avec mes téléphones**, puis depuis un téléphone : **Modèles > Cloud > Un ordinateur de votre réseau** | L'ordinateur est trouvé ; avec la clé affichée, le téléphone discute avec le modèle de l'ordinateur |
+| 7.7 | Deux téléphones en **Auxiliaire** ; sur l'ordinateur **Chercher les téléphones du réseau**, activer, charger un modèle trop gros pour l'ordinateur seul | Les téléphones apparaissent avec la mémoire prêtée ; le modèle se charge ; noter la durée et la vitesse |
+| 7.8 | **Programmeur** : mettre un fichier CSV dans le dossier de travail, demander « Quelle est la moyenne de la colonne prix de ventes.csv ? » | Il lit le fichier, demande l'accord pour exécuter du Python (le code est montré), puis répond avec le résultat |
+| 7.9 | Fermer la fenêtre pendant qu'un modèle est chargé | Le programme `llama-server` s'arrête aussi (Gestionnaire des tâches / `ps`) |
+| 7.10 | Entrée envoie, Maj+Entrée va à la ligne, clic droit sur une discussion la supprime | Comme décrit |
+
 ## Ce qu'il est le plus utile de me renvoyer
 
 1. Les lignes en ❌ ou ⚠️, avec le message affiché.
-2. Les mesures de vitesse (2.4 à 2.6, 4.3, 5.6) avec le modèle et le téléphone.
-3. La durée du premier chargement en cluster (5.5).
+2. Les mesures de vitesse (2.4 à 2.6, 4.3, 5.6, 7.3, 7.5) avec le modèle et l'appareil.
+3. La durée du premier chargement en cluster (5.5, 7.7).
+4. Pour les agents (3d) : si l'agent s'est trompé d'outil ou a tourné en rond, le modèle utilisé.

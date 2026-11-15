@@ -9,6 +9,11 @@ votre réseau local, rien ne passe par Internet.
 > uniquement sur un réseau de confiance (chez vous), jamais sur un Wi-Fi
 > public.
 
+> **Nouveau : l'ordinateur peut être le chef du cluster.** Avec l'application
+> PrivateLM pour ordinateur, il garde le fichier du modèle et emprunte la
+> mémoire des téléphones en mode Auxiliaire, sans ligne de commande. Voir
+> [application-pc.md](application-pc.md), partie 5.
+
 ## Comment ça marche
 
 - Un téléphone Android est le **principal** : c'est lui qui charge le modèle et

@@ -9,6 +9,12 @@ clavier. Tout reste sur votre réseau local, rien ne passe par Internet.
 > pas chiffrés pour autant : à utiliser sur un réseau de confiance (chez
 > vous), jamais sur un Wi-Fi public.
 
+> **Plus simple : l'application PrivateLM pour ordinateur** fait tout cela
+> sans ligne de commande (**Moteur de l'ordinateur > Partager avec mes
+> téléphones**). Voir [application-pc.md](application-pc.md). Les scripts
+> ci-dessous restent utiles pour un ordinateur sans écran, ou avec Ollama et
+> LM Studio.
+
 ## Laquelle des deux méthodes choisir ?
 
 | | Ordinateur seul (ce guide) | Cluster ([guide](cluster-ordinateur.md)) |
