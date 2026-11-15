@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
 
+import '../core/app_platform.dart';
+import 'model_fit.dart';
+
 import 'device_info_native.dart' if (dart.library.html) 'device_info_web.dart'
     as platform_info;
 
@@ -19,8 +22,26 @@ class DeviceInfoService extends GetxService {
   int get maxSafeContextSize => _tierConfig['maxContextSize']!;
   int get maxSafeTokens => _tierConfig['maxSafeTokens']!;
 
+  /// Memory of a separate graphics card (computer app), in GB.
+  final graphicsMemoryGB = 0.0.obs;
+
+  /// The memory model advice uses: the phone's memory, or on a computer
+  /// the equivalent of its memory plus its graphics card's.
+  double get modelMemoryGB => AppPlatform.isDesktop
+      ? computerEquivalentRamGb(totalRamGB.value, vramGb: graphicsMemoryGB.value)
+      : totalRamGB.value;
+
   Map<String, int> get _tierConfig {
     final ram = totalRamGB.value;
+    // A computer: long conversations and answers, and room for agents.
+    if (AppPlatform.isDesktop && ram > 8) {
+      return {
+        'contextSize': 16384,
+        'maxTokens': 4096,
+        'maxContextSize': 131072,
+        'maxSafeTokens': 16384,
+      };
+    }
     if (ram <= 4) {
       return {
         'contextSize': 1024,

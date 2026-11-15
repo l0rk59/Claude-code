@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
 
 import 'soc_family.dart';
@@ -103,8 +104,17 @@ Future<Map<String, dynamic>> getDeviceInfo() async {
       socFamily = SocFamily.apple;
     } else if (Platform.isMacOS) {
       totalRam = 16.0;
-      availableRam = 8.0;
+      final memsize = await Process.run('sysctl', ['-n', 'hw.memsize']);
+      final bytes = int.tryParse('${memsize.stdout}'.trim());
+      if (bytes != null && bytes > 0) totalRam = bytes / (1024 * 1024 * 1024);
+      availableRam = totalRam * 0.6;
       socFamily = SocFamily.apple;
+    } else if (Platform.isWindows) {
+      final info = await DeviceInfoPlugin().windowsInfo;
+      if (info.systemMemoryInMegabytes > 0) {
+        totalRam = info.systemMemoryInMegabytes / 1024;
+      }
+      availableRam = totalRam * 0.6;
     }
   } catch (e) {
     print('[DeviceInfo] Failed to read device info: $e');

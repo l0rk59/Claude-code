@@ -33,6 +33,9 @@ class AiModel {
 
   bool get hasVisionProjector => mmprojFilename.isNotEmpty;
 
+  /// Made for the computer app (or a phone cluster): too big for one phone.
+  final bool isComputerClass;
+
   /// Model-list filters ('general', 'vision', 'image', 'uncensored') in
   /// which this model is tagged as the recommended pick.
   final Set<String> recommendedFor;
@@ -52,6 +55,7 @@ class AiModel {
     this.mmprojFilename = '',
     this.mmprojUrl = '',
     this.recommendedFor = const {},
+    this.isComputerClass = false,
   }) : runtime = runtime ?? runtimeFromFilename(filename, template: template);
 
   factory AiModel.fromMap(Map<String, String> map) => AiModel(
@@ -68,6 +72,7 @@ class AiModel {
         isLegacy: map['legacy'] == 'true',
         mmprojFilename: map['mmproj_filename'] ?? '',
         mmprojUrl: map['mmproj_url'] ?? '',
+        isComputerClass: map['computer'] == 'true',
         recommendedFor: (map['recommended'] ?? '')
             .split(',')
             .map((e) => e.trim())
@@ -90,6 +95,7 @@ class AiModel {
         if (mmprojFilename.isNotEmpty) 'mmproj_filename': mmprojFilename,
         if (mmprojUrl.isNotEmpty) 'mmproj_url': mmprojUrl,
         if (recommendedFor.isNotEmpty) 'recommended': recommendedFor.join(','),
+        if (isComputerClass) 'computer': 'true',
       };
 
   static String runtimeFromFilename(String filename, {String? template}) {

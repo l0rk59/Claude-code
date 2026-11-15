@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1009,7 +1010,9 @@ class ChatView extends GetView<ChatController> {
                         child: Container(
                           constraints: const BoxConstraints(minHeight: 40),
                           alignment: Alignment.centerLeft,
-                          child: TextField(
+                          child: _desktopEnterSends(
+                            controller,
+                            TextField(
                             enabled: !noModel,
                             controller: controller.textController,
                             focusNode: controller.inputFocus,
@@ -1039,6 +1042,7 @@ class ChatView extends GetView<ChatController> {
                               filled: false,
                             ),
                             onSubmitted: (_) => controller.sendMessage(),
+                          ),
                           ),
                         ));
                   })),
@@ -1160,6 +1164,12 @@ class ChatView extends GetView<ChatController> {
                       bgColor = Colors.transparent;
                       iconData = Icons.arrow_upward_rounded;
                       onTap = controller.sendMessage;
+                    } else if (AppPlatform.isDesktop &&
+                        !controller.sttAvailable.value) {
+                      // No dictation on this computer: an inert send arrow
+                      bgColor = Colors.transparent;
+                      iconData = Icons.arrow_upward_rounded;
+                      onTap = null;
                     } else {
                       // Empty → bare mic glyph
                       bgColor = Colors.transparent;
@@ -1924,4 +1934,22 @@ class _BlinkingCursorState extends State<_BlinkingCursor>
                     color: widget.color,
                     borderRadius: BorderRadius.circular(1)))));
   }
+}
+
+/// On a computer, Enter sends the message (Shift+Enter starts a new line).
+Widget _desktopEnterSends(ChatController controller, Widget field) {
+  if (!AppPlatform.isDesktop) return field;
+  return CallbackShortcuts(
+    bindings: {
+      const SingleActivator(LogicalKeyboardKey.enter): () {
+        if (!controller.isLoading.value &&
+            (controller.inputText.value.trim().isNotEmpty ||
+                controller.selectedImagePath.value != null ||
+                controller.selectedFileName.value != null)) {
+          controller.sendMessage();
+        }
+      },
+    },
+    child: field,
+  );
 }

@@ -312,6 +312,64 @@ class AppConstants {
       'mmproj_url':
           'https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/resolve/main/mmproj-F16.gguf',
     },
+    // Computer-class models: for the computer app (graphics card + memory),
+    // or a phone cluster.
+    {
+      'name': 'gpt-oss 20B (MXFP4)',
+      'filename': 'gpt-oss-20b-mxfp4.gguf',
+      'url':
+          'https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-MXFP4.gguf',
+      'size': '12.1 GB',
+      'description':
+          "OpenAI's open model, 3.6B active: fast, and very good with tools and agents — for a computer with 16 GB or more",
+      'template': 'chatml',
+      'computer': 'true',
+    },
+    {
+      'name': 'Qwen 3.5 27B (Q4_K_M)',
+      'filename': 'qwen3.5-27b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/resolve/main/Qwen3.5-27B-Q4_K_M.gguf',
+      'size': '16.7 GB + 928 MB vision',
+      'description':
+          'The strongest dense Qwen 3.5 most computers can hold, with image understanding — best with a 16 GB+ graphics card',
+      'template': 'chatml',
+      'vision': 'true',
+      'computer': 'true',
+      'mmproj_filename': 'qwen3.5-27b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'Qwen 3.5 35B-A3B (Q4_K_M)',
+      'filename': 'qwen3.5-35b-a3b-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF/resolve/main/Qwen3.5-35B-A3B-Q4_K_M.gguf',
+      'size': '22.0 GB + 899 MB vision',
+      'description':
+          'Big Qwen 3.5 MoE, 3B active: quick even with little graphics memory, with image understanding — for a computer with 32 GB',
+      'template': 'chatml',
+      'vision': 'true',
+      'computer': 'true',
+      'mmproj_filename': 'qwen3.5-35b-a3b-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf',
+    },
+    {
+      'name': 'Gemma 4 26B-A4B Instruct (UD-Q4_K_M)',
+      'filename': 'gemma-4-26b-a4b-it-ud-q4_k_m.gguf',
+      'url':
+          'https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf',
+      'size': '16.9 GB + 1.19 GB vision',
+      'description':
+          'Google Gemma 4 MoE, 4B active, with image understanding — for a computer with 24 GB',
+      'template': 'gemma',
+      'vision': 'true',
+      'computer': 'true',
+      'mmproj_filename': 'gemma-4-26b-a4b-it-mmproj-f16.gguf',
+      'mmproj_url':
+          'https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-F16.gguf',
+    },
     {
       'name': 'LFM2.5 8B-A1B (Q4_K_M)',
       'filename': 'lfm2.5-8b-a1b-q4_k_m.gguf',

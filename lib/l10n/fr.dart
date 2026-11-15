@@ -1664,6 +1664,93 @@ const Map<String, String> fr = {
   'ERROR: @error': 'ERREUR : @error',
   'ERROR: The engine is not running. Load the model again.':
       "ERREUR : le moteur ne tourne pas. Chargez à nouveau le modèle.",
+  // Computer app: engine page
+  'Reloading the model': 'Rechargement du modèle',
+  'The change applies now.': 'Le changement prend effet maintenant.',
+  'Engine ready': 'Moteur prêt',
+  "The engine couldn't be downloaded": "Le moteur n'a pas pu être téléchargé",
+  'Engine': 'Moteur',
+  'Downloaded once from the official llama.cpp releases (@release).':
+      'Téléchargé une seule fois depuis les versions officielles de llama.cpp (@release).',
+  'Choose llama-server': 'Choisir llama-server',
+  'Not llama-server': "Ce n'est pas llama-server",
+  'Choose the llama-server program from a llama.cpp folder.':
+      "Choisissez le programme llama-server d'un dossier llama.cpp.",
+  'Folder for the models': 'Dossier des modèles',
+  'Search finished': 'Recherche terminée',
+  'No new phone in Worker mode found. Check that they are on the same network, with Worker mode on.':
+      "Aucun nouveau téléphone en mode Auxiliaire trouvé. Vérifiez qu'ils sont sur le même réseau, avec le mode Auxiliaire activé.",
+  '@count phones added.': '@count téléphones ajoutés.',
+  'Add a phone': 'Ajouter un téléphone',
+  'The address shown by the phone in Worker mode (Cluster screen), for example 192.168.1.20.':
+      "L'adresse affichée par le téléphone en mode Auxiliaire (écran Cluster), par exemple 192.168.1.20.",
+  'Address not understood': 'Adresse non comprise',
+  'Computer engine': "Moteur de l'ordinateur",
+  'On this computer, the models run in llama.cpp, the engine of the phones, using the graphics card when there is one.':
+      "Sur cet ordinateur, les modèles tournent dans llama.cpp, le moteur des téléphones, avec la carte graphique quand il y en a une.",
+  'Not installed yet': 'Pas encore installé',
+  'Your llama-server': 'Votre llama-server',
+  'Downloaded with the first model (@size MB).':
+      'Téléchargé avec le premier modèle (@size Mo).',
+  'No graphics card found': 'Aucune carte graphique trouvée',
+  'Known once the engine is installed.': 'Connue une fois le moteur installé.',
+  'The models run on the processor.': 'Les modèles tournent sur le processeur.',
+  '@total GB of graphics memory, @free GB free':
+      '@total Go de mémoire graphique, @free Go libres',
+  'Install now': 'Installer maintenant',
+  'Use my own llama-server': 'Utiliser mon propre llama-server',
+  'For a build made for your card (ROCm, SYCL…). The same version is safest for the phones.':
+      'Pour une version faite pour votre carte (ROCm, SYCL…). La même version est la plus sûre pour les téléphones.',
+  'Models folder': 'Dossier des modèles',
+  'Models downloaded or added from now on go here. Models already in the old folder stay there.':
+      "Les modèles téléchargés ou ajoutés à partir de maintenant vont ici. Ceux de l'ancien dossier y restent.",
+  'Back to the default folder': 'Revenir au dossier par défaut',
+  'Share with my phones': 'Partager avec mes téléphones',
+  'Phones of the network use this model': 'Les téléphones du réseau utilisent ce modèle',
+  'They find this computer in Models > Cloud > A computer on your network, and ask for the key below.':
+      'Ils trouvent cet ordinateur dans Modèles > Cloud > Un ordinateur de votre réseau, et demandent la clé ci-dessous.',
+  'No local network found': 'Aucun réseau local trouvé',
+  'Address of this computer': 'Adresse de cet ordinateur',
+  'Key to type on the phones': 'Clé à saisir sur les téléphones',
+  'New key': 'Nouvelle clé',
+  'Your firewall may ask whether llama-server can accept connections: allow it on private networks only.':
+      'Votre pare-feu peut demander si llama-server peut accepter des connexions : autorisez-le sur les réseaux privés seulement.',
+  'Phones lending their memory': 'Téléphones qui prêtent leur mémoire',
+  'Use the phones in Worker mode': 'Utiliser les téléphones en mode Auxiliaire',
+  'For models too big for this computer: llama.cpp spreads the model over this computer and the phones. Slower than one machine: the network carries every step.':
+      "Pour les modèles trop gros pour cet ordinateur : llama.cpp répartit le modèle entre cet ordinateur et les téléphones. Plus lent qu'une seule machine : le réseau transporte chaque étape.",
+  'Not reachable now': 'Injoignable pour le moment',
+  'Lends about @gb GB': 'Prête environ @gb Go',
+  'Searching the network… @percent%': 'Recherche sur le réseau… @percent %',
+  'Find phones on the network': 'Chercher les téléphones du réseau',
+  'Add a phone by its address': 'Ajouter un téléphone par son adresse',
+  'On each phone: Cluster > Worker. Changes apply when a model is next loaded.':
+      'Sur chaque téléphone : Cluster > Auxiliaire. Les changements prennent effet au prochain chargement de modèle.',
+  'No models on this computer yet': 'Aucun modèle sur cet ordinateur pour le moment',
+  'Use a model running on another computer of your network. Nothing leaves your network.':
+      "Utiliser un modèle qui tourne sur un autre ordinateur de votre réseau. Rien ne sort de votre réseau.",
+  'Thousands of open models, straight from Hugging Face. Each file shows whether it suits this computer before you download it.':
+      'Des milliers de modèles ouverts, directement depuis Hugging Face. Chaque fichier indique s\'il convient à cet ordinateur avant de le télécharger.',
+  'Recommended for this computer': 'Recommandé pour cet ordinateur',
+  'None of these files runs comfortably on this computer.':
+      "Aucun de ces fichiers ne tourne confortablement sur cet ordinateur.",
+  'Too big for this computer': 'Trop gros pour cet ordinateur',
+  'This file needs more memory than this computer has, so it will probably not load. Download it anyway?':
+      "Ce fichier demande plus de mémoire que cet ordinateur n'en a : il ne se chargera probablement pas. Le télécharger quand même ?",
+  'On this computer': 'Sur cet ordinateur',
+  "Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the system's keychain, sent only to Hugging Face.":
+      "Ouvre les modèles dont l'éditeur demande d'accepter une licence (Gemma, Llama…). Rangé dans le trousseau du système, envoyé seulement à Hugging Face.",
+  'Graphics card, models folder, sharing with the phones':
+      'Carte graphique, dossier des modèles, partage avec les téléphones',
+  "Stored in the system's keychain.": 'Rangée dans le trousseau du système.',
+  'Say "Remember that…" in a chat, or add a fact here: the assistant knows it in every conversation. Nothing is remembered without being asked, and it stays on this computer.':
+      'Dites « Souviens-toi que… » dans une discussion, ou ajoutez un fait ici : l\'assistant le connaît dans chaque discussion. Rien n\'est retenu sans qu\'on le demande, et tout reste sur cet ordinateur.',
+  'Load a model on this computer first: the measurement runs on the model in use.':
+      "Chargez d'abord un modèle sur cet ordinateur : la mesure porte sur le modèle en cours.",
+  'For a fair measure, close the other programs and keep the computer plugged in.':
+      "Pour une mesure juste, fermez les autres programmes et gardez l'ordinateur branché.",
+  '@ram GB RAM · @vram GB graphics': '@ram Go de RAM · @vram Go graphiques',
+  'Right-click a chat to delete it': 'Clic droit sur une discussion pour la supprimer',
 };
 
 /// Download statuses the Android code reports in English (shown through

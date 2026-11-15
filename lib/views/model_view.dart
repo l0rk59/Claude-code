@@ -13,6 +13,7 @@ import '../services/local_image_service.dart';
 import '../services/model_fit.dart';
 import '../widgets/fit_badge.dart';
 import '../core/colors.dart';
+import '../core/app_platform.dart';
 import '../controllers/home_controller.dart';
 import '../services/lan_server_finder.dart';
 import 'computer_finder_sheet.dart';
@@ -233,7 +234,9 @@ class ModelView extends GetView<ModelController> {
   Widget _buildEmptyLibrary(BuildContext context) {
     return EmptyState(
       icon: Icons.download_rounded,
-      title: 'No models on this phone yet'.tr,
+      title: AppPlatform.isDesktop
+          ? 'No models on this computer yet'.tr
+          : 'No models on this phone yet'.tr,
       message: 'Download one from Browse, or import a model file.'.tr,
       action: Wrap(spacing: 8, children: [
         PillButton(
@@ -661,8 +664,11 @@ class ModelView extends GetView<ModelController> {
               Text('A computer on your network'.tr, style: t.bodyStrong),
               const SizedBox(height: 2),
               Text(
-                'Run a big model on a PC or a Mac and chat from this phone. Nothing leaves your network.'
-                    .tr,
+                AppPlatform.isDesktop
+                    ? 'Use a model running on another computer of your network. Nothing leaves your network.'
+                        .tr
+                    : 'Run a big model on a PC or a Mac and chat from this phone. Nothing leaves your network.'
+                        .tr,
                 style: t.small,
               ),
             ],
@@ -1895,7 +1901,11 @@ class ModelView extends GetView<ModelController> {
         child: Row(children: [
           Expanded(
               child:
-                  Text('On this phone · @count'.trParams({'count': '${models.length}'}),
+                  Text(
+                      (AppPlatform.isDesktop
+                              ? 'On this computer · @count'
+                              : 'On this phone · @count')
+                          .trParams({'count': '${models.length}'}),
                       style: t.caption)),
           _sortAction(),
         ]),

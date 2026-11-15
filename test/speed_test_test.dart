@@ -140,7 +140,7 @@ void main() {
         remember: (r) async => [r],
       ),
     );
-    expect(find.textContaining('Load a model on this phone first'),
+    expect(find.textContaining(RegExp('Load a model on this (phone|computer) first')),
         findsOneWidget);
     expect(find.text('Measure'), findsNothing);
   });

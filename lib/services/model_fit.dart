@@ -41,3 +41,16 @@ int idealModelBytes(double totalRamGb) =>
     ((usableMemoryBytes(totalRamGb) * 0.75 - 0.6 * _gb) / 1.15)
         .floor()
         .clamp(0, 1 << 62);
+
+/// What a computer can give a model, as the memory of a phone that could
+/// give the same (so the rules above apply): most of its memory, plus the
+/// memory of a separate graphics card ([vramGb], 0 without one).
+double computerEquivalentRamGb(double ramGb, {double vramGb = 0}) =>
+    (0.75 * ramGb + 0.9 * vramGb) / 0.57;
+
+/// Whether a graphics card has memory of its own (not shared with the
+/// processor, which the computer's memory already counts).
+bool isDiscreteGpu(String name) => RegExp(
+        r'NVIDIA|GeForce|RTX|Quadro|Tesla|Radeon RX|Radeon Pro|Radeon VII|Arc A|Arc B|Instinct',
+        caseSensitive: false)
+    .hasMatch(name);

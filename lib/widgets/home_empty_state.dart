@@ -9,6 +9,7 @@ import '../controllers/settings_controller.dart';
 import '../core/colors.dart';
 import '../core/haptics.dart';
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../models/ai_model.dart';
 import '../services/device_info_service.dart';
 import '../services/download_service.dart';
@@ -176,8 +177,10 @@ class _FirstRun extends StatelessWidget {
     final t = AppTokens.of(context);
     final models = Get.find<ModelController>();
     final home = Get.find<HomeController>();
-    final ram = Get.find<DeviceInfoService>().totalRamGB.value;
+    final device = Get.find<DeviceInfoService>();
+    final ram = device.totalRamGB.value;
     return Obx(() {
+      final vram = device.graphicsMemoryGB.value;
       final model = models.availableModels.firstWhereOrNull(
               (m) => m.filename == models.autoLoadAfterDownload.value) ??
           models.starterModel;
@@ -194,10 +197,19 @@ class _FirstRun extends StatelessWidget {
               Icon(Icons.auto_awesome_rounded, size: 15, color: t.accent),
               const SizedBox(width: 6),
               Expanded(
-                child: Text('Recommended for this phone'.tr,
+                child: Text(
+                    AppPlatform.isDesktop
+                        ? 'Recommended for this computer'.tr
+                        : 'Recommended for this phone'.tr,
                     style: t.label.copyWith(color: t.accent)),
               ),
-              Text('@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)}),
+              Text(
+                  vram > 0
+                      ? '@ram GB RAM · @vram GB graphics'.trParams({
+                          'ram': ram.toStringAsFixed(0),
+                          'vram': vram.toStringAsFixed(0),
+                        })
+                      : '@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)}),
                   style: t.small),
             ]),
             const SizedBox(height: 10),

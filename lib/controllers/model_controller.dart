@@ -152,6 +152,8 @@ class ModelController extends GetxController {
         .map((m) => AiModel.fromMap(m))
         // Core ML (Apple NPU) models only run on iOS/macOS.
         .where((m) => supportsAppleNpu || !isNpuModel(m))
+        // The computer app runs GGUF models only (llama.cpp).
+        .where((m) => !AppPlatform.isDesktop || m.runtime == AiModel.runtimeLlama)
         .toList()
       ..addAll(customModels);
     refreshDownloaded();
@@ -260,12 +262,23 @@ class ModelController extends GetxController {
   /// The model to suggest on this phone when none is installed: the
   /// smartest starter that still runs comfortably.
   AiModel? get starterModel => pickStarter(
-      availableModels, Get.find<DeviceInfoService>().totalRamGB.value);
+      availableModels, Get.find<DeviceInfoService>().modelMemoryGB,
+      computer: AppPlatform.isDesktop);
+
+  /// On a computer: the strongest that runs comfortably.
+  static const _computerStarters = [
+    ('qwen3.5-35b-a3b-q4_k_m.gguf', 0.0),
+    ('gpt-oss-20b-mxfp4.gguf', 0.0),
+    ('qwen3.5-9b-q4_k_m.gguf', 0.0),
+    ('qwen3.5-4b-q4_k_m.gguf', 0.0),
+  ];
 
   /// The starter from [catalog] for a phone with [totalRamGb].
-  static AiModel? pickStarter(List<AiModel> catalog, double totalRamGb) {
+  static AiModel? pickStarter(List<AiModel> catalog, double totalRamGb,
+      {bool computer = false}) {
     AiModel? smallest;
-    for (final (filename, minRamGb) in _starters) {
+    for (final (filename, minRamGb)
+        in computer ? _computerStarters : _starters) {
       final model = catalog.firstWhereOrNull((m) => m.filename == filename);
       if (model == null) continue;
       smallest = model;
@@ -461,7 +474,7 @@ class ModelController extends GetxController {
   /// Whether [model] suits this phone's memory.
   ModelFit fitOf(AiModel model) => modelFit(
         modelBytes: _knownModelBytes(model),
-        totalRamGb: Get.find<DeviceInfoService>().totalRamGB.value,
+        totalRamGb: Get.find<DeviceInfoService>().modelMemoryGB,
       );
 
   int _knownModelBytes(AiModel model) {

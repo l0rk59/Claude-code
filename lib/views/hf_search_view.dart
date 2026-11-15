@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../controllers/model_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/device_info_service.dart';
 import '../services/hive_service.dart';
 import '../services/hf_search_service.dart';
@@ -208,8 +209,11 @@ class _HfSearchViewState extends State<HfSearchView> {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
         Text(
-          'Thousands of open models, straight from Hugging Face. Each file shows whether it suits this phone before you download it.'
-              .tr,
+          AppPlatform.isDesktop
+              ? 'Thousands of open models, straight from Hugging Face. Each file shows whether it suits this computer before you download it.'
+                  .tr
+              : 'Thousands of open models, straight from Hugging Face. Each file shows whether it suits this phone before you download it.'
+                  .tr,
           style: t.caption,
         ),
         const SizedBox(height: 18),
@@ -356,7 +360,7 @@ class _RepoFilesState extends State<_RepoFiles> {
   Widget _files(BuildContext context, AppTokens t, HfRepoDetails details) {
     final models = details.models;
     final mmproj = details.mmproj;
-    final ram = Get.find<DeviceInfoService>().totalRamGB.value;
+    final ram = Get.find<DeviceInfoService>().modelMemoryGB;
     final recommended = details.recommended(ram);
     final blocked = !details.downloadable || !details.supported;
     return Column(
@@ -434,7 +438,10 @@ class _RepoFilesState extends State<_RepoFiles> {
                       Icon(Icons.auto_awesome_rounded,
                           size: 14, color: t.accent),
                       const SizedBox(width: 6),
-                      Text('Recommended for this phone'.tr,
+                      Text(
+                          AppPlatform.isDesktop
+                              ? 'Recommended for this computer'.tr
+                              : 'Recommended for this phone'.tr,
                           style: t.small.copyWith(
                               color: t.accent, fontWeight: FontWeight.w600)),
                     ]),
@@ -452,7 +459,9 @@ class _RepoFilesState extends State<_RepoFiles> {
             const SizedBox(height: 18),
           ] else if (!blocked) ...[
             AppNotice(
-              'None of these files runs comfortably on this phone.'.tr,
+              AppPlatform.isDesktop
+                  ? 'None of these files runs comfortably on this computer.'.tr
+                  : 'None of these files runs comfortably on this phone.'.tr,
               icon: Icons.error_outline_rounded,
               color: t.orange,
             ),
@@ -511,9 +520,13 @@ class _FileRow extends StatelessWidget {
     if (fit == ModelFit.tooBig) {
       final go = await confirmSheet(
         context,
-        title: 'Too big for this phone'.tr,
-        message:
-            'This file needs more memory than this phone has, so it will probably not load. Download it anyway?'
+        title: AppPlatform.isDesktop
+            ? 'Too big for this computer'.tr
+            : 'Too big for this phone'.tr,
+        message: AppPlatform.isDesktop
+            ? 'This file needs more memory than this computer has, so it will probably not load. Download it anyway?'
+                .tr
+            : 'This file needs more memory than this phone has, so it will probably not load. Download it anyway?'
                 .tr,
         confirmLabel: 'Download'.tr,
       );
@@ -580,7 +593,10 @@ class _FileRow extends StatelessWidget {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.check_circle_rounded, size: 16, color: t.green),
                   const SizedBox(width: 5),
-                  Text('On this phone'.tr,
+                  Text(
+                      AppPlatform.isDesktop
+                          ? 'On this computer'.tr
+                          : 'On this phone'.tr,
                       style: t.small.copyWith(color: t.green)),
                 ]),
               );
@@ -622,8 +638,11 @@ Future<bool> showHfTokenSheet(
     context,
     title: 'Hugging Face token'.tr,
     subtitle:
-        'Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone\'s keystore, sent only to Hugging Face.'
-            .tr,
+        AppPlatform.isDesktop
+            ? "Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the system's keychain, sent only to Hugging Face."
+                .tr
+            : 'Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone\'s keystore, sent only to Hugging Face.'
+                .tr,
     builder: (_) => HfTokenSheet(
       service: service,
       current: savedHfToken() ?? '',

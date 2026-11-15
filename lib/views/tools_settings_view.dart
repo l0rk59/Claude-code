@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../core/constants.dart';
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/hive_service.dart';
 import '../services/memory_service.dart';
 import '../services/web_search_service.dart';
@@ -82,7 +83,9 @@ class _WebSearchSettingsViewState extends State<WebSearchSettingsView> {
             const SizedBox(height: 16),
             AppField(
               label: 'Brave Search key'.tr,
-              helper: "Stored in the phone's keystore.".tr,
+              helper: AppPlatform.isDesktop
+                  ? "Stored in the system's keychain.".tr
+                  : "Stored in the phone's keystore.".tr,
               child: TextField(
                 controller: _braveKey,
                 obscureText: true,
@@ -153,8 +156,11 @@ class _MemoryViewState extends State<MemoryView> {
         padding: kPagePadding,
         children: [
           Text(
-            'Say "Remember that…" in a chat, or add a fact here: the assistant knows it in every conversation. Nothing is remembered without being asked, and it stays on the phone.'
-                .tr,
+            AppPlatform.isDesktop
+                ? 'Say "Remember that…" in a chat, or add a fact here: the assistant knows it in every conversation. Nothing is remembered without being asked, and it stays on this computer.'
+                    .tr
+                : 'Say "Remember that…" in a chat, or add a fact here: the assistant knows it in every conversation. Nothing is remembered without being asked, and it stays on the phone.'
+                    .tr,
             style: t.caption,
           ),
           const SizedBox(height: 12),

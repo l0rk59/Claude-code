@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
 
@@ -201,8 +202,11 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
       children: [
         if (!hasModel)
           AppNotice(
-            'Load a model on this phone first: the measurement runs on the model in use.'
-                .tr,
+            AppPlatform.isDesktop
+                ? 'Load a model on this computer first: the measurement runs on the model in use.'
+                    .tr
+                : 'Load a model on this phone first: the measurement runs on the model in use.'
+                    .tr,
             icon: Icons.info_outline_rounded,
           )
         else ...[
@@ -328,8 +332,11 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
         ],
         const SizedBox(height: 12),
         Text(
-          'For a fair measure, close the other apps and keep the phone plugged in.'
-              .tr,
+          AppPlatform.isDesktop
+              ? 'For a fair measure, close the other programs and keep the computer plugged in.'
+                  .tr
+              : 'For a fair measure, close the other apps and keep the phone plugged in.'
+                  .tr,
           style: t.small,
           textAlign: TextAlign.center,
         ),

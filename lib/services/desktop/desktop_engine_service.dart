@@ -11,7 +11,11 @@ import '../../core/app_dirs.dart';
 import '../../core/constants.dart';
 import '../app_log_service.dart';
 import '../hive_service.dart';
+import '../device_info_service.dart';
+import '../lan_server_finder.dart';
+import '../model_fit.dart';
 import '../openai_chat_client.dart';
+import '../rpc_probe.dart';
 import 'llama_engine.dart';
 import 'llama_server_process.dart';
 
@@ -72,9 +76,12 @@ class DesktopEngineService extends GetxService {
           arm: isArm) ??
       variants.first;
 
-  /// A llama-server the user installed themselves, instead of ours.
+  /// A llama-server the user installed themselves, instead of ours (the
+  /// PRIVATELM_LLAMA_SERVER environment variable wins, for developers).
   String get customBinary =>
-      hive.getSetting<String>(AppConstants.keyDesktopServerPath) ?? '';
+      Platform.environment['PRIVATELM_LLAMA_SERVER'] ??
+      hive.getSetting<String>(AppConstants.keyDesktopServerPath) ??
+      '';
 
   Future<Directory> _engineRoot() async =>
       root ?? Directory('${(await AppDirs.data()).path}/engine');
@@ -201,6 +208,12 @@ class DesktopEngineService extends GetxService {
           .timeout(const Duration(seconds: 20));
       devices.assignAll(
           LlamaEngine.parseDevices('${result.stdout}\n${result.stderr}'));
+      // Model advice counts a separate card's memory.
+      if (Get.isRegistered<DeviceInfoService>()) {
+        final gpu = mainGpu;
+        Get.find<DeviceInfoService>().graphicsMemoryGB.value =
+            gpu != null && isDiscreteGpu(gpu.name) ? gpu.totalMb / 1024 : 0;
+      }
     } catch (e) {
       _log?.warning('Engine devices not listed', details: e);
     }
@@ -231,16 +244,90 @@ class DesktopEngineService extends GetxService {
     return List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
   }
 
+  /// Port of a phone in Worker mode (and of ggml-rpc-server).
+  static const workerPort = 50052;
+
+  /// Phones (or computers) known to lend their memory: host:port.
+  List<String> get savedWorkers => [
+        for (final w in hive.getSetting<List>(AppConstants.keyDesktopRpcWorkers) ??
+            const [])
+          '$w',
+      ];
+
+  Future<void> saveWorkers(List<String> workers) =>
+      hive.setSetting(AppConstants.keyDesktopRpcWorkers, workers);
+
+  bool get clusterOn =>
+      hive.getSetting<bool>(AppConstants.keyDesktopClusterOn) ?? false;
+
+  Future<void> setClusterOn(bool on) =>
+      hive.setSetting(AppConstants.keyDesktopClusterOn, on);
+
   /// Phones lending their memory (host:port), when the cluster is on.
-  List<String> get rpcWorkers {
-    if (!(hive.getSetting<bool>(AppConstants.keyDesktopClusterOn) ?? false)) {
+  List<String> get rpcWorkers => clusterOn ? savedWorkers : const [];
+
+  /// "192.168.1.20" or "192.168.1.20:50052" → "192.168.1.20:50052".
+  static String? workerEndpoint(String input) {
+    final text = input.trim();
+    final m = RegExp(r'^([A-Za-z0-9.\-]+)(?::(\d{1,5}))?$').firstMatch(text);
+    if (m == null) return null;
+    final port = int.tryParse(m[2] ?? '') ?? workerPort;
+    if (port < 1 || port > 65535) return null;
+    return '${m[1]}:$port';
+  }
+
+  /// Asks a worker for its memory; null when it doesn't answer.
+  static Future<RpcServerInfo?> probeWorker(String endpoint) async {
+    final i = endpoint.lastIndexOf(':');
+    try {
+      return await RpcProbe.query(
+          endpoint.substring(0, i), int.parse(endpoint.substring(i + 1)));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Phones of this network in Worker mode.
+  static Future<List<(String, RpcServerInfo)>> scanWorkers(
+      {void Function(double progress)? onProgress}) async {
+    final own = await LanServerFinder.ownAddress();
+    if (own == null) return const [];
+    final hosts = LanServerFinder.neighbours(own);
+    final found = <(String, RpcServerInfo)>[];
+    var next = 0;
+    var done = 0;
+    Future<void> worker() async {
+      while (next < hosts.length) {
+        final host = hosts[next++];
+        try {
+          final socket = await Socket.connect(host, workerPort,
+              timeout: const Duration(milliseconds: 400));
+          socket.destroy();
+          final info = await probeWorker('$host:$workerPort');
+          if (info != null) found.add(('$host:$workerPort', info));
+        } catch (_) {}
+        onProgress?.call(++done / hosts.length);
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < 48; i++) worker()]);
+    found.sort((a, b) => a.$1.compareTo(b.$1));
+    return found;
+  }
+
+  /// This computer's addresses on the local network (for the phones).
+  static Future<List<String>> localAddresses() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+          type: InternetAddressType.IPv4, includeLoopback: false);
+      return [
+        for (final i in interfaces)
+          for (final a in i.addresses)
+            if (LanServerFinder.isLocal('http://${a.address}')) a.address,
+      ];
+    } catch (_) {
       return const [];
     }
-    return [
-      for (final w in hive.getSetting<List>(AppConstants.keyDesktopRpcWorkers) ??
-          const [])
-        '$w',
-    ];
   }
 
   /// Starts llama-server with [modelPath]. Stops the one running first.

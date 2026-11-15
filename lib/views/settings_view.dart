@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../core/app_platform.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
 import '../l10n/app_translations.dart';
@@ -18,6 +19,7 @@ import '../services/cluster_service.dart';
 import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
 import 'agents_view.dart';
+import 'desktop_engine_view.dart';
 import 'cluster_view.dart';
 import 'documents_view.dart';
 import 'tools_settings_view.dart';
@@ -60,7 +62,7 @@ class SettingsView extends GetView<SettingsController> {
                 value: _languageLabel(controller.language.value),
                 builder: (ctx) => _buildLanguageGroup(ctx),
               ),
-              AppRow(
+              if (!AppPlatform.isDesktop) AppRow(
                 icon: Icons.vibration_rounded,
                 title: 'Haptic feedback'.tr,
                 trailing: Switch(
@@ -135,6 +137,15 @@ class SettingsView extends GetView<SettingsController> {
             ]),
             SectionHeader('Performance'.tr),
             AppGroup(dividerIndent: 60, children: [
+              if (AppPlatform.isDesktop)
+                AppRow(
+                  icon: Icons.memory_rounded,
+                  title: 'Computer engine'.tr,
+                  subtitle:
+                      'Graphics card, models folder, sharing with the phones'.tr,
+                  chevron: true,
+                  onTap: () => Get.to(() => const DesktopEngineView()),
+                ),
               _navRow(
                 context,
                 icon: Icons.speed_rounded,
@@ -146,7 +157,8 @@ class SettingsView extends GetView<SettingsController> {
                 },
                 builder: (ctx) => _buildLiteRtGroup(ctx),
               ),
-              _navRow(
+              // Image generation runs on phones only.
+              if (!AppPlatform.isDesktop) _navRow(
                 context,
                 icon: Icons.image_outlined,
                 title: 'Image generation',

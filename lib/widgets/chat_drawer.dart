@@ -8,6 +8,7 @@ import '../services/cluster_service.dart';
 import '../core/haptics.dart';
 import '../core/colors.dart';
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 
 /// Two-bar "sidebar" glyph — the long bar over a short one reads as a list
 /// rather than the generic hamburger.
@@ -282,7 +283,10 @@ class _ChatDrawerState extends State<ChatDrawer> {
               ],
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
-                child: Text('Long-press a chat to delete it'.tr,
+                child: Text(
+                    AppPlatform.isDesktop
+                        ? 'Right-click a chat to delete it'.tr
+                        : 'Long-press a chat to delete it'.tr,
                     style: GoogleFonts.inter(fontSize: 12, color: t.faint)),
               ),
             ],
@@ -399,6 +403,8 @@ class _SessionRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           onLongPress: onLongPress,
+          // A right click does the same on a computer.
+          onSecondaryTap: onLongPress,
           splashFactory: NoSplash.splashFactory,
           highlightColor: selected,
           child: Padding(
