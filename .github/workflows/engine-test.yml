@@ -1,0 +1,67 @@
+# Runs the computer app's engine for real on Windows and Linux: llama.cpp's
+# own llama-server, downloaded from its releases as the app does, with a
+# small real model (Qwen 3.5 0.8B): loading, chatting, a tool call, agents,
+# stopping. The everyday tests use a stand-in server; this checks the real
+# one still behaves the way the app expects.
+name: Engine test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    paths:
+      - '.github/workflows/engine-test.yml'
+      - 'test/real_engine/**'
+      - 'lib/services/desktop/**'
+      - 'lib/services/agents/**'
+      - 'lib/services/openai_chat_client.dart'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - uses: actions/cache@v4
+        with:
+          path: test-model
+          key: qwen3.5-0.8b-q4_k_m
+
+      - name: Model
+        run: |
+          mkdir -p test-model
+          if [ ! -s test-model/qwen3.5-0.8b-q4_k_m.gguf ]; then
+            curl -fL --retry 4 -o test-model/qwen3.5-0.8b-q4_k_m.gguf \
+              https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf
+          fi
+          ls -l test-model
+
+      - name: Real engine
+        run: |
+          # A Windows path on Windows (D:/a/…), not Git Bash's /d/a/….
+          root="$(pwd -W 2>/dev/null || pwd)"
+          export PRIVATELM_REAL_ENGINE_MODEL="$root/test-model/qwen3.5-0.8b-q4_k_m.gguf"
+          flutter test test/real_engine --reporter expanded
