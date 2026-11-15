@@ -21,6 +21,7 @@ import 'services/inference_service.dart';
 import 'services/cluster_service.dart';
 import 'services/cloud_service.dart';
 import 'services/desktop/desktop_engine_service.dart';
+import 'services/desktop/desktop_update.dart';
 import 'services/document_library_service.dart';
 import 'services/download_service.dart';
 import 'services/speech_service.dart';
@@ -101,6 +102,7 @@ void main() {
           '';
       if (modelsDir.isNotEmpty) AppDirs.modelsOverride = modelsDir;
       await Get.putAsync(() => DesktopEngineService().init(), permanent: true);
+      Get.put(DesktopUpdateService(), permanent: true);
     }
     if (ClusterService.isSupported) Get.put(ClusterService(), permanent: true);
     Get.put(InferenceService());

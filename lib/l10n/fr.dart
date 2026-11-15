@@ -1805,6 +1805,13 @@ const Map<String, String> fr = {
   'Plans before working, then checks its answer against what it found, and searches again if something is missing. Slower, more reliable.':
       "Planifie avant de travailler, vérifie ensuite sa réponse avec ce qu'il a trouvé, et cherche à nouveau s'il manque quelque chose. Plus lent, plus fiable.",
   'Asks you first': 'Vous demande avant',
+  // Computer app: updates
+  'PrivateLM @version is available': 'PrivateLM @version est disponible',
+  'Settings > About to download it.': 'Paramètres > À propos pour la télécharger.',
+  'Updates': 'Mises à jour',
+  'Version @version': 'Version @version',
+  'Download it, then replace the old folder with the new one. Your models and chats stay.':
+      "Téléchargez-la, puis remplacez l'ancien dossier par le nouveau. Vos modèles et discussions restent.",
 };
 
 /// Download statuses the Android code reports in English (shown through

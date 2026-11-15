@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../controllers/model_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/app_platform.dart';
@@ -11,6 +12,7 @@ import '../services/inference_service.dart';
 import '../services/hive_service.dart';
 import '../services/local_image_service.dart';
 import '../services/update_service.dart';
+import '../services/desktop/desktop_update.dart';
 import '../services/device_info_service.dart';
 import '../services/download_service.dart';
 import '../services/soc_family.dart' as platform_info;
@@ -191,6 +193,9 @@ class SettingsView extends GetView<SettingsController> {
             SectionHeader('About'.tr),
             AppGroup(dividerIndent: 60, children: [
               if (showUpdates) _buildUpdatesRow(context),
+              if (AppPlatform.isDesktop &&
+                  Get.isRegistered<DesktopUpdateService>())
+                _desktopUpdateRow(context),
               _navRow(
                 context,
                 icon: Icons.smartphone_rounded,
@@ -468,6 +473,39 @@ class SettingsView extends GetView<SettingsController> {
         },
       ),
     ]);
+  }
+
+  /// The computer app's version, and a newer one to download.
+  Widget _desktopUpdateRow(BuildContext context) {
+    final updates = Get.find<DesktopUpdateService>();
+    if (updates.currentVersion.value.isEmpty) {
+      PackageInfo.fromPlatform()
+          .then((info) => updates.currentVersion.value = info.version);
+    }
+    return Obx(() {
+      final release = updates.available.value;
+      return AppRow(
+        icon: Icons.system_update_alt_rounded,
+        title: release == null
+            ? 'Updates'.tr
+            : 'PrivateLM @version is available'
+                .trParams({'version': release.version}),
+        subtitle: release == null
+            ? 'Version @version'.trParams({'version': updates.currentVersion.value})
+            : 'Download it, then replace the old folder with the new one. Your models and chats stay.'
+                .tr,
+        trailing: updates.checking.value
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2))
+            : null,
+        chevron: !updates.checking.value,
+        onTap: () => release == null
+            ? updates.check(manual: true)
+            : DesktopUpdateService.openInBrowser(release.url),
+      );
+    });
   }
 
   Widget _buildUpdatesRow(BuildContext context) {
