@@ -33,12 +33,14 @@ abstract class AgentBackend {
   String systemPrompt(String instructions, List<AgentTool> tools, int maxSteps);
 
   /// The model's next turn. [allowTools] false: it must answer.
-  /// [onPartial] hears the answer as it is written.
+  /// [onPartial] hears the answer as it is written. [brief]: a short
+  /// side task (a plan, a check) the model needn't think long about.
   Future<AgentReply> next(
     List<Map<String, dynamic>> messages,
     List<AgentTool> tools, {
     required bool allowTools,
     void Function(String visible)? onPartial,
+    bool brief = false,
   });
 }
 
@@ -118,6 +120,7 @@ The result comes back in <tool_response>. Use one tool at a time, at most $maxSt
     List<AgentTool> tools, {
     required bool allowTools,
     void Function(String visible)? onPartial,
+    bool brief = false,
   }) async {
     final useTools = allowTools && tools.isNotEmpty;
     final buffer = StringBuffer();
@@ -153,8 +156,12 @@ class NativeAgentBackend implements AgentBackend {
   final TextAgentBackend? fallback;
   bool _useFallback = false;
 
+  /// The server is llama.cpp's: brief tasks can switch the model's
+  /// thinking off (models that think spend their whole budget on it).
+  final bool llamaCpp;
+
   NativeAgentBackend(this.client,
-      {this.temperature, this.maxTokens, this.fallback});
+      {this.temperature, this.maxTokens, this.fallback, this.llamaCpp = false});
 
   @override
   bool get native => !_useFallback;
@@ -176,10 +183,11 @@ You have tools: use them whenever they make the answer more accurate, several at
     List<AgentTool> tools, {
     required bool allowTools,
     void Function(String visible)? onPartial,
+    bool brief = false,
   }) async {
     if (_useFallback && fallback != null) {
       return fallback!.next(messages, tools,
-          allowTools: allowTools, onPartial: onPartial);
+          allowTools: allowTools, onPartial: onPartial, brief: brief);
     }
     final useTools = allowTools && tools.isNotEmpty;
     final text = StringBuffer();
@@ -194,6 +202,11 @@ You have tools: use them whenever they make the answer more accurate, several at
           : const [],
       temperature: temperature,
       maxTokens: maxTokens,
+      extra: brief && llamaCpp
+          ? const {
+              'chat_template_kwargs': {'enable_thinking': false},
+            }
+          : const {},
       onText: (t) {
         text.write(t);
         onPartial?.call(ToolCallParser.withoutThinking(text.toString()).trimRight());
@@ -205,8 +218,8 @@ You have tools: use them whenever they make the answer more accurate, several at
           fallback != null &&
           RegExp(r'tool|function', caseSensitive: false).hasMatch(reply.error!)) {
         _useFallback = true;
-        return fallback!
-            .next(messages, tools, allowTools: allowTools, onPartial: onPartial);
+        return fallback!.next(messages, tools,
+            allowTools: allowTools, onPartial: onPartial, brief: brief);
       }
       return AgentReply('', error: reply.error);
     }
@@ -342,7 +355,7 @@ class AgentRunner {
         {'role': 'system', 'content': instructions},
         ...history,
         {'role': 'user', 'content': '$_planPrompt\n\nRequest:\n$question'},
-      ], tools, allowTools: false);
+      ], tools, allowTools: false, brief: true);
       final text = plan.text.trim();
       if (plan.error == null && text.isNotEmpty) {
         record(AgentStep(
@@ -398,7 +411,7 @@ class AgentRunner {
                 'Draft answer:\n$answer',
               ].join('\n\n'),
             },
-          ], tools, allowTools: false);
+          ], tools, allowTools: false, brief: true);
           final verdict = check.text.trim();
           if (check.error != null || verdict.isEmpty || verdict.startsWith('APPROVED')) {
             record(AgentStep(

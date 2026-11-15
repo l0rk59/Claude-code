@@ -1420,9 +1420,11 @@ class ChatController extends GetxController {
             defaultValue: 'local') ??
         'local') == 'local';
     OpenAiChatClient? Function()? factory;
+    var llamaCpp = false;
     if (local && Get.isRegistered<DesktopEngineService>()) {
       final engine = Get.find<DesktopEngineService>();
       if (engine.client() != null) factory = engine.client;
+      llamaCpp = true;
     } else if (!local && Get.find<CloudService>().agentClient() != null) {
       factory = Get.find<CloudService>().agentClient;
     }
@@ -1437,6 +1439,7 @@ class ChatController extends GetxController {
       temperature: _hive.getSetting<double>(AppConstants.keyTemperature),
       maxTokens: _hive.getSetting<int>(AppConstants.keyMaxTokens),
       fallback: text,
+      llamaCpp: llamaCpp,
     );
   }
 

@@ -147,14 +147,15 @@ void main() {
     final steps = <String>[];
     final run = await AgentRunner(
       backend: NativeAgentBackend(() => engine.client()!,
-          temperature: 0.2, maxTokens: 800),
+          temperature: 0.2, maxTokens: 800, llamaCpp: true),
       tools: toolbox().tools([AgentToolbox.calculator]),
       maxSteps: 3,
       deep: true,
     ).run(
       instructions: 'You are an analyst. Use the calculator for calculations.',
       question: 'A train travels 120 km in 1.5 hours. What is its speed in km/h?',
-      onStep: (s) => steps.add('${s.kind.name}:${s.label}'),
+      onStep: (s) => steps.add('${s.kind.name}:${s.label}'
+          '${s.kind == AgentStepKind.plan ? ' ${s.result.replaceAll('\n', ' / ')}' : ''}'),
     );
     print('[real] deep steps: $steps');
     print('[real] deep answer: ${run.answer}');
