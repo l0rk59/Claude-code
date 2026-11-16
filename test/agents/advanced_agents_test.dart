@@ -84,7 +84,10 @@ AgentToolbox box({
     AgentToolbox(
       searchWeb: searchWeb ??
           (q) async => [
-                WebResult(title: 'Result for $q', url: 'https://ex.com/$q', snippet: 'About $q'),
+                WebResult(
+                    title: 'Result for $q',
+                    url: 'https://ex.com/$q',
+                    snippet: 'About $q'),
               ],
       fetchPage: (url) async => 'Page $url',
       searchDocs: (q) => const [],
@@ -109,8 +112,14 @@ void main() {
         {
           'text': 'Je cherche les deux.',
           'calls': [
-            {'name': 'web_search', 'arguments': {'query': 'paris'}},
-            {'name': 'calculator', 'arguments': {'expression': '6*7'}},
+            {
+              'name': 'web_search',
+              'arguments': {'query': 'paris'}
+            },
+            {
+              'name': 'calculator',
+              'arguments': {'expression': '6*7'}
+            },
           ],
         },
         {'text': 'Paris [1], et 6×7 = 42.'},
@@ -120,7 +129,8 @@ void main() {
       final tools = box();
       final activities = <String>[];
       final run = await AgentRunner(
-        backend: NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
+        backend:
+            NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
         tools: tools.tools([AgentToolbox.webSearch, AgentToolbox.calculator]),
       ).run(
         instructions: 'You research.',
@@ -144,7 +154,8 @@ void main() {
       // The second request carries the calls and both results.
       final messages = server.requests[1]['messages'] as List;
       final assistant = messages.firstWhere((m) => m['role'] == 'assistant');
-      expect((assistant['tool_calls'] as List).map((c) => c['id']), ['c0', 'c1']);
+      expect(
+          (assistant['tool_calls'] as List).map((c) => c['id']), ['c0', 'c1']);
       final results = messages.where((m) => m['role'] == 'tool').toList();
       expect(results.map((m) => m['tool_call_id']), ['c0', 'c1']);
       expect(results[1]['content'], '6*7 = 42');
@@ -154,8 +165,8 @@ void main() {
 
     test('a server that refuses tools: the run carries on through text',
         () async {
-      final server = FakeToolServer([], errorStatus: 400,
-          errorMessage: 'This model does not support tools');
+      final server = FakeToolServer([],
+          errorStatus: 400, errorMessage: 'This model does not support tools');
       await server.start();
       addTearDown(server.stop);
       final text = ScriptedModel([
@@ -179,13 +190,17 @@ void main() {
 
     test('a model that writes its call as text is understood too', () async {
       final server = FakeToolServer([
-        {'text': '<tool_call>{"name": "calculator", "arguments": {"expression": "1+1"}}</tool_call>'},
+        {
+          'text':
+              '<tool_call>{"name": "calculator", "arguments": {"expression": "1+1"}}</tool_call>'
+        },
         {'text': '2.'},
       ]);
       await server.start();
       addTearDown(server.stop);
       final run = await AgentRunner(
-        backend: NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
+        backend:
+            NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
         tools: box().tools([AgentToolbox.calculator]),
       ).run(instructions: 'x', question: '1+1');
       expect(run.answer, '2.');
@@ -265,7 +280,8 @@ void main() {
     ).run(instructions: 'x', question: 'x');
     expect(run.answer, 'Fini.');
     expect(searches, 1);
-    expect(model.calls[2].last['content'], contains('You already did exactly this'));
+    expect(model.calls[2].last['content'],
+        contains('You already did exactly this'));
   });
 
   test('old tool results are shortened past the context budget', () async {
@@ -336,13 +352,18 @@ void main() {
         ]))
           t.name: t,
       };
-      expect(await tools['write_file']!.run({'path': 'notes/plan.md', 'content': '# Plan'}),
+      expect(
+          await tools['write_file']!
+              .run({'path': 'notes/plan.md', 'content': '# Plan'}),
           'Wrote 6 characters to notes/plan.md.');
       expect(allowed.filesWritten, ['notes/plan.md']);
       expect(await tools['list_files']!.run({}), 'notes/');
-      expect(await tools['list_files']!.run({'path': 'notes'}), 'notes/plan.md (6 B)');
-      expect(await tools['read_file']!.run({'path': 'notes/plan.md'}), '# Plan');
-      await expectLater(tools['read_file']!.run({'path': '../x'}), throwsFormatException);
+      expect(await tools['list_files']!.run({'path': 'notes'}),
+          'notes/plan.md (6 B)');
+      expect(
+          await tools['read_file']!.run({'path': 'notes/plan.md'}), '# Plan');
+      await expectLater(
+          tools['read_file']!.run({'path': '../x'}), throwsFormatException);
     });
 
     test('a link pointing out of the folder is refused', () async {
@@ -353,6 +374,41 @@ void main() {
       final read = box(workspace: dir).tools([AgentToolbox.readFile]).single;
       await expectLater(read.run({'path': 'escape'}), throwsFormatException);
     }, skip: Platform.isWindows);
+
+    test('a linked folder pointing out is refused too, even for a new file',
+        () async {
+      final outside = await Directory.systemTemp.createTemp('outside');
+      addTearDown(() => outside.delete(recursive: true));
+      File('${outside.path}/secret.txt').writeAsStringSync('secret');
+      Link('${dir.path}/linked').createSync(outside.path);
+      final tools = {
+        for (final t in box(workspace: dir, allow: true)
+            .tools([AgentToolbox.readFile, AgentToolbox.writeFile]))
+          t.name: t,
+      };
+      await expectLater(tools['read_file']!.run({'path': 'linked/secret.txt'}),
+          throwsFormatException);
+      await expectLater(
+          tools['write_file']!
+              .run({'path': 'linked/new/planted.txt', 'content': 'x'}),
+          throwsFormatException);
+      expect(Directory('${outside.path}/new').existsSync(), isFalse);
+    }, skip: Platform.isWindows);
+
+    test('inside means inside, not a neighbour with a longer name', () {
+      expect(AgentToolbox.isInside('/w/work', '/w/work'), isTrue);
+      expect(AgentToolbox.isInside('/w/work/a.txt', '/w/work/'), isTrue);
+      expect(AgentToolbox.isInside('/w/work2/a.txt', '/w/work'), isFalse);
+      expect(
+          AgentToolbox.isInside(r'C:\Users\Me\Work\a.txt', r'c:\users\me\work',
+              windows: true, separator: r'\'),
+          isTrue);
+      expect(
+          AgentToolbox.isInside(r'C:\Users\Me\Work2', r'C:\Users\Me\Work',
+              windows: true, separator: r'\'),
+          isFalse);
+      expect(AgentToolbox.safeRelative('notes.txt:hidden'), isNull);
+    });
 
     test('runs Python once allowed, in the folder, and stops it when too long',
         () async {
@@ -383,18 +439,18 @@ void main() {
 
     test('tools missing what they need are not offered', () {
       final none = box();
-      expect(
-          none.tools(AgentToolbox.all).map((t) => t.name),
-          [
-            AgentToolbox.webSearch,
-            AgentToolbox.readPage,
-            AgentToolbox.searchDocuments,
-            AgentToolbox.calculator,
-            AgentToolbox.dateTime,
-          ]);
+      expect(none.tools(AgentToolbox.all).map((t) => t.name), [
+        AgentToolbox.webSearch,
+        AgentToolbox.readPage,
+        AgentToolbox.searchDocuments,
+        AgentToolbox.calculator,
+        AgentToolbox.dateTime,
+      ]);
       // Python needs a program and a folder.
       expect(box(workspace: dir).isAvailable(AgentToolbox.runPython), isFalse);
-      expect(box(workspace: dir, python: 'python3').isAvailable(AgentToolbox.runPython),
+      expect(
+          box(workspace: dir, python: 'python3')
+              .isAvailable(AgentToolbox.runPython),
           isTrue);
     });
   });
@@ -414,11 +470,18 @@ void main() {
   });
 
   test('recognises an assistant written loosely', () {
-    const names = ['Chercheur', 'Analyste', 'Chef de projet', 'Chercheur approfondi'];
+    const names = [
+      'Chercheur',
+      'Analyste',
+      'Chef de projet',
+      'Chercheur approfondi'
+    ];
     expect(AgentToolbox.matchAssistant('analyste', names), 'Analyste');
     expect(AgentToolbox.matchAssistant('Analyst', names), 'Analyste');
-    expect(AgentToolbox.matchAssistant('chef de projet', names), 'Chef de projet');
-    expect(AgentToolbox.matchAssistant('ChefDeProjet', names), 'Chef de projet');
+    expect(
+        AgentToolbox.matchAssistant('chef de projet', names), 'Chef de projet');
+    expect(
+        AgentToolbox.matchAssistant('ChefDeProjet', names), 'Chef de projet');
     expect(AgentToolbox.matchAssistant('Chercheur', names), 'Chercheur');
     // Two assistants start the same way: not guessed.
     expect(AgentToolbox.matchAssistant('Cherch', names), isNull);
@@ -440,13 +503,18 @@ void main() {
         contains('Unknown assistant'));
   });
 
-  test('a manager delegates two tasks at once through native calls',
-      () async {
+  test('a manager delegates two tasks at once through native calls', () async {
     final server = FakeToolServer([
       {
         'calls': [
-          {'name': 'ask_assistant', 'arguments': {'assistant': 'Researcher', 'task': 'A'}},
-          {'name': 'ask_assistant', 'arguments': {'assistant': 'Analyst', 'task': 'B'}},
+          {
+            'name': 'ask_assistant',
+            'arguments': {'assistant': 'Researcher', 'task': 'A'}
+          },
+          {
+            'name': 'ask_assistant',
+            'arguments': {'assistant': 'Analyst', 'task': 'B'}
+          },
         ],
       },
       {'text': 'Synthèse : A et B.'},
@@ -463,12 +531,14 @@ void main() {
       return '$name: $task fait';
     });
     final run = await AgentRunner(
-      backend: NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
+      backend:
+          NativeAgentBackend(() => OpenAiChatClient(baseUrl: server.baseUrl)),
       tools: tools.tools([AgentToolbox.askAssistant]),
     ).run(instructions: 'You lead.', question: 'A et B');
     expect(run.answer, 'Synthèse : A et B.');
     expect(concurrent, 2, reason: 'the two assistants work at the same time');
-    expect(run.steps.map((s) => s.result), ['Researcher: A fait', 'Analyst: B fait']);
+    expect(run.steps.map((s) => s.result),
+        ['Researcher: A fait', 'Analyst: B fait']);
   });
 
   group('profiles', () {
@@ -477,15 +547,20 @@ void main() {
       expect(byId['builtin:manager']!.delegates, isTrue);
       expect(byId['builtin:manager']!.deep, isTrue);
       expect(byId['builtin:deep_researcher']!.deep, isTrue);
-      expect(byId['builtin:programmer']!.tools, contains(AgentToolbox.runPython));
+      expect(
+          byId['builtin:programmer']!.tools, contains(AgentToolbox.runPython));
       expect(byId['builtin:files']!.tools, contains(AgentToolbox.writeFile));
       expect(byId['builtin:researcher']!.deep, isFalse);
     });
 
     test('deep mode is saved with the assistant', () {
       const a = AgentProfile(
-          id: 'agent:1', name: 'N', description: 'D', instructions: 'I',
-          tools: [AgentToolbox.runPython, 'unknown'], deep: true);
+          id: 'agent:1',
+          name: 'N',
+          description: 'D',
+          instructions: 'I',
+          tools: [AgentToolbox.runPython, 'unknown'],
+          deep: true);
       final back = AgentProfile.fromMap(a.toMap());
       expect(back.deep, isTrue);
       expect(back.tools, [AgentToolbox.runPython]);
@@ -498,13 +573,15 @@ void main() {
       AgentStep(label: 'PLAN', result: '1. A\n2. B', kind: AgentStepKind.plan),
       AgentStep(agent: 'Researcher', label: 'Searching the web: “x”'),
       AgentStep(label: 'Asking Researcher'),
-      AgentStep(label: 'MISSING', result: 'the date', kind: AgentStepKind.verify),
+      AgentStep(
+          label: 'MISSING', result: 'the date', kind: AgentStepKind.verify),
       AgentStep(label: 'APPROVED', kind: AgentStepKind.verify),
     ]);
     expect(text, contains('**Plan**\n> 1. A\n> 2. B'));
     expect(text, contains('1. **Researcher** · Searching the web: “x”'));
     expect(text, contains('2. Asking Researcher'));
-    expect(text, contains('↻ Check: something is missing, more research\n> the date'));
+    expect(text,
+        contains('↻ Check: something is missing, more research\n> the date'));
     expect(text, contains('✓ Answer checked'));
   });
 }

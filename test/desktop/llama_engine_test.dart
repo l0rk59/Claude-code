@@ -123,6 +123,20 @@ Available devices:
           LlamaEngine.failureReason(
               ['llama_model_load: error loading model: failed to load model']),
           contains("couldn't be read"));
+      // The normal start log mentions binding: not a port problem.
+      expect(
+          LlamaEngine.failureReason([
+            'main: binding port with default address family',
+            'main: HTTP server is listening, hostname: 127.0.0.1, port: 41234',
+            'llama_model_load: error loading model: failed to load model',
+          ]),
+          contains("couldn't be read"));
+      expect(
+          LlamaEngine.failureReason([
+            'main: binding port with default address family',
+            'segmentation fault',
+          ]),
+          'segmentation fault');
       expect(LlamaEngine.failureReason(['', 'last words', '']), 'last words');
     });
   });

@@ -60,9 +60,8 @@ class AgentTool {
 
   /// How the tool is presented to the model.
   String get signature {
-    final args = parameters.entries
-        .map((e) => '"${e.key}": ${e.value}')
-        .join(', ');
+    final args =
+        parameters.entries.map((e) => '"${e.key}": ${e.value}').join(', ');
     return '- $name: $description Arguments: {$args}';
   }
 }
@@ -217,8 +216,8 @@ class AgentToolbox {
             description:
                 'Searches the web. Use it for recent facts, prices, news, or anything you are unsure of.',
             parameters: {'query': 'the search, a few words'},
-            label: (a) =>
-                'Searching the web: “@query”'.trParams({'query': _arg(a, 'query')}),
+            label: (a) => 'Searching the web: “@query”'
+                .trParams({'query': _arg(a, 'query')}),
             run: (a) async {
               final query = _arg(a, 'query');
               if (query.isEmpty) throw const FormatException('No query');
@@ -279,8 +278,13 @@ class AgentToolbox {
             run: (_) async {
               final t = now();
               const days = [
-                'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-                'Saturday', 'Sunday'
+                'Monday',
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+                'Saturday',
+                'Sunday'
               ];
               String two(int n) => n.toString().padLeft(2, '0');
               return '${days[t.weekday - 1]} ${t.year}-${two(t.month)}-${two(t.day)} '
@@ -292,7 +296,8 @@ class AgentToolbox {
             description:
                 'Saves a lasting fact about the user (a preference, their situation) for future conversations. The user is asked first. Only for facts they would want remembered.',
             parameters: {'fact': 'the fact, one short sentence'},
-            label: (a) => 'Remembering: “@fact”'.trParams({'fact': _arg(a, 'fact')}),
+            label: (a) =>
+                'Remembering: “@fact”'.trParams({'fact': _arg(a, 'fact')}),
             run: (a) async {
               final fact = _arg(a, 'fact');
               if (fact.isEmpty) throw const FormatException('No fact');
@@ -307,7 +312,9 @@ class AgentToolbox {
             name: listFiles,
             description:
                 'Lists the files of the work folder (or of a sub-folder), with their sizes.',
-            parameters: {'path': 'a sub-folder, or leave empty for the work folder'},
+            parameters: {
+              'path': 'a sub-folder, or leave empty for the work folder'
+            },
             optional: const {'path'},
             label: (a) => 'Looking at the files'.tr,
             run: (a) async {
@@ -318,7 +325,8 @@ class AgentToolbox {
               await for (final e in dir.list(followLinks: false)) {
                 final rel = e.path.substring(root.length).replaceAll('\\', '/');
                 final name = rel.startsWith('/') ? rel.substring(1) : rel;
-                if (name.split('/').any((p) => p.startsWith('.privatelm'))) continue;
+                if (name.split('/').any((p) => p.startsWith('.privatelm')))
+                  continue;
                 if (e is Directory) {
                   lines.add('$name/');
                 } else if (e is File) {
@@ -327,7 +335,9 @@ class AgentToolbox {
                 if (lines.length >= 200) break;
               }
               lines.sort();
-              return lines.isEmpty ? 'The folder is empty.' : _cut(lines.join('\n'));
+              return lines.isEmpty
+                  ? 'The folder is empty.'
+                  : _cut(lines.join('\n'));
             },
           ),
         readFile => AgentTool(
@@ -339,14 +349,18 @@ class AgentToolbox {
             run: (a) async {
               final file = File(await _resolve(_arg(a, 'path')));
               if (!await file.exists()) return 'No such file.';
-              final ext = file.path.contains('.') ? file.path.split('.').last.toLowerCase() : '';
+              final ext = file.path.contains('.')
+                  ? file.path.split('.').last.toLowerCase()
+                  : '';
               if (const ['pdf', 'docx', 'xlsx', 'pptx', 'odt'].contains(ext)) {
-                return _cut(await DocumentExtractorService.extractText(file.path, ext));
+                return _cut(
+                    await DocumentExtractorService.extractText(file.path, ext));
               }
               if (await file.length() > 2 * 1024 * 1024) {
                 return 'The file is too big to read (over 2 MB).';
               }
-              return _cut(utf8.decode(await file.readAsBytes(), allowMalformed: true));
+              return _cut(
+                  utf8.decode(await file.readAsBytes(), allowMalformed: true));
             },
           ),
         writeFile => AgentTool(
@@ -354,7 +368,8 @@ class AgentToolbox {
             description:
                 'Writes a text file (Markdown, CSV, code…) in the work folder, replacing it if it exists. The user is asked first.',
             parameters: {
-              'path': 'the file, relative to the work folder, e.g. "notes/plan.md"',
+              'path':
+                  'the file, relative to the work folder, e.g. "notes/plan.md"',
               'content': 'the whole text of the file',
             },
             label: (a) => 'Writing @file'.trParams({'file': _arg(a, 'path')}),
@@ -368,7 +383,9 @@ class AgentToolbox {
                 exists
                     ? 'Replace @file?'.trParams({'file': rel})
                     : 'Write @file?'.trParams({'file': rel}),
-                content.length > 4000 ? '${content.substring(0, 4000)}\n…' : content,
+                content.length > 4000
+                    ? '${content.substring(0, 4000)}\n…'
+                    : content,
               );
               if (!ok) return 'The user declined: the file was not written.';
               final file = File(path);
@@ -382,7 +399,9 @@ class AgentToolbox {
             name: runPython,
             description:
                 'Runs a Python 3 program on this computer, in the work folder, and returns what it prints (standard library only). Use it for exact computations, data analysis, or to check work. The user is asked first.',
-            parameters: {'code': 'the whole Python program; print() what you need'},
+            parameters: {
+              'code': 'the whole Python program; print() what you need'
+            },
             label: (a) => 'Running Python'.tr,
             run: (a) async {
               final code = '${a['code'] ?? ''}';
@@ -464,23 +483,49 @@ class AgentToolbox {
     final root = await workspace!();
     await root.create(recursive: true);
     final path = rel.isEmpty ? root.path : '${root.path}/$rel';
-    // A link inside the folder must not lead outside it.
-    final type = await FileSystemEntity.type(path, followLinks: false);
-    if (type == FileSystemEntityType.link) {
-      final real = await Link(path).resolveSymbolicLinks();
-      final rootReal = await root.resolveSymbolicLinks();
-      if (!real.startsWith(rootReal)) {
-        throw const FormatException('This link leads outside the work folder');
-      }
+    // Links anywhere along the path (a linked folder too, not only a
+    // linked file) must not lead outside: the deepest part that exists,
+    // every link followed, has to be inside the folder.
+    var probe = path;
+    while (await FileSystemEntity.type(probe, followLinks: false) ==
+        FileSystemEntityType.notFound) {
+      final parent = File(probe).parent.path;
+      if (parent == probe) break;
+      probe = parent;
+    }
+    final real = await File(probe).resolveSymbolicLinks();
+    final rootReal = await root.resolveSymbolicLinks();
+    if (!isInside(real, rootReal)) {
+      throw const FormatException('This link leads outside the work folder');
     }
     return path;
+  }
+
+  /// Whether [path] is [root] or inside it ("/work2" is not inside "/work";
+  /// Windows paths compare whatever their case).
+  static bool isInside(String path, String root,
+      {bool windows = false, String? separator}) {
+    windows = windows || Platform.isWindows;
+    final sep = separator ?? Platform.pathSeparator;
+    String norm(String p) {
+      var n = windows ? p.replaceAll('/', r'\').toLowerCase() : p;
+      while (n.length > 1 && n.endsWith(sep)) {
+        n = n.substring(0, n.length - 1);
+      }
+      return n;
+    }
+
+    final p = norm(path), r = norm(root);
+    return p == r || p.startsWith('$r$sep');
   }
 
   /// A path the model wrote, made relative and checked: null when it is
   /// absolute or climbs out with "..".
   static String? safeRelative(String input) {
     final p = input.trim().replaceAll('\\', '/');
-    if (p.startsWith('/') || RegExp(r'^[A-Za-z]:').hasMatch(p) || p.startsWith('~')) {
+    // A colon would be a drive ("C:") or, on Windows, a hidden stream of a
+    // file ("notes.txt:x").
+    if (p.startsWith('/') || p.contains(':') || p.startsWith('~')) {
       return null;
     }
     final parts = <String>[];
@@ -550,12 +595,14 @@ class AgentToolbox {
   /// devices.
   static Future<String> readWebPage(String url, {http.Client? client}) async {
     final uri = Uri.tryParse(url.trim());
-    if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') ||
+    if (uri == null ||
+        !(uri.scheme == 'http' || uri.scheme == 'https') ||
         uri.host.isEmpty) {
       throw const FormatException('Not a web address');
     }
     if (LanServerFinder.isLocal(uri.toString())) {
-      throw const FormatException('Addresses of the local network are not read');
+      throw const FormatException(
+          'Addresses of the local network are not read');
     }
     final c = client ?? http.Client();
     try {
@@ -579,12 +626,14 @@ class AgentToolbox {
   /// The readable text of an HTML page: its title, then its text without
   /// scripts, styles, menus or footers.
   static String pageText(String html) {
-    final title = RegExp(r'<title[^>]*>([\s\S]*?)</title>', caseSensitive: false)
-            .firstMatch(html)?[1] ??
-        '';
+    final title =
+        RegExp(r'<title[^>]*>([\s\S]*?)</title>', caseSensitive: false)
+                .firstMatch(html)?[1] ??
+            '';
     var text = html
         .replaceAll(
-            RegExp(r'<(head|title|script|style|noscript|svg|nav|header|footer|form|aside)\b[\s\S]*?</\1>',
+            RegExp(
+                r'<(head|title|script|style|noscript|svg|nav|header|footer|form|aside)\b[\s\S]*?</\1>',
                 caseSensitive: false),
             ' ')
         .replaceAll(RegExp(r'<!--[\s\S]*?-->'), ' ')

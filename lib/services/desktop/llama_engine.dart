@@ -116,7 +116,10 @@ abstract final class LlamaEngine {
               'smaller context, or the processor only.'
           .tr;
     }
-    if (RegExp(r'address already in use|bind', caseSensitive: false)
+    // Not just "bind": every start logs "binding port with default address
+    // family", so a model that fails to load would read as a port problem.
+    if (RegExp(r"address already in use|(couldn't|could not|failed to) bind",
+            caseSensitive: false)
         .hasMatch(text)) {
       return 'The network port is already used by another program.'.tr;
     }
