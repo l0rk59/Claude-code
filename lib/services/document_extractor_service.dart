@@ -5,6 +5,8 @@ import 'package:archive/archive.dart';
 import 'package:xml/xml.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
+import '../utils/text_decoding.dart';
+
 /// Extracts plain text from document files (PDF, DOCX) so they can be
 /// fed into local or cloud LLMs as context.
 class DocumentExtractorService {
@@ -29,8 +31,10 @@ class DocumentExtractorService {
       case 'js':
       case 'ts':
       case 'py':
-        final bytes = await File(path).readAsBytes();
-        return utf8.decode(bytes, allowMalformed: true);
+        return decodeText(await File(path).readAsBytes());
+      case 'html':
+      case 'htm':
+        return htmlText(decodeText(await File(path).readAsBytes()));
       default:
         throw UnsupportedError(
           'Document extraction not supported for .$extension files',
@@ -57,7 +61,8 @@ class DocumentExtractorService {
 
     final documentFile = archive.files.firstWhere(
       (f) => f.name == 'word/document.xml',
-      orElse: () => throw Exception('Invalid DOCX: word/document.xml not found'),
+      orElse: () =>
+          throw Exception('Invalid DOCX: word/document.xml not found'),
     );
 
     final xmlString = utf8.decode(documentFile.content as List<int>);

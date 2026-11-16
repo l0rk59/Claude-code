@@ -9,6 +9,7 @@ import '../document_extractor_service.dart';
 import '../document_library.dart';
 import '../lan_server_finder.dart';
 import '../web_search_service.dart';
+import '../../utils/text_decoding.dart';
 import 'calculator.dart';
 
 /// Something an agent can do. Tools that read are free to use; tools that
@@ -344,7 +345,7 @@ class AgentToolbox {
         readFile => AgentTool(
             name: readFile,
             description:
-                'Reads a file of the work folder: text, code, CSV, JSON, Markdown, PDF or Word.',
+                'Reads a file of the work folder: text, code, CSV, JSON, Markdown, HTML, PDF or Word (.docx).',
             parameters: {'path': 'the file, relative to the work folder'},
             label: (a) => 'Reading @file'.trParams({'file': _arg(a, 'path')}),
             run: (a) async {
@@ -353,15 +354,19 @@ class AgentToolbox {
               final ext = file.path.contains('.')
                   ? file.path.split('.').last.toLowerCase()
                   : '';
-              if (const ['pdf', 'docx', 'xlsx', 'pptx', 'odt'].contains(ext)) {
+              if (const ['pdf', 'docx', 'html', 'htm'].contains(ext)) {
                 return _cut(
                     await DocumentExtractorService.extractText(file.path, ext));
+              }
+              if (const ['xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'doc']
+                  .contains(ext)) {
+                return 'This type of file cannot be read. Ask the user to '
+                    'save it as CSV (tables) or PDF.';
               }
               if (await file.length() > 2 * 1024 * 1024) {
                 return 'The file is too big to read (over 2 MB).';
               }
-              return _cut(
-                  utf8.decode(await file.readAsBytes(), allowMalformed: true));
+              return _cut(decodeText(await file.readAsBytes()));
             },
           ),
         writeFile => AgentTool(
@@ -620,7 +625,7 @@ class AgentToolbox {
         throw HttpExceptionText('The page answered ${response.statusCode}');
       }
       final type = response.headers['content-type'] ?? '';
-      final body = utf8.decode(response.bodyBytes, allowMalformed: true);
+      final body = decodeText(response.bodyBytes);
       if (!type.contains('html')) return body;
       return pageText(body);
     } finally {
@@ -630,43 +635,7 @@ class AgentToolbox {
 
   /// The readable text of an HTML page: its title, then its text without
   /// scripts, styles, menus or footers.
-  static String pageText(String html) {
-    final title =
-        RegExp(r'<title[^>]*>([\s\S]*?)</title>', caseSensitive: false)
-                .firstMatch(html)?[1] ??
-            '';
-    var text = html
-        .replaceAll(
-            RegExp(
-                r'<(head|title|script|style|noscript|svg|nav|header|footer|form|aside)\b[\s\S]*?</\1>',
-                caseSensitive: false),
-            ' ')
-        .replaceAll(RegExp(r'<!--[\s\S]*?-->'), ' ')
-        .replaceAll(
-            RegExp(r'<(br|p|div|li|h[1-6]|tr|section|article)\b[^>]*>',
-                caseSensitive: false),
-            '\n')
-        .replaceAll(RegExp(r'<[^>]+>'), ' ');
-    text = _entities(text)
-        .replaceAll(RegExp(r'[ \t ]+'), ' ')
-        .replaceAll(RegExp(r'\s*\n\s*'), '\n')
-        .replaceAll(RegExp(r'\n{2,}'), '\n')
-        .trim();
-    final heading = _entities(title).replaceAll(RegExp(r'\s+'), ' ').trim();
-    return heading.isEmpty ? text : '$heading\n\n$text';
-  }
-
-  static String _entities(String s) => s
-      .replaceAll('&nbsp;', ' ')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&#39;', "'")
-      .replaceAll('&#x27;', "'")
-      .replaceAll('&rsquo;', '’')
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAllMapped(RegExp(r'&#(\d+);'),
-          (m) => String.fromCharCode(int.tryParse(m[1]!) ?? 32));
+  static String pageText(String html) => htmlText(html);
 }
 
 /// A failure to show the model as text.
