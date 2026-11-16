@@ -325,8 +325,9 @@ class AgentToolbox {
               await for (final e in dir.list(followLinks: false)) {
                 final rel = e.path.substring(root.length).replaceAll('\\', '/');
                 final name = rel.startsWith('/') ? rel.substring(1) : rel;
-                if (name.split('/').any((p) => p.startsWith('.privatelm')))
+                if (name.split('/').any((p) => p.startsWith('.privatelm'))) {
                   continue;
+                }
                 if (e is Directory) {
                   lines.add('$name/');
                 } else if (e is File) {
