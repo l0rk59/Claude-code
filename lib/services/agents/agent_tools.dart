@@ -413,10 +413,35 @@ class AgentToolbox {
         _ => throw ArgumentError('Unknown tool $name'),
       };
 
-  /// The assistant [args] name, as listed (the model may change its case).
-  String? _knownAssistant(Map<String, dynamic> args) {
-    final name = _arg(args, 'assistant').toLowerCase();
-    return assistants.keys.where((k) => k.toLowerCase() == name).firstOrNull;
+  /// The assistant [args] name, as listed. Models change the case, drop
+  /// accents or write a near form ("Analyst" for "Analyste"): those are
+  /// recognised when they point to one assistant only.
+  String? _knownAssistant(Map<String, dynamic> args) =>
+      matchAssistant(_arg(args, 'assistant'), assistants.keys);
+
+  static String _fold(String s) {
+    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüýÿœæ';
+    const to = 'aaaaaaceeeeiiiinooooouuuuyyoa';
+    final lower = s.toLowerCase();
+    final out = StringBuffer();
+    for (final ch in lower.split('')) {
+      final i = from.indexOf(ch);
+      out.write(i >= 0 ? to[i] : ch);
+    }
+    return out.toString().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  static String? matchAssistant(String name, Iterable<String> names) {
+    final wanted = _fold(name);
+    if (wanted.isEmpty) return null;
+    final exact = names.where((n) => _fold(n) == wanted).toList();
+    if (exact.length == 1) return exact.single;
+    if (wanted.length < 4) return null;
+    final near = names.where((n) {
+      final f = _fold(n);
+      return f.length >= 4 && (f.startsWith(wanted) || wanted.startsWith(f));
+    }).toList();
+    return near.length == 1 ? near.single : null;
   }
 
   String _assistantName(Map<String, dynamic> args) =>

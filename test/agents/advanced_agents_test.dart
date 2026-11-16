@@ -413,6 +413,19 @@ void main() {
     expect(remembered, ['Végétarien']);
   });
 
+  test('recognises an assistant written loosely', () {
+    const names = ['Chercheur', 'Analyste', 'Chef de projet', 'Chercheur approfondi'];
+    expect(AgentToolbox.matchAssistant('analyste', names), 'Analyste');
+    expect(AgentToolbox.matchAssistant('Analyst', names), 'Analyste');
+    expect(AgentToolbox.matchAssistant('chef de projet', names), 'Chef de projet');
+    expect(AgentToolbox.matchAssistant('ChefDeProjet', names), 'Chef de projet');
+    expect(AgentToolbox.matchAssistant('Chercheur', names), 'Chercheur');
+    // Two assistants start the same way: not guessed.
+    expect(AgentToolbox.matchAssistant('Cherch', names), isNull);
+    expect(AgentToolbox.matchAssistant('', names), isNull);
+    expect(AgentToolbox.matchAssistant('Pilote', names), isNull);
+  });
+
   test('hands a task to another assistant by its name', () async {
     final asked = <(String, String)>[];
     final tool = box(delegate: (name, task) async {

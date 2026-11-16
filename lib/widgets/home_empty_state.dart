@@ -99,6 +99,21 @@ class _Greeting extends StatelessWidget {
     return 'Good evening,'.tr;
   }
 
+  /// "Good evening, / what's on your mind?"; after a question ("Up
+  /// late?") the second line starts with a capital.
+  String _greeting() {
+    final salutation = _salutation;
+    final text =
+        "@salutation\nwhat's on your mind?".trParams({'salutation': salutation});
+    final i = text.indexOf('\n');
+    if (!salutation.trimRight().endsWith('?') || i < 0 || i + 1 >= text.length) {
+      return text;
+    }
+    return text.substring(0, i + 1) +
+        text[i + 1].toUpperCase() +
+        text.substring(i + 2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
@@ -121,8 +136,7 @@ class _Greeting extends StatelessWidget {
         const SizedBox(height: 12),
       ],
       Text(
-        "@salutation\nwhat's on your mind?"
-            .trParams({'salutation': _salutation}),
+        _greeting(),
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
           fontSize: compact ? 24 : 28,
