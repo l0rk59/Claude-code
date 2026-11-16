@@ -145,6 +145,7 @@ la carte graphique.
 | 7.10 | Entrée envoie, Maj+Entrée va à la ligne, clic droit sur une discussion la supprime | Comme décrit |
 | 7.11 | Sur un Mac : ouvrir `PrivateLM.app` (clic droit > Ouvrir la première fois), charger un modèle | Le moteur Metal s'installe ; le message dit GPU |
 | 7.12 | **Paramètres > À propos > Mises à jour** | « Version 1.1.0 » ; toucher vérifie s'il y a plus récent |
+| 7.13 | Forcer la fermeture de PrivateLM (Gestionnaire des tâches > Fin de tâche) pendant qu'un modèle est chargé, puis relancer et recharger | Le `llama-server` resté en mémoire est arrêté au lancement ; le modèle se recharge sans erreur de port ni de mémoire |
 
 ## Ce qu'il est le plus utile de me renvoyer
 

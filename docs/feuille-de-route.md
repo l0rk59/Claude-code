@@ -59,7 +59,19 @@ français, en largeur ordinateur et téléphone) :
   question (les petits modèles répondaient parfois en anglais) et s'appelle
   PrivateLM ; l'écran ne l'affiche plus « Personnalisé » à tort ;
 - le test des traductions refuse désormais une forme d'écriture qui lui avait
-  caché un texte resté en anglais.
+  caché un texte resté en anglais ;
+- **sécurité des agents** : un dossier lié (lien symbolique) placé dans le
+  dossier de travail permettait de lire ou d'écrire en dehors ; c'est
+  refusé, comme un dossier voisin au nom plus long (`workspace2`) ;
+- **moteur de l'ordinateur** : un fichier de modèle abîmé était annoncé
+  « port réseau déjà utilisé » ; la vraie raison s'affiche ;
+- fenêtre « Charger le modèle » : mémoire en Go comme sur les cartes, sans
+  mention d'Android ni bouton « Redémarrer l'app » sur ordinateur ;
+- tous les nombres à virgule à la française (« 86,1 tok/s », température
+  « 0,30 ») ; tableaux des réponses dans la police du texte ; au survol de
+  la souris, le surlignage reste dans les coins arrondis ;
+- page Serveur et mode d'inférence : nom du modèle au lieu du fichier ; le
+  prompt système explique pourquoi il est en anglais.
 
 ## 3. Ce qui reste
 
