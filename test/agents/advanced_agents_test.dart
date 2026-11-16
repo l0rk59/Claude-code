@@ -423,7 +423,17 @@ void main() {
             'print(sum(int(r["b"]) for r in rows))',
       });
       expect(out, 'Finished.\n6');
+
       expect(asked.single.detail, contains('import csv'));
+
+      // Accents and emoji come back intact (Windows writes in its console
+      // code page otherwise, and stops on the emoji).
+      final unicode = await tool.run({
+        'code': 'print("Café crème ☕ 😀")\n'
+            'open("note.txt", "w").write("é")\n'
+            'print(open("note.txt", encoding="utf-8").read())',
+      });
+      expect(unicode, 'Finished.\nCafé crème ☕ 😀\né');
 
       final error = await tool.run({'code': 'raise ValueError("boom")'});
       expect(error, startsWith('Exit code 1.'));

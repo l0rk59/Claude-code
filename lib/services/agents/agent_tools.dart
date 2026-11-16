@@ -545,7 +545,11 @@ class AgentToolbox {
     final script = File('${dir.path}/agent.py');
     await script.writeAsString(code);
     try {
-      final process = await Process.start(python!, ['-I', script.path],
+      // -X utf8: on Windows Python otherwise writes in the console's code
+      // page (é garbled, an emoji stops the script); -I alone would ignore
+      // PYTHONUTF8.
+      final process = await Process.start(
+          python!, ['-I', '-X', 'utf8', script.path],
           workingDirectory: root.path);
       final out = StringBuffer();
       final err = StringBuffer();

@@ -15,6 +15,7 @@ on:
       - 'lib/services/desktop/**'
       - 'lib/services/agents/**'
       - 'lib/services/openai_chat_client.dart'
+      - 'test/agents/**'
 
 permissions:
   contents: read
@@ -65,3 +66,8 @@ jobs:
           root="$(pwd -W 2>/dev/null || pwd)"
           export PRIVATELM_REAL_ENGINE_MODEL="$root/test-model/qwen3.5-0.8b-q4_k_m.gguf"
           flutter test test/real_engine --reporter expanded
+
+      # The agents' own tests on this system too: work folder paths, Python
+      # (installed on GitHub's Windows and Linux machines).
+      - name: Agents on this system
+        run: flutter test test/agents --reporter expanded
