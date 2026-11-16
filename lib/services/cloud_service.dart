@@ -12,7 +12,8 @@ class CloudService extends GetxService {
   final HiveService _hive = Get.find<HiveService>();
 
   String get _provider =>
-      _hive.getSetting(AppConstants.keyCloudProvider, defaultValue: 'openrouter') ??
+      _hive.getSetting(AppConstants.keyCloudProvider,
+          defaultValue: 'openrouter') ??
       'openrouter';
 
   String get _apiKey {
@@ -83,12 +84,51 @@ class CloudService extends GetxService {
   // endpoint) leaves the chat loading forever.
   static const _connectTimeout = Duration(seconds: 30);
   static const _responseTimeout = Duration(seconds: 120);
+
   /// Max gap between streamed chunks. Not const so tests can shorten it.
   static Duration streamIdleTimeout = const Duration(seconds: 60);
 
+  /// A computer on the home network (another PrivateLM, llama-server,
+  /// Ollama…) may read a long message on its processor for minutes before
+  /// the first word: it gets far longer waits than an online provider.
+  static bool isLocalNetworkUrl(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
+    if (host.isEmpty) return false;
+    if (host == 'localhost' || host.endsWith('.local')) return true;
+    if (host.contains(':')) {
+      // IPv6: loopback, link-local, unique local.
+      return host == '::1' ||
+          host.startsWith('fe80:') ||
+          host.startsWith('fc') ||
+          host.startsWith('fd');
+    }
+    final p = host.split('.').map(int.tryParse).toList();
+    if (p.length != 4 || p.contains(null)) return false;
+    return p[0] == 10 ||
+        p[0] == 127 ||
+        (p[0] == 192 && p[1] == 168) ||
+        (p[0] == 172 && p[1]! >= 16 && p[1]! <= 31) ||
+        (p[0] == 169 && p[1] == 254);
+  }
+
+  bool get _onLocalNetwork =>
+      _provider == 'custom' && isLocalNetworkUrl(_openAICompatibleEndpoint);
+
+  Duration get _connectWait =>
+      _onLocalNetwork ? const Duration(minutes: 10) : _connectTimeout;
+
+  /// Max gap between streamed chunks from the home network. Not const so
+  /// tests can shorten it.
+  static Duration localNetworkIdleTimeout = const Duration(minutes: 5);
+
+  Duration get _idleWait =>
+      _onLocalNetwork ? localNetworkIdleTimeout : streamIdleTimeout;
+  Duration get _responseWait =>
+      _onLocalNetwork ? const Duration(minutes: 15) : _responseTimeout;
+
   Future<http.Response> _post(Uri url,
           {Map<String, String>? headers, Object? body}) =>
-      http.post(url, headers: headers, body: body).timeout(_responseTimeout);
+      http.post(url, headers: headers, body: body).timeout(_responseWait);
 
   /// Aborts the streaming response in progress, if any. Closing the client
   /// drops the connection, so the provider stops generating (and billing).
@@ -115,7 +155,8 @@ class CloudService extends GetxService {
 
     try {
       if (onToken != null && _provider == 'anthropic') {
-        return await _streamAnthropic(messages, imageBase64, maxTokens, onToken);
+        return await _streamAnthropic(
+            messages, imageBase64, maxTokens, onToken);
       }
       if (onToken != null && _supportsStreaming) {
         return await _streamOpenAICompatible(
@@ -182,6 +223,12 @@ class CloudService extends GetxService {
       apiKey: _apiKey,
       model: _model,
       headers: _openAICompatibleExtraHeaders,
+      connectTimeout: _onLocalNetwork
+          ? const Duration(minutes: 10)
+          : const Duration(seconds: 60),
+      idleTimeout: _onLocalNetwork
+          ? localNetworkIdleTimeout
+          : const Duration(seconds: 120),
     );
   }
 
@@ -325,10 +372,13 @@ class CloudService extends GetxService {
         continue;
       }
       // Claude refuses empty turns (an earlier error, an empty answer).
-      if (content.trim().isEmpty && !(imageBase64 != null && msg == messages.last)) {
+      if (content.trim().isEmpty &&
+          !(imageBase64 != null && msg == messages.last)) {
         continue;
       }
-      if (msg['role'] == 'user' && imageBase64 != null && msg == messages.last) {
+      if (msg['role'] == 'user' &&
+          imageBase64 != null &&
+          msg == messages.last) {
         apiMessages.add({
           'role': 'user',
           'content': [
@@ -402,8 +452,8 @@ class CloudService extends GetxService {
         'body': response.body
       });
     }
-    return anthropicText(jsonDecode(utf8.decode(response.bodyBytes))
-        as Map<String, dynamic>);
+    return anthropicText(
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
   /// Streams a Claude answer: text_delta events go to [onToken].
@@ -413,8 +463,10 @@ class CloudService extends GetxService {
     int? maxTokens,
     void Function(String token) onToken,
   ) async {
-    final request = http.Request('POST', Uri.parse(AppConstants.anthropicEndpoint));
-    request.headers.addAll({..._anthropicHeaders, 'Accept': 'text/event-stream'});
+    final request =
+        http.Request('POST', Uri.parse(AppConstants.anthropicEndpoint));
+    request.headers
+        .addAll({..._anthropicHeaders, 'Accept': 'text/event-stream'});
     request.body = jsonEncode(anthropicBody(
         model: _model,
         messages: messages,
@@ -427,8 +479,11 @@ class CloudService extends GetxService {
       final response = await client.send(request).timeout(_connectTimeout);
       if (response.statusCode != 200) {
         final body = await response.stream.bytesToString();
-        return 'ERROR: @provider returned @code — @body'.trParams(
-            {'provider': 'Anthropic', 'code': '${response.statusCode}', 'body': body});
+        return 'ERROR: @provider returned @code — @body'.trParams({
+          'provider': 'Anthropic',
+          'code': '${response.statusCode}',
+          'body': body
+        });
       }
       final buffer = StringBuffer();
       var stop = '';
@@ -773,19 +828,19 @@ class CloudService extends GetxService {
     final client = http.Client();
     _activeStreamClient = client;
     try {
-      final response = await client.send(request).timeout(_connectTimeout);
+      final response = await client.send(request).timeout(_connectWait);
       if (response.statusCode != 200) {
         final body = await response.stream.bytesToString();
         return 'ERROR: @provider returned @code — @body'.trParams({
-        'provider': providerLabel,
-        'code': '${response.statusCode}',
-        'body': body
-      });
+          'provider': providerLabel,
+          'code': '${response.statusCode}',
+          'body': body
+        });
       }
 
       final buffer = StringBuffer();
       final lines = response.stream
-          .timeout(streamIdleTimeout)
+          .timeout(_idleWait)
           .transform(utf8.decoder)
           .transform(const LineSplitter());
 

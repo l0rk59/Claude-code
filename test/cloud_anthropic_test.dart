@@ -31,8 +31,10 @@ void main() {
     expect(CloudService.claudeHasFallbacks('claude-fable-5-2'), isTrue);
     expect(CloudService.claudeHasFallbacks('claude-haiku-5-5'), isFalse);
     expect(CloudService.claudeHasFallbacks('claude-sonnet-4-6'), isFalse);
-    final body = CloudService.anthropicBody(
-        model: 'claude-haiku-5-5', messages: const [{'role': 'user', 'content': 'x'}]);
+    final body =
+        CloudService.anthropicBody(model: 'claude-haiku-5-5', messages: const [
+      {'role': 'user', 'content': 'x'}
+    ]);
     expect(body.containsKey('fallbacks'), isFalse);
     expect(body.containsKey('stream'), isFalse);
   });
@@ -40,7 +42,9 @@ void main() {
   test('an image goes before the question', () {
     final body = CloudService.anthropicBody(
       model: 'claude-opus-5-5',
-      messages: const [{'role': 'user', 'content': 'Que vois-tu ?'}],
+      messages: const [
+        {'role': 'user', 'content': 'Que vois-tu ?'}
+      ],
       imageBase64: 'AAAA',
     );
     final content = (body['messages'] as List).single['content'] as List;
@@ -66,5 +70,29 @@ void main() {
           'stop_reason': 'refusal',
         }),
         startsWith('ERROR'));
+  });
+
+  test('a computer on the home network gets long waits, online providers not',
+      () {
+    for (final url in [
+      'http://192.168.1.20:8080/v1',
+      'http://10.0.0.5:11434/v1',
+      'http://172.20.3.4:1234/v1',
+      'http://localhost:8080/v1',
+      'http://127.0.0.1:8080/v1',
+      'http://pc-salon.local:8080/v1',
+      'http://[fd12:3456::1]:8080/v1',
+    ]) {
+      expect(CloudService.isLocalNetworkUrl(url), isTrue, reason: url);
+    }
+    for (final url in [
+      'https://api.openai.com/v1',
+      'https://fdroid.example.com/v1',
+      'http://172.32.0.1/v1',
+      'http://8.8.8.8/v1',
+      'not a url',
+    ]) {
+      expect(CloudService.isLocalNetworkUrl(url), isFalse, reason: url);
+    }
   });
 }

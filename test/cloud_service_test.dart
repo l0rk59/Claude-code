@@ -10,13 +10,13 @@ import 'package:privatelm/services/cloud_service.dart';
 import 'package:privatelm/services/hive_service.dart';
 
 String _chunk(String token, {String? finish}) => 'data: ${jsonEncode({
-      'choices': [
-        {
-          'delta': {'content': token},
-          'finish_reason': finish,
-        }
-      ]
-    })}\n\n';
+          'choices': [
+            {
+              'delta': {'content': token},
+              'finish_reason': finish,
+            }
+          ]
+        })}\n\n';
 
 void main() {
   late Directory dir;
@@ -53,6 +53,7 @@ void main() {
 
   tearDown(() async {
     CloudService.streamIdleTimeout = const Duration(seconds: 60);
+    CloudService.localNetworkIdleTimeout = const Duration(minutes: 5);
     await server.close(force: true);
     Get.reset();
     await Hive.deleteFromDisk();
@@ -101,8 +102,7 @@ void main() {
     expect(authorization, isNull);
   });
 
-  test('an error event mid-stream is reported, not shown as a reply',
-      () async {
+  test('an error event mid-stream is reported, not shown as a reply', () async {
     respond = (res) async {
       res.write(_chunk('Partial '));
       res.write('data: ${jsonEncode({
@@ -142,7 +142,8 @@ void main() {
   });
 
   test('a stalled stream times out instead of hanging', () async {
-    CloudService.streamIdleTimeout = const Duration(milliseconds: 300);
+    // The test server is on this machine, which counts as the home network.
+    CloudService.localNetworkIdleTimeout = const Duration(milliseconds: 300);
     respond = (res) async {
       res.write(_chunk('Start'));
       await res.flush(); // ...then nothing more
