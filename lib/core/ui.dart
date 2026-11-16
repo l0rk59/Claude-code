@@ -274,16 +274,21 @@ class AppGroup extends StatelessWidget {
               border: Border.all(color: t.hairline, width: 0.5),
             ),
       clipBehavior: flat ? Clip.none : Clip.antiAlias,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        for (var i = 0; i < list.length; i++) ...[
-          if (i > 0)
-            Padding(
-              padding: EdgeInsets.only(left: dividerIndent),
-              child: Container(height: 0.5, color: t.hairline),
-            ),
-          list[i],
-        ],
-      ]),
+      // The rows' ink (tap splash, mouse hover) paints on the nearest
+      // Material: this one, so the clip above rounds it with the card.
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          for (var i = 0; i < list.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: EdgeInsets.only(left: dividerIndent),
+                child: Container(height: 0.5, color: t.hairline),
+              ),
+            list[i],
+          ],
+        ]),
+      ),
     );
   }
 }
@@ -579,9 +584,8 @@ class AppChips<T> extends StatelessWidget {
               color: on ? tint : Colors.transparent,
               shape: StadiumBorder(
                   side: BorderSide(
-                      color: on
-                          ? t.accent.withValues(alpha: 0.45)
-                          : t.outline)),
+                      color:
+                          on ? t.accent.withValues(alpha: 0.45) : t.outline)),
               child: InkWell(
                 customBorder: const StadiumBorder(),
                 splashFactory: NoSplash.splashFactory,

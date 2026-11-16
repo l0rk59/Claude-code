@@ -12,6 +12,7 @@ import '../services/hive_service.dart';
 import '../services/inference_service.dart';
 import '../services/cluster_service.dart';
 import '../services/openai_server_service.dart';
+import 'model_controller.dart';
 
 class ServerController extends GetxController {
   final HiveService _hive = Get.find<HiveService>();
@@ -56,9 +57,15 @@ class ServerController extends GetxController {
 
   bool get hasLocalModel => inference.isModelLoaded.value;
 
-  String get modelName => inference.loadedModelName.value.isEmpty
-      ? 'No model loaded'.tr
-      : inference.loadedModelName.value;
+  /// The loaded model as the rest of the app names it ("Qwen 3.5 9B"); the
+  /// API itself answers to the file name.
+  String get modelName {
+    final file = inference.loadedModelName.value;
+    if (file.isEmpty) return 'No model loaded'.tr;
+    return Get.isRegistered<ModelController>()
+        ? Get.find<ModelController>().displayName(file)
+        : file;
+  }
 
   Future<void> toggleServer(bool enabled) async {
     if (enabled) {

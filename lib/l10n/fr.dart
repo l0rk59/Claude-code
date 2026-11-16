@@ -1859,6 +1859,9 @@ const Map<String, String> fr = {
       'La mémoire libre est plus faible que recommandé. Fermez d\'autres programmes ou choisissez un modèle plus petit.',
   'The model takes most of the free memory: the computer may slow down while it runs.':
       'Le modèle occupe l\'essentiel de la mémoire libre : l\'ordinateur peut ralentir pendant qu\'il tourne.',
+  'Applies to local and cloud models. Written in English, which models follow best: they still answer in your language.':
+      'S\'applique aux modèles locaux et cloud. Rédigé en anglais, que les modèles suivent le mieux : ils répondent quand même dans votre langue.',
+  'Local (on this computer)': 'Local (sur cet ordinateur)',
 };
 
 /// Download statuses the Android code reports in English (shown through

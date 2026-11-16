@@ -103,7 +103,7 @@ class SettingsView extends GetView<SettingsController> {
                 context,
                 icon: Icons.tune_rounded,
                 title: 'Model parameters',
-                value: controller.temperature.value.toStringAsFixed(2),
+                value: decimal(controller.temperature.value, 2),
                 builder: (ctx) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -420,8 +420,12 @@ class SettingsView extends GetView<SettingsController> {
   Widget _buildInferenceGroup(BuildContext context) {
     return AppGroup(dividerIndent: 60, children: [
       AppRow(
-        icon: Icons.phone_iphone_rounded,
-        title: 'Local (on-device)'.tr,
+        icon: AppPlatform.isDesktop
+            ? Icons.computer_rounded
+            : Icons.phone_iphone_rounded,
+        title: AppPlatform.isDesktop
+            ? 'Local (on this computer)'.tr
+            : 'Local (on-device)'.tr,
         subtitle: _localSubtitle(),
         selected: controller.inferenceMode.value == 'local',
         onTap: () => controller.setInferenceMode('local'),
@@ -450,7 +454,12 @@ class SettingsView extends GetView<SettingsController> {
       ),
       _fieldFooter(
         context,
-        note: 'Applies to local and cloud models.'.tr,
+        note: AppConstants.isDefaultSystemPrompt(
+                controller.globalSystemPromptController.text)
+            ? 'Applies to local and cloud models. Written in English, which '
+                    'models follow best: they still answer in your language.'
+                .tr
+            : 'Applies to local and cloud models.'.tr,
         onSave: () async {
           await controller.setGlobalSystemPrompt(
               controller.globalSystemPromptController.text);
@@ -708,7 +717,12 @@ class SettingsView extends GetView<SettingsController> {
     final inf = Get.find<InferenceService>();
     final localImage = Get.find<LocalImageService>();
     if (inf.isModelLoaded.value) {
-      return 'Active: @name'.trParams({'name': inf.loadedModelName.value});
+      final file = inf.loadedModelName.value;
+      return 'Active: @name'.trParams({
+        'name': Get.isRegistered<ModelController>()
+            ? Get.find<ModelController>().displayName(file)
+            : file
+      });
     } else if (localImage.isModelLoaded.value) {
       return 'Active: @name'
           .trParams({'name': localImage.loadedModelName.value});

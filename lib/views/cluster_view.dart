@@ -425,7 +425,7 @@ class _AddComputerSheetState extends State<AddComputerSheet> {
       final info = result.info;
       if (info != null) {
         _totalMb = info.totalMb;
-        _memory.text = (info.suggestedMb / 1024).toStringAsFixed(1);
+        _memory.text = decimal(info.suggestedMb / 1024, 1);
       }
     });
   }
