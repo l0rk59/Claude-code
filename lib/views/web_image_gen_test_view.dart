@@ -74,15 +74,18 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Model', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+            Text('Model',
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
             Text('CyberRealistic-LCM (WebGPU → Metal on Apple)',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500)),
+                style: GoogleFonts.inter(
+                    fontSize: 15, fontWeight: FontWeight.w500)),
             const SizedBox(height: 16),
             TextField(
               controller: _promptCtrl,
               decoration: InputDecoration(
                 hintText: 'Enter prompt...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               maxLines: 2,
             ),
@@ -90,7 +93,8 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: _localImage.isModelLoaded.value ? null : _loadModel,
+                  onPressed:
+                      _localImage.isModelLoaded.value ? null : _loadModel,
                   child: const Text('Load Model'),
                 ),
                 const SizedBox(width: 12),
@@ -105,7 +109,8 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(_status, style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
+            Text(_status,
+                style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
             if (_localImage.isGenerating.value)
               const Padding(
                 padding: EdgeInsets.only(top: 8),

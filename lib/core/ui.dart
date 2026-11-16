@@ -150,6 +150,23 @@ class AppBarIcon extends StatelessWidget {
 /// Standard horizontal page padding.
 const kPagePadding = EdgeInsets.fromLTRB(16, 4, 16, 32);
 
+/// Keeps a page readable on a wide window (computers, tablets): its
+/// content is centred, at most [maxWidth] wide. No change on a phone.
+class PageWidth extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+  const PageWidth({super.key, required this.child, this.maxWidth = 880});
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: child,
+        ),
+      );
+}
+
 /// Corner radius of cards and grouped lists.
 const kCardRadius = 20.0;
 

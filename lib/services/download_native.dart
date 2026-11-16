@@ -239,12 +239,38 @@ Future<void> deleteModel(String path) async {
 /// Bytes free on the storage holding [dir]. Null when it can't be read
 /// (only Android reports it).
 Future<int?> freeSpaceBytes(String dir) async {
-  if (!Platform.isAndroid) return null;
   try {
-    return await _channel.invokeMethod<int>('freeSpaceBytes', {'path': dir});
-  } catch (_) {
-    return null;
-  }
+    if (Platform.isAndroid) {
+      return await _channel.invokeMethod<int>('freeSpaceBytes', {'path': dir});
+    }
+    if (Platform.isWindows) {
+      // The drive of the folder ("D:\\…" or "D:/…").
+      final drive = RegExp(r'^[A-Za-z]:').stringMatch(dir);
+      if (drive == null) return null;
+      final r = await Process.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        "[System.IO.DriveInfo]::new('$drive').AvailableFreeSpace",
+      ]).timeout(const Duration(seconds: 10));
+      return int.tryParse('${r.stdout}'.trim());
+    }
+    if (Platform.isLinux || Platform.isMacOS) {
+      final r = await Process.run('df', ['-Pk', dir])
+          .timeout(const Duration(seconds: 10));
+      return parseDfAvailable('${r.stdout}');
+    }
+  } catch (_) {}
+  return null;
+}
+
+/// The free bytes `df -Pk` reports (its 4th column, in KB).
+int? parseDfAvailable(String output) {
+  final lines = output.trim().split('\n');
+  if (lines.length < 2) return null;
+  final cols = lines.last.trim().split(RegExp(r'\s+'));
+  if (cols.length < 4) return null;
+  final kb = int.tryParse(cols[3]);
+  return kb == null ? null : kb * 1024;
 }
 
 // ── Native MethodChannel bridges (Android DownloadManager) ──

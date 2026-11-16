@@ -87,11 +87,15 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
     if (freeBytes == null || neededBytes <= 0) return null;
     const margin = 300 * 1024 * 1024;
     if (neededBytes + margin <= freeBytes) return null;
-    return 'This needs @needed of storage and the phone has @free free. Delete models or files you no longer use, then try again.'
-        .trParams({
+    final sizes = {
       'needed': formatBytes(neededBytes),
       'free': formatBytes(freeBytes),
-    });
+    };
+    return AppPlatform.isDesktop
+        ? 'This needs @needed of disk space and the disk has @free free. Delete models or files you no longer use, or choose another models folder in Settings > Computer engine.'
+            .trParams(sizes)
+        : 'This needs @needed of storage and the phone has @free free. Delete models or files you no longer use, then try again.'
+            .trParams(sizes);
   }
 
   Future<int> getRemoteFileSize(String url, {String? authToken}) async {
@@ -424,7 +428,18 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
   /// `frNativeStatuses`.
   static String statusLabel(String status) => status.tr;
 
-  static String formatBytes(int bytes) {
+  /// A size written in the catalogue ("2.74 GB + 672 MB vision") in the
+  /// app's language: "2,74 Go + 672 Mo vision" in French.
+  static String localizeSize(String text) {
+    if (Get.locale?.languageCode != 'fr') return text;
+    return text
+        .replaceAllMapped(RegExp(r'(\d)\.(\d)'), (m) => '${m[1]},${m[2]}')
+        .replaceAllMapped(RegExp(r'\b(K|M|G|T)B\b'), (m) => '${m[1]}o');
+  }
+
+  static String formatBytes(int bytes) => localizeSize(_formatBytes(bytes));
+
+  static String _formatBytes(int bytes) {
     if (bytes < 1024) return '@size B'.trParams({'size': '$bytes'});
     if (bytes < 1024 * 1024) {
       return '@size KB'.trParams({'size': (bytes / 1024).toStringAsFixed(1)});

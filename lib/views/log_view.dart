@@ -65,7 +65,8 @@ class _LogViewState extends State<LogView> {
               )),
         ],
       ),
-      body: Column(children: [
+      body: PageWidth(
+          child: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 8, 10),
           child: Obx(() => AppChips<String>(
@@ -96,7 +97,8 @@ class _LogViewState extends State<LogView> {
                       _ => 'No debug'.tr,
                     },
                     message: f == 'ALL'
-                        ? 'Errors, warnings and debug details will appear here.'.tr
+                        ? 'Errors, warnings and debug details will appear here.'
+                            .tr
                         : 'Nothing at this level has been captured.'.tr,
                   ),
                 ),
@@ -115,7 +117,7 @@ class _LogViewState extends State<LogView> {
             );
           }),
         ),
-      ]),
+      ])),
     );
   }
 }

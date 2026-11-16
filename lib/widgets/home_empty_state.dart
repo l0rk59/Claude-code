@@ -201,12 +201,12 @@ class _FirstRun extends StatelessWidget {
                     style: t.label.copyWith(color: t.accent)),
               ),
               Text(
-                  vram > 0
+                  DownloadService.localizeSize(vram > 0
                       ? '@ram GB RAM · @vram GB graphics'.trParams({
                           'ram': ram.toStringAsFixed(0),
                           'vram': vram.toStringAsFixed(0),
                         })
-                      : '@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)}),
+                      : '@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)})),
                   style: t.small),
             ]),
             const SizedBox(height: 10),

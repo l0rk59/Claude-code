@@ -1438,8 +1438,6 @@ const Map<String, String> fr = {
   "Couldn't reach the search engine. Check your connection.":
       'Impossible de joindre le moteur de recherche. Vérifiez votre connexion.',
   'Documents added': 'Documents ajoutés',
-  'Documents need the phone app.':
-      'Les documents nécessitent l’application sur téléphone.',
   'Enter the address of your SearXNG server in Settings.':
       'Saisissez l’adresse de votre serveur SearXNG dans les Paramètres.',
   'Excerpts used': 'Extraits utilisés',
@@ -1819,6 +1817,40 @@ const Map<String, String> fr = {
       "Votre llama-server n'est plus à l'emplacement @path. Choisissez-le à nouveau dans Paramètres > Moteur de l'ordinateur.",
   'The engine is missing. Install it in Settings > Computer engine.':
       "Le moteur est absent. Installez-le dans Paramètres > Moteur de l'ordinateur.",
+  'On this computer · @count': 'Sur cet ordinateur · @count',
+  'Made for computers': 'Fait pour les ordinateurs',
+  '@count passages': '@count passages',
+  'Web': 'Web',
+  'Pages': 'Pages',
+  'Documents': 'Documents',
+  'Calculation': 'Calcul',
+  'Date': 'Date',
+  // Computer wording
+  'This model is probably too large for the free memory of this computer, even with a small context. Try a smaller model.':
+      "Ce modèle est probablement trop gros pour la mémoire libre de cet ordinateur, même avec un petit contexte. Essayez un modèle plus petit.",
+  'This needs @needed of disk space and the disk has @free free. Delete models or files you no longer use, or choose another models folder in Settings > Computer engine.':
+      "Il faut @needed d'espace disque et le disque n'a que @free de libre. Supprimez des modèles ou des fichiers inutiles, ou choisissez un autre dossier des modèles dans Paramètres > Moteur de l'ordinateur.",
+  'Add .gguf files from this computer.': 'Ajoutez des fichiers .gguf de cet ordinateur.',
+  'Same language as the system': 'Même langue que le système',
+  'The model may run out of memory with this value!':
+      'Le modèle risque de manquer de mémoire avec cette valeur !',
+  'Your own search server: the search engines see it, not this computer.':
+      'Votre propre serveur de recherche : les moteurs de recherche voient ce serveur, pas cet ordinateur.',
+  'This computer is not on a local network. Connect it to the same network as the other computer.':
+      "Cet ordinateur n'est pas sur un réseau local. Connectez-le au même réseau que l'autre ordinateur.",
+  'The other computer runs the model and this one only shows the conversation. Nothing leaves your network.':
+      "L'autre ordinateur fait tourner le modèle et celui-ci affiche seulement la conversation. Rien ne sort de votre réseau.",
+  '@name will no longer be searched. The file itself stays on the computer.':
+      "@name ne sera plus consulté. Le fichier lui-même reste sur l'ordinateur.",
+  'Documents need the phone or computer app.':
+      "Les documents nécessitent l'application pour téléphone ou pour ordinateur.",
+  'Add your files (PDF, Word, text): when "My documents" is on, the passages that answer your question are given to the model with it. Everything stays on this computer.':
+      'Ajoutez vos fichiers (PDF, Word, texte) : quand « Mes documents » est activé, les passages qui répondent à votre question sont donnés au modèle avec elle. Tout reste sur cet ordinateur.',
+  'Runs comfortably on this computer.': 'Tourne confortablement sur cet ordinateur.',
+  'Loads on this computer with little memory to spare: it can be slow, or fail when other programs are open.':
+      "Se charge sur cet ordinateur avec peu de mémoire en réserve : il peut être lent, ou échouer quand d'autres programmes sont ouverts.",
+  'Needs more memory than this computer has. Phones in Worker mode can lend theirs (Settings > Computer engine).':
+      "Demande plus de mémoire que cet ordinateur n'en a. Des téléphones en mode Auxiliaire peuvent prêter la leur (Paramètres > Moteur de l'ordinateur).",
 };
 
 /// Download statuses the Android code reports in English (shown through

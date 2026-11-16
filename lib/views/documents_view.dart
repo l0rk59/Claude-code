@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/document_library.dart';
 import '../services/document_library_service.dart';
 
@@ -30,7 +31,15 @@ class _DocumentsViewState extends State<DocumentsView> {
     final picked = await FilePicker.pickFiles(
       type: FileType.custom,
       allowMultiple: true,
-      allowedExtensions: const ['pdf', 'txt', 'md', 'docx', 'csv', 'json', 'html'],
+      allowedExtensions: const [
+        'pdf',
+        'txt',
+        'md',
+        'docx',
+        'csv',
+        'json',
+        'html'
+      ],
     );
     if (picked == null) return;
     setState(() => _adding = true);
@@ -58,8 +67,11 @@ class _DocumentsViewState extends State<DocumentsView> {
     final ok = await confirmSheet(
       context,
       title: 'Remove this document?'.tr,
-      message: '@name will no longer be searched. The file itself stays on the phone.'
-          .trParams({'name': document.name}),
+      message: AppPlatform.isDesktop
+          ? '@name will no longer be searched. The file itself stays on the computer.'
+              .trParams({'name': document.name})
+          : '@name will no longer be searched. The file itself stays on the phone.'
+              .trParams({'name': document.name}),
       confirmLabel: 'Remove'.tr,
       destructive: true,
     );
@@ -73,60 +85,64 @@ class _DocumentsViewState extends State<DocumentsView> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'My documents'.tr),
-      body: service == null
-          ? EmptyState(
-              icon: Icons.folder_off_outlined,
-              title: 'Not available here'.tr,
-              message: 'Documents need the phone app.'.tr,
-            )
-          : Obx(() {
-              final docs = service.documents.toList()
-                ..sort((a, b) => b.added.compareTo(a.added));
-              return ListView(
-                padding: kPagePadding,
-                children: [
-                  Text(
-                    'Add your files (PDF, Word, text): when "My documents" is on, the passages that answer your question are given to the model with it. Everything stays on the phone.'
-                        .tr,
-                    style: t.caption,
-                  ),
-                  const SizedBox(height: 16),
-                  PrimaryButton(
-                    label: 'Add documents'.tr,
-                    icon: Icons.add_rounded,
-                    busy: _adding,
-                    onPressed: _adding ? null : _add,
-                  ),
-                  if (docs.isEmpty)
-                    EmptyState(
-                      icon: Icons.description_outlined,
-                      title: 'No documents yet'.tr,
-                    )
-                  else ...[
-                    SectionHeader('@count documents'
-                        .trParams({'count': '${docs.length}'})),
-                    AppGroup(dividerIndent: 60, children: [
-                      for (final d in docs)
-                        AppRow(
+      body: PageWidth(
+          child: service == null
+              ? EmptyState(
+                  icon: Icons.folder_off_outlined,
+                  title: 'Not available here'.tr,
+                  message: 'Documents need the phone or computer app.'.tr,
+                )
+              : Obx(() {
+                  final docs = service.documents.toList()
+                    ..sort((a, b) => b.added.compareTo(a.added));
+                  return ListView(
+                    padding: kPagePadding,
+                    children: [
+                      Text(
+                        AppPlatform.isDesktop
+                            ? 'Add your files (PDF, Word, text): when "My documents" is on, the passages that answer your question are given to the model with it. Everything stays on this computer.'
+                                .tr
+                            : 'Add your files (PDF, Word, text): when "My documents" is on, the passages that answer your question are given to the model with it. Everything stays on the phone.'
+                                .tr,
+                        style: t.caption,
+                      ),
+                      const SizedBox(height: 16),
+                      PrimaryButton(
+                        label: 'Add documents'.tr,
+                        icon: Icons.add_rounded,
+                        busy: _adding,
+                        onPressed: _adding ? null : _add,
+                      ),
+                      if (docs.isEmpty)
+                        EmptyState(
                           icon: Icons.description_outlined,
-                          title: d.name,
-                          subtitle: [
-                            DateFormat.yMMMd(Get.locale?.languageCode)
-                                .format(d.added),
-                            '@count passages'
-                                .trParams({'count': '${d.chunks.length}'}),
-                          ].join(' · '),
-                          trailing: IconButton(
-                            tooltip: 'Remove'.tr,
-                            icon: Icon(Icons.close_rounded, color: t.muted),
-                            onPressed: () => _remove(d),
-                          ),
-                        ),
-                    ]),
-                  ],
-                ],
-              );
-            }),
+                          title: 'No documents yet'.tr,
+                        )
+                      else ...[
+                        SectionHeader('@count documents'
+                            .trParams({'count': '${docs.length}'})),
+                        AppGroup(dividerIndent: 60, children: [
+                          for (final d in docs)
+                            AppRow(
+                              icon: Icons.description_outlined,
+                              title: d.name,
+                              subtitle: [
+                                DateFormat.yMMMd(Get.locale?.languageCode)
+                                    .format(d.added),
+                                '@count passages'
+                                    .trParams({'count': '${d.chunks.length}'}),
+                              ].join(' · '),
+                              trailing: IconButton(
+                                tooltip: 'Remove'.tr,
+                                icon: Icon(Icons.close_rounded, color: t.muted),
+                                onPressed: () => _remove(d),
+                              ),
+                            ),
+                        ]),
+                      ],
+                    ],
+                  );
+                })),
     );
   }
 }

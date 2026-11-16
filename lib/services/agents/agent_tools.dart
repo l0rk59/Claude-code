@@ -100,6 +100,21 @@ class AgentToolbox {
   /// Tools that ask the user before acting.
   static const asksFirst = {remember, writeFile, runPython};
 
+  /// A word for the tool, in lists of an assistant's tools (the three
+  /// file tools share one).
+  static String shortTitle(String tool) => switch (tool) {
+        webSearch => 'Web'.tr,
+        readPage => 'Pages'.tr,
+        searchDocuments => 'Documents'.tr,
+        calculator => 'Calculation'.tr,
+        dateTime => 'Date'.tr,
+        remember => 'Memory'.tr,
+        listFiles || readFile || writeFile => 'Files'.tr,
+        runPython => 'Python',
+        askAssistant => 'Assistants'.tr,
+        _ => tool,
+      };
+
   /// For the agent editor: the tool's name for the user.
   static String title(String tool) => switch (tool) {
         webSearch => 'Search the web'.tr,

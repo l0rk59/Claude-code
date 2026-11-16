@@ -20,7 +20,7 @@ class ServerView extends GetView<ServerController> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Server'.tr),
-      body: Obx(() {
+      body: PageWidth(child: Obx(() {
         final isRunning = controller.isRunning.value;
         final isStarting = controller.isStarting.value;
         final allowNetwork = controller.allowNetwork.value;
@@ -95,7 +95,8 @@ class ServerView extends GetView<ServerController> {
                 enableSuggestions: false,
                 decoration: appInputDecoration(
                   context,
-                  hint: controller.requiresApiKey ? 'Required'.tr : 'Optional'.tr,
+                  hint:
+                      controller.requiresApiKey ? 'Required'.tr : 'Optional'.tr,
                   suffix: Row(mainAxisSize: MainAxisSize.min, children: [
                     IconButton(
                       tooltip: 'Generate key'.tr,
@@ -155,7 +156,7 @@ class ServerView extends GetView<ServerController> {
             ],
           ],
         );
-      }),
+      })),
     );
   }
 

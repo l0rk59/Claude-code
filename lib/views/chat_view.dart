@@ -184,9 +184,7 @@ class ChatView extends GetView<ChatController> {
                 strokeWidth: 2.4,
                 strokeCap: StrokeCap.round,
                 backgroundColor: _sep(context),
-                color: warn
-                    ? AppColors.warning
-                    : Theme.of(context).hintColor,
+                color: warn ? AppColors.warning : Theme.of(context).hintColor,
               ),
             ),
           );
@@ -198,7 +196,8 @@ class ChatView extends GetView<ChatController> {
           return IconButton(
               tooltip: 'New chat'.tr,
               icon: Icon(Icons.edit_square,
-                  size: 20, color: isDark ? AppColors.textDark : AppColors.textLight),
+                  size: 20,
+                  color: isDark ? AppColors.textDark : AppColors.textLight),
               onPressed: () {
                 Haptics.selectionClick();
                 controller.createNewChat();
@@ -223,7 +222,8 @@ class ChatView extends GetView<ChatController> {
       final m = settings.selectedCloudModelName;
       return (
         name: m.isEmpty ? 'No model selected'.tr : m,
-        meta: 'Cloud · @provider'.trParams({'provider': providerLabel(settings)}),
+        meta:
+            'Cloud · @provider'.trParams({'provider': providerLabel(settings)}),
         dot: _accent(context),
         canUnload: false,
       );
@@ -256,8 +256,7 @@ class ChatView extends GetView<ChatController> {
       return (
         name: pretty(img.loadedModelName.value),
         meta: 'Ready · Image generation · @backend'.trParams({
-          'backend':
-              b == Backend.cpu ? 'CPU' : b.displayName.split(' ').first
+          'backend': b == Backend.cpu ? 'CPU' : b.displayName.split(' ').first
         }),
         dot: green,
         canUnload: true,
@@ -675,26 +674,26 @@ class ChatView extends GetView<ChatController> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Wrap(spacing: 8, runSpacing: 6, children: [
-                  if (agent != null)
-                    _ToolChip(
-                      icon: Icons.smart_toy_outlined,
-                      label: agent,
-                      onTap: () => _showAgents(context),
-                      onRemove: () => controller.chooseAgent(''),
-                    ),
-                  if (web)
-                    _ToolChip(
-                      icon: Icons.travel_explore_rounded,
-                      label: 'Web search'.tr,
-                      onRemove: () => controller.webSearch.value = false,
-                    ),
-                  if (docs)
-                    _ToolChip(
-                      icon: Icons.folder_open_rounded,
-                      label: 'My documents'.tr,
-                      onRemove: () => controller.useDocuments.value = false,
-                    ),
-                ]),
+                    if (agent != null)
+                      _ToolChip(
+                        icon: Icons.smart_toy_outlined,
+                        label: agent,
+                        onTap: () => _showAgents(context),
+                        onRemove: () => controller.chooseAgent(''),
+                      ),
+                    if (web)
+                      _ToolChip(
+                        icon: Icons.travel_explore_rounded,
+                        label: 'Web search'.tr,
+                        onRemove: () => controller.webSearch.value = false,
+                      ),
+                    if (docs)
+                      _ToolChip(
+                        icon: Icons.folder_open_rounded,
+                        label: 'My documents'.tr,
+                        onRemove: () => controller.useDocuments.value = false,
+                      ),
+                  ]),
                 ),
               );
             }),
@@ -811,7 +810,9 @@ class ChatView extends GetView<ChatController> {
                             steps.toString(),
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: isDark ? AppColors.textDark : AppColors.textLight,
+                              color: isDark
+                                  ? AppColors.textDark
+                                  : AppColors.textLight,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -849,13 +850,14 @@ class ChatView extends GetView<ChatController> {
                     Expanded(
                       child: Text(
                         'Batch complete! (@count images)'.trParams({
-                          'count':
-                              '${controller.lastBatchImagesBase64.length}'
+                          'count': '${controller.lastBatchImagesBase64.length}'
                         }),
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: isDark ? AppColors.textDark : AppColors.textLight),
+                            color: isDark
+                                ? AppColors.textDark
+                                : AppColors.textLight),
                       ),
                     ),
                     TextButton(
@@ -908,7 +910,9 @@ class ChatView extends GetView<ChatController> {
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: isDark ? AppColors.textDark : AppColors.textLight),
+                            color: isDark
+                                ? AppColors.textDark
+                                : AppColors.textLight),
                       ),
                     ),
                     TextButton(
@@ -940,9 +944,8 @@ class ChatView extends GetView<ChatController> {
             Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceDark
-                      : AppColors.surfaceLight,
+                  color:
+                      isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                       color: isDark
@@ -1012,36 +1015,38 @@ class ChatView extends GetView<ChatController> {
                           child: _desktopEnterSends(
                             controller,
                             TextField(
-                            enabled: !noModel,
-                            controller: controller.textController,
-                            focusNode: controller.inputFocus,
-                            textCapitalization: TextCapitalization.sentences,
-                            onChanged: (v) => controller.inputText.value = v,
-                            maxLines: 5,
-                            minLines: 1,
-                            style: GoogleFonts.inter(
-                                fontSize: 15,
-                                color: isDark ? AppColors.textDark : AppColors.textLight),
-                            decoration: InputDecoration(
-                              hintText: !noModel
-                                  ? 'Ask anything'.tr
-                                  : loadingModel
-                                      ? 'Loading model…'.tr
-                                      : 'Load a model to start chatting'.tr,
-                              hintStyle: GoogleFonts.inter(
+                              enabled: !noModel,
+                              controller: controller.textController,
+                              focusNode: controller.inputFocus,
+                              textCapitalization: TextCapitalization.sentences,
+                              onChanged: (v) => controller.inputText.value = v,
+                              maxLines: 5,
+                              minLines: 1,
+                              style: GoogleFonts.inter(
                                   fontSize: 15,
-                                  color: Theme.of(context).hintColor),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              isDense: true,
-                              filled: false,
+                                  color: isDark
+                                      ? AppColors.textDark
+                                      : AppColors.textLight),
+                              decoration: InputDecoration(
+                                hintText: !noModel
+                                    ? 'Ask anything'.tr
+                                    : loadingModel
+                                        ? 'Loading model…'.tr
+                                        : 'Load a model to start chatting'.tr,
+                                hintStyle: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    color: Theme.of(context).hintColor),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                isDense: true,
+                                filled: false,
+                              ),
+                              onSubmitted: (_) => controller.sendMessage(),
                             ),
-                            onSubmitted: (_) => controller.sendMessage(),
-                          ),
                           ),
                         ));
                   })),
@@ -1097,7 +1102,8 @@ class ChatView extends GetView<ChatController> {
                                 context,
                                 title: 'Batch generation'.tr,
                                 message:
-                                    'Generating multiple images back-to-back is demanding. Your device may get warm and use more battery.'.tr,
+                                    'Generating multiple images back-to-back is demanding. Your device may get warm and use more battery.'
+                                        .tr,
                                 confirmLabel: 'Continue'.tr,
                               );
                               if (!accepted) return;
@@ -1113,8 +1119,7 @@ class ChatView extends GetView<ChatController> {
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
-                              color:
-                                  _accent(context).withValues(alpha: 0.15),
+                              color: _accent(context).withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.add_rounded,
@@ -1144,7 +1149,8 @@ class ChatView extends GetView<ChatController> {
 
                     if (loading) {
                       // AI generating → solid neutral stop
-                      bgColor = isDark ? AppColors.textDark : AppColors.textLight;
+                      bgColor =
+                          isDark ? AppColors.textDark : AppColors.textLight;
                       iconData = Icons.stop_rounded;
                       onTap = controller.stopGenerating;
                     } else if (listening) {
@@ -1198,7 +1204,9 @@ class ChatView extends GetView<ChatController> {
                           child: Icon(iconData,
                               key: ValueKey(iconData),
                               color: loading
-                                  ? (isDark ? AppColors.bgDark : AppColors.bgLight)
+                                  ? (isDark
+                                      ? AppColors.bgDark
+                                      : AppColors.bgLight)
                                   : (listening || (hasContent && !noModel))
                                       ? Colors.white
                                       : Theme.of(context)
@@ -1230,7 +1238,8 @@ class ChatView extends GetView<ChatController> {
   MarkdownStyleSheet _thoughtMd(BuildContext c, bool isDark) {
     final muted = Theme.of(c).hintColor;
     final base = GoogleFonts.inter(fontSize: 13, color: muted, height: 1.4);
-    final codeBg = isDark ? AppColors.raisedDark : AppColors.surfacePressedLight;
+    final codeBg =
+        isDark ? AppColors.raisedDark : AppColors.surfacePressedLight;
     return MarkdownStyleSheet.fromTheme(Theme.of(c)).copyWith(
         p: base,
         strong: base.copyWith(fontWeight: FontWeight.w600),
@@ -1517,7 +1526,8 @@ class _ToolChip extends StatelessWidget {
         Icon(icon, size: 15, color: t.accent),
         const SizedBox(width: 6),
         Text(label,
-            style: t.small.copyWith(color: t.accent, fontWeight: FontWeight.w600)),
+            style:
+                t.small.copyWith(color: t.accent, fontWeight: FontWeight.w600)),
         InkWell(
           customBorder: const CircleBorder(),
           onTap: onRemove,
@@ -1567,8 +1577,8 @@ class _PulsingDotState extends State<_PulsingDot>
       child: Container(
         width: 8,
         height: 8,
-        decoration: const BoxDecoration(
-            color: AppColors.error, shape: BoxShape.circle),
+        decoration:
+            const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
       ),
     );
   }
@@ -1750,7 +1760,9 @@ class _ImageGenIndicatorState extends State<_ImageGenIndicator>
                   width: 160,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: (widget.isDark ? AppColors.textDark : AppColors.textLight)
+                    color: (widget.isDark
+                            ? AppColors.textDark
+                            : AppColors.textLight)
                         .withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(2),
                   ),

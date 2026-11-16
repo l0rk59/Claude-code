@@ -33,7 +33,7 @@ void main() {
     String? problem(int needed, int? free) => DownloadService.storageProblem(
         neededBytes: needed, freeBytes: free);
 
-    expect(problem(22 * _gb, 10 * _gb), contains('storage'));
+    expect(problem(22 * _gb, 10 * _gb), matches(RegExp('storage|disk space')));
     // Fits, with room to spare.
     expect(problem(5 * _gb, 64 * _gb), isNull);
     // Would leave the phone with nothing: refused too.

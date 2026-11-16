@@ -40,7 +40,7 @@ class SettingsView extends GetView<SettingsController> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Settings'.tr),
-      body: Obx(() {
+      body: PageWidth(child: Obx(() {
         final device = Get.find<DeviceInfoService>();
         final showUpdates =
             UpdateService.isSupported && Get.isRegistered<UpdateService>();
@@ -64,16 +64,17 @@ class SettingsView extends GetView<SettingsController> {
                 value: _languageLabel(controller.language.value),
                 builder: (ctx) => _buildLanguageGroup(ctx),
               ),
-              if (!AppPlatform.isDesktop) AppRow(
-                icon: Icons.vibration_rounded,
-                title: 'Haptic feedback'.tr,
-                trailing: Switch(
-                  value: controller.hapticsEnabled.value,
-                  onChanged: controller.setHapticsEnabled,
+              if (!AppPlatform.isDesktop)
+                AppRow(
+                  icon: Icons.vibration_rounded,
+                  title: 'Haptic feedback'.tr,
+                  trailing: Switch(
+                    value: controller.hapticsEnabled.value,
+                    onChanged: controller.setHapticsEnabled,
+                  ),
+                  onTap: () => controller
+                      .setHapticsEnabled(!controller.hapticsEnabled.value),
                 ),
-                onTap: () => controller
-                    .setHapticsEnabled(!controller.hapticsEnabled.value),
-              ),
             ]),
             SectionHeader('Chat'.tr),
             AppGroup(dividerIndent: 60, children: [
@@ -144,14 +145,17 @@ class SettingsView extends GetView<SettingsController> {
                   icon: Icons.memory_rounded,
                   title: 'Computer engine'.tr,
                   subtitle:
-                      'Graphics card, models folder, sharing with the phones'.tr,
+                      'Graphics card, models folder, sharing with the phones'
+                          .tr,
                   chevron: true,
                   onTap: () => Get.to(() => const DesktopEngineView()),
                 ),
               _navRow(
                 context,
                 icon: Icons.speed_rounded,
-                title: 'GGUF & LiteRT',
+                // On a computer it only says whether the graphics card is
+                // used (LiteRT is phones only).
+                title: AppPlatform.isDesktop ? 'Graphics card' : 'GGUF & LiteRT',
                 value: switch (controller.liteRtPerformanceMode.value) {
                   'gpu_fast' => 'GPU fast'.tr,
                   'cpu_safe' => 'CPU safe'.tr,
@@ -160,15 +164,16 @@ class SettingsView extends GetView<SettingsController> {
                 builder: (ctx) => _buildLiteRtGroup(ctx),
               ),
               // Image generation runs on phones only.
-              if (!AppPlatform.isDesktop) _navRow(
-                context,
-                icon: Icons.image_outlined,
-                title: 'Image generation',
-                value: controller.imageGenBackend.value == Backend.cpu
-                    ? 'CPU'
-                    : 'GPU',
-                builder: (ctx) => _buildImageGenerationGroup(ctx),
-              ),
+              if (!AppPlatform.isDesktop)
+                _navRow(
+                  context,
+                  icon: Icons.image_outlined,
+                  title: 'Image generation',
+                  value: controller.imageGenBackend.value == Backend.cpu
+                      ? 'CPU'
+                      : 'GPU',
+                  builder: (ctx) => _buildImageGenerationGroup(ctx),
+                ),
               AppRow(
                 icon: Icons.timer_outlined,
                 title: 'Measure speed'.tr,
@@ -185,7 +190,8 @@ class SettingsView extends GetView<SettingsController> {
                         ClusterRole.worker => 'Worker'.tr,
                         ClusterRole.off => 'Off'.tr,
                       },
-                      style: AppTokens.of(context).caption.copyWith(fontSize: 14)),
+                      style:
+                          AppTokens.of(context).caption.copyWith(fontSize: 14)),
                   chevron: true,
                   onTap: () => Get.to(() => const ClusterView()),
                 ),
@@ -198,10 +204,12 @@ class SettingsView extends GetView<SettingsController> {
                 _desktopUpdateRow(context),
               _navRow(
                 context,
-                icon: Icons.smartphone_rounded,
-                title: 'Device',
-                value: '@ram GB RAM'.trParams(
-                    {'ram': device.totalRamGB.value.toStringAsFixed(1)}),
+                icon: AppPlatform.isDesktop
+                    ? Icons.computer_rounded
+                    : Icons.smartphone_rounded,
+                title: AppPlatform.isDesktop ? 'Computer' : 'Device',
+                value: DownloadService.localizeSize('@ram GB RAM'.trParams(
+                    {'ram': device.totalRamGB.value.toStringAsFixed(1)})),
                 builder: (ctx) => AppGroup(children: [_buildDeviceCard(ctx)]),
                 reactive: false,
               ),
@@ -226,7 +234,7 @@ class SettingsView extends GetView<SettingsController> {
             ]),
           ],
         );
-      }),
+      })),
     );
   }
 
@@ -308,8 +316,8 @@ class SettingsView extends GetView<SettingsController> {
         await SpeedTest.remember(hive, result);
         return result;
       },
-      onTrial: (index, choice) => onStep('Trying @setting (@index of @count)…'
-          .trParams({
+      onTrial: (index, choice) =>
+          onStep('Trying @setting (@index of @count)…'.trParams({
         'setting': SpeedTestSheet.describe(choice),
         'index': '${index + 1}',
         'count': '${candidates.length}',
@@ -369,7 +377,9 @@ class SettingsView extends GetView<SettingsController> {
               : Icons.translate_rounded,
           title: _languageLabel(code),
           subtitle: code == AppTranslations.system
-              ? 'Same language as the phone'.tr
+              ? (AppPlatform.isDesktop
+                  ? 'Same language as the system'.tr
+                  : 'Same language as the phone'.tr)
               : null,
           selected: controller.language.value == code,
           onTap: () => controller.setLanguage(code),
@@ -491,7 +501,8 @@ class SettingsView extends GetView<SettingsController> {
             : 'PrivateLM @version is available'
                 .trParams({'version': release.version}),
         subtitle: release == null
-            ? 'Version @version'.trParams({'version': updates.currentVersion.value})
+            ? 'Version @version'
+                .trParams({'version': updates.currentVersion.value})
             : 'Download it, then replace the old folder with the new one. Your models and chats stay.'
                 .tr,
         trailing: updates.checking.value
@@ -537,8 +548,8 @@ class SettingsView extends GetView<SettingsController> {
     final current = updates.currentVersion.value;
     final String status;
     if (update != null) {
-      status = "You have @current · see what's new"
-          .trParams({'current': current});
+      status =
+          "You have @current · see what's new".trParams({'current': current});
     } else if (checked != null) {
       status = 'Up to date · checked @ago'.trParams({'ago': _ago(checked)});
     } else {
@@ -782,13 +793,17 @@ class SettingsView extends GetView<SettingsController> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const IconBadge(Icons.smartphone_rounded),
+            IconBadge(AppPlatform.isDesktop
+                ? Icons.computer_rounded
+                : Icons.smartphone_rounded),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('@ram GB RAM'.trParams({'ram': ram}),
+                    Text(
+                        DownloadService.localizeSize(
+                            '@ram GB RAM'.trParams({'ram': ram})),
                         style: t.bodyStrong.copyWith(fontFeatures: _tabular)),
                     if (tierHint.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -807,9 +822,8 @@ class SettingsView extends GetView<SettingsController> {
           ),
           kv(
               'Available memory'.tr,
-              '@size GB'.trParams({
-                'size': device.availableRamGB.value.toStringAsFixed(1)
-              })),
+              '@size GB'.trParams(
+                  {'size': device.availableRamGB.value.toStringAsFixed(1)})),
           kv('Recommended context'.tr, '${device.recommendedContextSize}'),
           kv('Recommended max tokens'.tr, '${device.recommendedMaxTokens}'),
           if (soc != platform_info.SocFamily.unknown) ...[
@@ -1004,7 +1018,9 @@ class SettingsView extends GetView<SettingsController> {
         safeMax: Get.find<DeviceInfoService>().maxSafeTokens.toDouble(),
         onChanged: (v) => controller.setMaxTokens(v.toInt()),
         displayValue: controller.maxTokens.value.toString(),
-        warning: 'Your phone may crash with this value!'.tr,
+        warning: AppPlatform.isDesktop
+            ? 'The model may run out of memory with this value!'.tr
+            : 'Your phone may crash with this value!'.tr,
       ),
       (() {
         final inference = Get.find<InferenceService>();
@@ -1169,7 +1185,8 @@ class SettingsView extends GetView<SettingsController> {
       _sliderRow(
         context,
         label: 'GPU safety'.tr,
-        valueLabel: guard <= 0 ? 'Off'.tr : '@size MB'.trParams({'size': '$guard'}),
+        valueLabel:
+            guard <= 0 ? 'Off'.tr : '@size MB'.trParams({'size': '$guard'}),
         value: guard.toDouble().clamp(0, 4096),
         min: 0,
         max: 4096,
@@ -1238,7 +1255,8 @@ class _SettingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: title.tr, showBack: true),
-      body: reactive ? Obx(() => _list(context)) : _list(context),
+      body: PageWidth(
+          child: reactive ? Obx(() => _list(context)) : _list(context)),
     );
   }
 

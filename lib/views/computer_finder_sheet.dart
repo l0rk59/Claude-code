@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/lan_server_finder.dart';
 
 /// Finds the computers of the Wi-Fi that run a model (llama.cpp, Ollama,
@@ -18,8 +19,8 @@ class ComputerFinderSheet extends StatefulWidget {
 
   /// Looks for computers on the network. Replaced in tests.
   final Future<List<LanServer>> Function(
-      void Function(double progress) onProgress,
-      bool Function() cancelled)? scan;
+          void Function(double progress) onProgress, bool Function() cancelled)?
+      scan;
 
   /// Tries the address the user typed. Replaced in tests.
   final Future<List<LanServer>> Function(String input)? find;
@@ -80,7 +81,8 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
       _keyErrors.remove(server.address);
     });
     final opened = await (widget.unlock ??
-        (s, k) => LanServerFinder.probe(s.host, s.port, apiKey: k))(server, key);
+        (s, k) =>
+            LanServerFinder.probe(s.host, s.port, apiKey: k))(server, key);
     if (!mounted) return;
     setState(() {
       _unlocking = null;
@@ -96,8 +98,8 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
   }
 
   Widget _keyRequest(AppTokens t, LanServer server) {
-    final field = _keyFields.putIfAbsent(
-        server.address, () => TextEditingController());
+    final field =
+        _keyFields.putIfAbsent(server.address, () => TextEditingController());
     final busy = _unlocking == server.address;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,8 +213,11 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
         ] else if (_servers.isEmpty) ...[
           AppNotice(
             _noWifi
-                ? 'This phone is not on a Wi-Fi network. Connect it to the same Wi-Fi as the computer.'
-                    .tr
+                ? AppPlatform.isDesktop
+                    ? 'This computer is not on a local network. Connect it to the same network as the other computer.'
+                        .tr
+                    : 'This phone is not on a Wi-Fi network. Connect it to the same Wi-Fi as the computer.'
+                        .tr
                 : 'No computer found. On the computer, start llama-server, Ollama or LM Studio and let it accept connections from the network, then search again.'
                     .tr,
             icon: Icons.wifi_find_rounded,
@@ -287,8 +292,11 @@ class _ComputerFinderSheetState extends State<ComputerFinderSheet> {
         ],
         const SizedBox(height: 12),
         Text(
-          'The computer runs the model and this phone only shows the conversation. Nothing leaves your network.'
-              .tr,
+          AppPlatform.isDesktop
+              ? 'The other computer runs the model and this one only shows the conversation. Nothing leaves your network.'
+                  .tr
+              : 'The computer runs the model and this phone only shows the conversation. Nothing leaves your network.'
+                  .tr,
           style: t.small,
           textAlign: TextAlign.center,
         ),

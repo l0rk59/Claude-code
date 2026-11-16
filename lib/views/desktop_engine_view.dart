@@ -94,7 +94,9 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
         for (final v in _engine.variants)
           AppRow(
             title: v.title,
-            subtitle: '${v.description} · ${'@size MB'.trParams({'size': '${v.downloadMb}'})}',
+            subtitle: '${v.description} · ${'@size MB'.trParams({
+                  'size': '${v.downloadMb}'
+                })}',
             selected: v.id == _engine.installedVariant.value,
             trailing: v.id == _engine.installedVariant.value
                 ? Icon(Icons.check_rounded, color: AppTokens.of(ctx).accent)
@@ -211,8 +213,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
   }
 
   Future<void> _removeWorker(String endpoint) async {
-    await _engine.saveWorkers(
-        _engine.savedWorkers.where((w) => w != endpoint).toList());
+    await _engine
+        .saveWorkers(_engine.savedWorkers.where((w) => w != endpoint).toList());
     setState(() => _workerInfo.remove(endpoint));
   }
 
@@ -222,7 +224,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Computer engine'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           Text(
@@ -235,8 +238,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
             final installed = _engine.installedVariant.value;
             final installing = _engine.installing.value;
             final gpu = _engine.mainGpu;
-            final variant = _engine.variants
-                .firstWhereOrNull((v) => v.id == installed);
+            final variant =
+                _engine.variants.firstWhereOrNull((v) => v.id == installed);
             return AppGroup(dividerIndent: 16, children: [
               AppRow(
                 icon: Icons.memory_rounded,
@@ -248,8 +251,9 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
                 subtitle: installing
                     ? _engine.installStatus.value
                     : installed.isEmpty
-                        ? 'Downloaded with the first model (@size MB).'.trParams(
-                            {'size': '${_engine.chosenVariant.downloadMb}'})
+                        ? 'Downloaded with the first model (@size MB).'
+                            .trParams(
+                                {'size': '${_engine.chosenVariant.downloadMb}'})
                         : installed == 'custom'
                             ? _engine.customBinary
                             : 'llama.cpp @release'
@@ -265,9 +269,7 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
               ),
               AppRow(
                 icon: Icons.developer_board_rounded,
-                title: gpu == null
-                    ? 'No graphics card found'.tr
-                    : gpu.name,
+                title: gpu == null ? 'No graphics card found'.tr : gpu.name,
                 subtitle: gpu == null
                     ? (installed.isEmpty
                         ? 'Known once the engine is installed.'.tr
@@ -403,8 +405,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
             AppRow(
               icon: Icons.radar_rounded,
               title: _scanning
-                  ? 'Searching the network… @percent%'.trParams(
-                      {'percent': '${(_scanProgress * 100).round()}'})
+                  ? 'Searching the network… @percent%'
+                      .trParams({'percent': '${(_scanProgress * 100).round()}'})
                   : 'Find phones on the network'.tr,
               onTap: _scanning ? null : _scan,
             ),
@@ -418,7 +420,7 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
               'On each phone: Cluster > Worker. Changes apply when a model is next loaded.'
                   .tr),
         ],
-      ),
+      )),
     );
   }
 }

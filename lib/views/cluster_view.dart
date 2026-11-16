@@ -46,7 +46,7 @@ class _ClusterViewState extends State<ClusterView> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Phone cluster'.tr, showBack: true),
-      body: Obx(() {
+      body: PageWidth(child: Obx(() {
         final role = cluster.role;
         return ListView(
           padding: kPagePadding,
@@ -55,16 +55,19 @@ class _ClusterViewState extends State<ClusterView> {
             AppSegmented<ClusterRole>(
               items: [
                 (ClusterRole.off, 'Off'.tr),
-                if (ClusterService.canBeMaster) (ClusterRole.master, 'Master'.tr),
+                if (ClusterService.canBeMaster)
+                  (ClusterRole.master, 'Master'.tr),
                 (ClusterRole.worker, 'Worker'.tr),
               ],
               selected: role,
               onChanged: cluster.setRole,
             ),
             const SizedBox(height: 16),
-            if (role != ClusterRole.off && cluster.wifiAddress.value == null) ...[
+            if (role != ClusterRole.off &&
+                cluster.wifiAddress.value == null) ...[
               AppNotice(
-                'Turn on Wi-Fi. All phones in the cluster must be on the same Wi-Fi network.'.tr,
+                'Turn on Wi-Fi. All phones in the cluster must be on the same Wi-Fi network.'
+                    .tr,
                 icon: Icons.wifi_off_rounded,
                 color: t.orange,
               ),
@@ -77,7 +80,7 @@ class _ClusterViewState extends State<ClusterView> {
             },
           ],
         );
-      }),
+      })),
     );
   }
 
@@ -85,12 +88,14 @@ class _ClusterViewState extends State<ClusterView> {
         AppNotice(
           ClusterService.canBeMaster
               ? 'Run models too big for one phone by sharing the work across '
-                  'phones on the same Wi-Fi.\n\n'
-                  'Master: the phone you chat on. It runs the model.\n'
-                  'Worker: a phone that lends its memory to the master.'.tr
+                      'phones on the same Wi-Fi.\n\n'
+                      'Master: the phone you chat on. It runs the model.\n'
+                      'Worker: a phone that lends its memory to the master.'
+                  .tr
               : 'Help an Android phone running PrivateLM run models too big for '
-                  'it alone: choose Worker, then scan this device\'s QR code '
-                  'from that phone.'.tr,
+                      'it alone: choose Worker, then scan this device\'s QR code '
+                      'from that phone.'
+                  .tr,
           icon: Icons.hub_outlined,
         ),
       ];
@@ -109,29 +114,40 @@ class _ClusterViewState extends State<ClusterView> {
         const SizedBox(height: 12),
         Text('Worker stopped'.tr, style: t.bodyStrong),
         const SizedBox(height: 4),
-        Text(s.error ?? 'Unknown error'.tr, style: t.caption, textAlign: TextAlign.center),
+        Text(s.error ?? 'Unknown error'.tr,
+            style: t.caption, textAlign: TextAlign.center),
         const SizedBox(height: 16),
-        PillButton(label: 'Try again'.tr, primary: true, onPressed: cluster.startWorker),
+        PillButton(
+            label: 'Try again'.tr,
+            primary: true,
+            onPressed: cluster.startWorker),
       ]);
     } else if (s.peer != null) {
       body = _centered(context, [
         _PulsingDot(color: t.green),
         const SizedBox(height: 14),
-        Text('Sharing with master'.tr, style: t.bodyStrong.copyWith(fontSize: 18)),
+        Text('Sharing with master'.tr,
+            style: t.bodyStrong.copyWith(fontSize: 18)),
         const SizedBox(height: 4),
         Text(s.peer!, style: t.caption),
         const SizedBox(height: 20),
         Row(children: [
           Expanded(child: _Stat(label: 'Holding'.tr, value: _gb(s.heldMb))),
-          Expanded(child: _Stat(label: 'Free at start'.tr, value: _gb(s.ramMb))),
-          Expanded(child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
+          Expanded(
+              child: _Stat(label: 'Free at start'.tr, value: _gb(s.ramMb))),
+          Expanded(
+              child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
         ]),
       ]);
     } else if (!s.running || qr == null) {
       body = _centered(context, [
-        const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5)),
+        const SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2.5)),
         const SizedBox(height: 16),
-        Text(s.running ? 'Waiting for Wi-Fi…'.tr : 'Measuring this phone…'.tr, style: t.caption),
+        Text(s.running ? 'Waiting for Wi-Fi…'.tr : 'Measuring this phone…'.tr,
+            style: t.caption),
       ]);
     } else {
       body = _centered(context, [
@@ -157,7 +173,8 @@ class _ClusterViewState extends State<ClusterView> {
         const SizedBox(height: 16),
         Row(children: [
           Expanded(child: _Stat(label: 'Free memory'.tr, value: _gb(s.ramMb))),
-          Expanded(child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
+          Expanded(
+              child: _Stat(label: 'Memory speed'.tr, value: _gbs(s.bandwidth))),
         ]),
       ]);
     }
@@ -166,8 +183,9 @@ class _ClusterViewState extends State<ClusterView> {
       if (s.throttled) ...[
         AppNotice(
           'Android is slowing this worker down (slow cores only), which slows '
-          'the whole cluster. Set PrivateLM\'s battery use to Unrestricted, '
-          'then turn Worker off and on.'.tr,
+                  'the whole cluster. Set PrivateLM\'s battery use to Unrestricted, '
+                  'then turn Worker off and on.'
+              .tr,
           icon: Icons.speed_rounded,
           color: t.orange,
         ),
@@ -185,10 +203,12 @@ class _ClusterViewState extends State<ClusterView> {
       AppCard(padding: const EdgeInsets.fromLTRB(16, 24, 16, 20), child: body),
       SectionFootnote(ClusterService.workerStopsWithApp
           ? 'Keep this device plugged in, on the same Wi-Fi, with PrivateLM open: '
-              'iOS pauses apps in the background. Close PrivateLM to stop sharing.'.tr
+                  'iOS pauses apps in the background. Close PrivateLM to stop sharing.'
+              .tr
           : 'Keep this phone plugged in and on the same Wi-Fi, with PrivateLM '
-              'open: the screen stays on while sharing, because Android slows '
-              'background work. Set Phone cluster to Off to stop.'.tr),
+                  'open: the screen stays on while sharing, because Android slows '
+                  'background work. Set Phone cluster to Off to stop.'
+              .tr),
     ];
   }
 
@@ -217,7 +237,8 @@ class _ClusterViewState extends State<ClusterView> {
             icon: Icons.devices_other_rounded,
             title: 'No workers yet'.tr,
             message: 'On each other phone, open Phone cluster, choose Worker, '
-                'then scan the QR code it shows.'.tr,
+                    'then scan the QR code it shows.'
+                .tr,
           ),
         ])
       else
@@ -245,9 +266,10 @@ class _ClusterViewState extends State<ClusterView> {
         ]),
       SectionFootnote(
         'Used the next time you load a GGUF model. If the model fits on this '
-        'phone you can keep it here, which is faster. If it doesn\'t, the '
-        'fastest phones get the biggest share and phones that aren\'t needed '
-        'are left out.'.tr,
+                'phone you can keep it here, which is faster. If it doesn\'t, the '
+                'fastest phones get the biggest share and phones that aren\'t needed '
+                'are left out.'
+            .tr,
       ),
       SectionHeader('Other ways to add'.tr),
       Row(children: [
@@ -314,7 +336,8 @@ class _ClusterViewState extends State<ClusterView> {
             onSubmitted: (v) => Navigator.pop(ctx, v),
           ),
           const SizedBox(height: 16),
-          PrimaryButton(label: 'Add'.tr, onPressed: () => Navigator.pop(ctx, ctrl.text)),
+          PrimaryButton(
+              label: 'Add'.tr, onPressed: () => Navigator.pop(ctx, ctrl.text)),
         ],
       ),
     );
@@ -332,8 +355,8 @@ class _ClusterViewState extends State<ClusterView> {
       builder: (_) => AddComputerSheet(cluster: cluster),
     );
     if (added == true) {
-      showToast('Computer added'.tr,
-          'Used the next time you load a GGUF model.'.tr,
+      showToast(
+          'Computer added'.tr, 'Used the next time you load a GGUF model.'.tr,
           tone: ToastTone.success);
     }
   }
@@ -343,7 +366,8 @@ class _ClusterViewState extends State<ClusterView> {
     if (error != null) {
       showToast('Couldn\'t add worker'.tr, error, tone: ToastTone.error);
     } else {
-      showToast('Worker added'.tr, 'Used the next time you load a GGUF model.'.tr,
+      showToast(
+          'Worker added'.tr, 'Used the next time you load a GGUF model.'.tr,
           tone: ToastTone.success);
     }
   }
@@ -368,7 +392,8 @@ class AddComputerSheet extends StatefulWidget {
 }
 
 class _AddComputerSheetState extends State<AddComputerSheet> {
-  static const _command = 'ggml-rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
+  static const _command =
+      'ggml-rpc-server -H 0.0.0.0 -p ${LlamaCluster.defaultPort} -c';
 
   final _address = TextEditingController();
   final _memory = TextEditingController();
@@ -413,8 +438,8 @@ class _AddComputerSheetState extends State<AddComputerSheet> {
       return;
     }
     if (memoryMb > totalMb) {
-      setState(() => _error = 'This computer only has @size.'
-          .trParams({'size': _gb(totalMb)}));
+      setState(() => _error =
+          'This computer only has @size.'.trParams({'size': _gb(totalMb)}));
       return;
     }
     setState(() {
@@ -446,8 +471,8 @@ class _AddComputerSheetState extends State<AddComputerSheet> {
               shape: BoxShape.circle,
             ),
             child: Text('$number',
-                style: t.small.copyWith(
-                    color: t.accent, fontWeight: FontWeight.w700)),
+                style: t.small
+                    .copyWith(color: t.accent, fontWeight: FontWeight.w700)),
           ),
           const SizedBox(width: 10),
           Expanded(child: child),
@@ -534,8 +559,7 @@ class _AddComputerSheetState extends State<AddComputerSheet> {
         ],
         if (_error != null) ...[
           const SizedBox(height: 12),
-          AppNotice(_error!,
-              icon: Icons.error_outline_rounded, color: t.red),
+          AppNotice(_error!, icon: Icons.error_outline_rounded, color: t.red),
         ],
         const SizedBox(height: 16),
         PrimaryButton(
@@ -583,7 +607,8 @@ class _SplitCard extends StatelessWidget {
                 Expanded(
                   flex: (shares[i].mb / total * 1000).round().clamp(1, 1000),
                   child: Container(
-                    margin: EdgeInsets.only(right: i == shares.length - 1 ? 0 : 2),
+                    margin:
+                        EdgeInsets.only(right: i == shares.length - 1 ? 0 : 2),
                     color: colors[i % colors.length],
                   ),
                 ),
@@ -605,11 +630,13 @@ class _SplitCard extends StatelessWidget {
                   style: t.body,
                 ),
               ),
-              Text('${(shares[i].mb / total * 100).round()}%', style: t.bodyStrong),
+              Text('${(shares[i].mb / total * 100).round()}%',
+                  style: t.bodyStrong),
               const SizedBox(width: 10),
               SizedBox(
                 width: 58,
-                child: Text(_gb(shares[i].mb), textAlign: TextAlign.right, style: t.caption),
+                child: Text(_gb(shares[i].mb),
+                    textAlign: TextAlign.right, style: t.caption),
               ),
             ]),
           ),
@@ -643,10 +670,11 @@ class _PulsingDot extends StatefulWidget {
   State<_PulsingDot> createState() => _PulsingDotState();
 }
 
-class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
-        ..repeat();
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1400))
+    ..repeat();
 
   @override
   void dispose() {
@@ -673,7 +701,8 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
           Container(
             width: 24,
             height: 24,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color),
+            decoration:
+                BoxDecoration(shape: BoxShape.circle, color: widget.color),
             child: const Icon(Icons.hub_rounded, size: 14, color: Colors.white),
           ),
         ]),
@@ -720,7 +749,8 @@ class _QrScanPageState extends State<_QrScanPage> {
         foregroundColor: Colors.white,
         title: Text('Scan worker QR code'.tr),
       ),
-      body: Stack(children: [
+      body: PageWidth(
+          child: Stack(children: [
         MobileScanner(controller: _controller, onDetect: _onDetect),
         Center(
           child: Container(
@@ -742,7 +772,7 @@ class _QrScanPageState extends State<_QrScanPage> {
             style: const TextStyle(color: Colors.white, fontSize: 15),
           ),
         ),
-      ]),
+      ])),
     );
   }
 }

@@ -72,7 +72,8 @@ class TaskView extends GetView<TaskController> {
             icon: Icons.checklist_rounded,
             title: 'No tasks yet'.tr,
             message:
-                'Describe a goal and the model will plan it\ninto steps, then run them for you.'.tr,
+                'Describe a goal and the model will plan it\ninto steps, then run them for you.'
+                    .tr,
             action: PrimaryButton(
               label: 'New task'.tr,
               icon: Icons.add_rounded,
@@ -387,9 +388,8 @@ class _StepRow extends StatelessWidget {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: t.isDark
-                      ? AppColors.sunkenDark
-                      : AppColors.surfaceLight,
+                  color:
+                      t.isDark ? AppColors.sunkenDark : AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: t.hairline, width: 0.5),
                 ),

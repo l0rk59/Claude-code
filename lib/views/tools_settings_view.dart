@@ -47,14 +47,17 @@ class _WebSearchSettingsViewState extends State<WebSearchSettingsView> {
           WebSearchProvider.brave =>
             'Needs a key (a free plan exists on brave.com/search/api). Dependable.'
                 .tr,
-          WebSearchProvider.searxng =>
-            'Your own search server, for instance on your computer: the search engines see it, not your phone.'
-                .tr,
+          WebSearchProvider.searxng => AppPlatform.isDesktop
+              ? 'Your own search server: the search engines see it, not this computer.'
+                  .tr
+              : 'Your own search server, for instance on your computer: the search engines see it, not your phone.'
+                  .tr,
         };
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Web search'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           Text(
@@ -91,7 +94,8 @@ class _WebSearchSettingsViewState extends State<WebSearchSettingsView> {
                 obscureText: true,
                 autocorrect: false,
                 decoration: appInputDecoration(context),
-                onChanged: (v) => _hive.setSetting(AppConstants.keyBraveSearchKey,
+                onChanged: (v) => _hive.setSetting(
+                    AppConstants.keyBraveSearchKey,
                     v.trim().isEmpty ? null : v.trim()),
               ),
             ),
@@ -115,7 +119,7 @@ class _WebSearchSettingsViewState extends State<WebSearchSettingsView> {
             ),
           ],
         ],
-      ),
+      )),
     );
   }
 }
@@ -152,7 +156,8 @@ class _MemoryViewState extends State<MemoryView> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Memory'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           Text(
@@ -182,8 +187,8 @@ class _MemoryViewState extends State<MemoryView> {
             Expanded(
               child: TextField(
                 controller: _newFact,
-                decoration: appInputDecoration(context,
-                    hint: 'I am vegetarian'.tr),
+                decoration:
+                    appInputDecoration(context, hint: 'I am vegetarian'.tr),
                 onSubmitted: (_) => _add(),
               ),
             ),
@@ -231,7 +236,7 @@ class _MemoryViewState extends State<MemoryView> {
             ),
           ],
         ],
-      ),
+      )),
     );
   }
 }

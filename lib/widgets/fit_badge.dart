@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../core/ui.dart';
+import '../core/app_platform.dart';
 import '../services/model_fit.dart';
 
 /// "Runs well" / "Tight fit" / "Too big": whether a model suits this phone.
@@ -18,13 +19,19 @@ class FitBadge extends StatelessWidget {
 
   /// One sentence on what the fit means for the user.
   static String explain(ModelFit fit) => switch (fit) {
-        ModelFit.ideal => 'Runs comfortably on this phone.'.tr,
-        ModelFit.tight =>
-          'Loads on this phone with little memory to spare: it can be slow, or fail when other apps are open.'
-              .tr,
-        ModelFit.tooBig =>
-          'Needs more memory than this phone has. Phone cluster can run it across several phones.'
-              .tr,
+        ModelFit.ideal => AppPlatform.isDesktop
+            ? 'Runs comfortably on this computer.'.tr
+            : 'Runs comfortably on this phone.'.tr,
+        ModelFit.tight => AppPlatform.isDesktop
+            ? 'Loads on this computer with little memory to spare: it can be slow, or fail when other programs are open.'
+                .tr
+            : 'Loads on this phone with little memory to spare: it can be slow, or fail when other apps are open.'
+                .tr,
+        ModelFit.tooBig => AppPlatform.isDesktop
+            ? 'Needs more memory than this computer has. Phones in Worker mode can lend theirs (Settings > Computer engine).'
+                .tr
+            : 'Needs more memory than this phone has. Phone cluster can run it across several phones.'
+                .tr,
         ModelFit.unknown => '',
       };
 

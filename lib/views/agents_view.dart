@@ -50,19 +50,29 @@ class AgentPickerSheet extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppGroup(dividerIndent: 60, children: [
-          row(AgentStore.none, 'Plain assistant'.tr,
-              'Answers directly, without tools.'.tr, Icons.chat_bubble_outline_rounded),
+          row(
+              AgentStore.none,
+              'Plain assistant'.tr,
+              'Answers directly, without tools.'.tr,
+              Icons.chat_bubble_outline_rounded),
         ]),
         SectionHeader('Assistants'.tr),
         AppGroup(dividerIndent: 60, children: [
           for (final a in store.agents())
-            row(a.id, a.name, a.description,
-                a.usesTools ? Icons.smart_toy_outlined : Icons.person_outline_rounded),
+            row(
+                a.id,
+                a.name,
+                a.description,
+                a.usesTools
+                    ? Icons.smart_toy_outlined
+                    : Icons.person_outline_rounded),
         ]),
         SectionHeader('Teams'.tr),
         AppGroup(dividerIndent: 60, children: [
           for (final team in store.teams())
-            row(team.id, team.name,
+            row(
+                team.id,
+                team.name,
                 store.membersOf(team).map((m) => m.name).join(' → '),
                 Icons.groups_outlined),
         ]),
@@ -113,10 +123,11 @@ class _AgentsViewState extends State<AgentsView> {
   }
 
   Future<void> _pickWorkspace() async {
-    final dir =
-        await FilePicker.getDirectoryPath(dialogTitle: 'Work folder of the agents'.tr);
+    final dir = await FilePicker.getDirectoryPath(
+        dialogTitle: 'Work folder of the agents'.tr);
     if (dir == null) return;
-    await Get.find<HiveService>().setSetting(AppConstants.keyAgentWorkspace, dir);
+    await Get.find<HiveService>()
+        .setSetting(AppConstants.keyAgentWorkspace, dir);
     await _loadWorkspace();
   }
 
@@ -132,13 +143,14 @@ class _AgentsViewState extends State<AgentsView> {
     String toolsLine(AgentProfile a) => [
           if (a.deep) 'Deep mode'.tr,
           a.usesTools
-              ? a.tools.map(AgentToolbox.title).join(', ')
+              ? a.tools.map(AgentToolbox.shortTitle).toSet().join(', ')
               : 'No tools'.tr,
         ].join(' · ');
     return Scaffold(
       backgroundColor: t.bg,
       appBar: appScreenBar(context, title: 'Agents'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           Text(
@@ -201,7 +213,7 @@ class _AgentsViewState extends State<AgentsView> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }
@@ -248,7 +260,10 @@ class _AgentEditorViewState extends State<AgentEditorView> {
       name: _name.text.trim(),
       description: _description.text.trim(),
       instructions: _instructions.text.trim(),
-      tools: [for (final tool in AgentToolbox.all) if (_tools.contains(tool)) tool],
+      tools: [
+        for (final tool in AgentToolbox.all)
+          if (_tools.contains(tool)) tool
+      ],
       model: _model,
       deep: _deep,
     ));
@@ -298,7 +313,8 @@ class _AgentEditorViewState extends State<AgentEditorView> {
               : isNew
                   ? 'New assistant'.tr
                   : 'Edit assistant'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           if (_readOnly) ...[
@@ -312,7 +328,8 @@ class _AgentEditorViewState extends State<AgentEditorView> {
             child: TextField(
               controller: _name,
               enabled: !_readOnly,
-              decoration: appInputDecoration(context, hint: 'Travel planner'.tr),
+              decoration:
+                  appInputDecoration(context, hint: 'Travel planner'.tr),
             ),
           ),
           const SizedBox(height: 14),
@@ -360,19 +377,20 @@ class _AgentEditorViewState extends State<AgentEditorView> {
             for (final tool in AgentToolbox.all)
               // Python runs on a computer only.
               if (tool != AgentToolbox.runPython || AppPlatform.isDesktop)
-              AppRow(
-                title: AgentToolbox.title(tool),
-                subtitle: AgentToolbox.asksFirst.contains(tool)
-                    ? 'Asks you first'.tr
-                    : null,
-                trailing: Checkbox(
-                  value: _tools.contains(tool),
-                  onChanged: _readOnly
-                      ? null
-                      : (on) => setState(() =>
-                          on == true ? _tools.add(tool) : _tools.remove(tool)),
+                AppRow(
+                  title: AgentToolbox.title(tool),
+                  subtitle: AgentToolbox.asksFirst.contains(tool)
+                      ? 'Asks you first'.tr
+                      : null,
+                  trailing: Checkbox(
+                    value: _tools.contains(tool),
+                    onChanged: _readOnly
+                        ? null
+                        : (on) => setState(() => on == true
+                            ? _tools.add(tool)
+                            : _tools.remove(tool)),
+                  ),
                 ),
-              ),
           ]),
           SectionFootnote(
               'With tools, it decides on its own when to use them, in several steps.'
@@ -387,11 +405,13 @@ class _AgentEditorViewState extends State<AgentEditorView> {
                   trailing: _model == option
                       ? Icon(Icons.check_rounded, color: t.accent)
                       : null,
-                  onTap: _readOnly ? null : () => setState(() => _model = option),
+                  onTap:
+                      _readOnly ? null : () => setState(() => _model = option),
                 ),
             ]),
             SectionFootnote(
-                'A model of its own is loaded when you choose the assistant.'.tr),
+                'A model of its own is loaded when you choose the assistant.'
+                    .tr),
           ],
           const SizedBox(height: 20),
           if (_readOnly)
@@ -410,7 +430,7 @@ class _AgentEditorViewState extends State<AgentEditorView> {
             ],
           ],
         ],
-      ),
+      )),
     );
   }
 }
@@ -484,12 +504,12 @@ class _TeamEditorViewState extends State<TeamEditorView> {
               : isNew
                   ? 'New team'.tr
                   : 'Edit team'.tr),
-      body: ListView(
+      body: PageWidth(
+          child: ListView(
         padding: kPagePadding,
         children: [
           if (_readOnly) ...[
-            AppNotice(
-                'This team comes with the app. Copy it to change it.'.tr),
+            AppNotice('This team comes with the app. Copy it to change it.'.tr),
             const SizedBox(height: 12),
           ],
           AppField(
@@ -532,7 +552,8 @@ class _TeamEditorViewState extends State<TeamEditorView> {
                           if (i > 0)
                             IconButton(
                               tooltip: 'Move up'.tr,
-                              icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+                              icon: const Icon(Icons.arrow_upward_rounded,
+                                  size: 18),
                               onPressed: () => setState(() {
                                 final m = _members.removeAt(i);
                                 _members.insert(i - 1, m);
@@ -541,7 +562,8 @@ class _TeamEditorViewState extends State<TeamEditorView> {
                           IconButton(
                             tooltip: 'Remove'.tr,
                             icon: const Icon(Icons.close_rounded, size: 18),
-                            onPressed: () => setState(() => _members.removeAt(i)),
+                            onPressed: () =>
+                                setState(() => _members.removeAt(i)),
                           ),
                         ]),
                 ),
@@ -601,7 +623,7 @@ class _TeamEditorViewState extends State<TeamEditorView> {
             ],
           ],
         ],
-      ),
+      )),
     );
   }
 }

@@ -123,7 +123,8 @@ class _HfSearchViewState extends State<HfSearchView> {
           },
         ),
       ]),
-      body: Column(children: [
+      body: PageWidth(
+          child: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
           child: TextField(
@@ -152,7 +153,7 @@ class _HfSearchViewState extends State<HfSearchView> {
           ),
         ),
         Expanded(child: _body(context, t)),
-      ]),
+      ])),
     );
   }
 
@@ -416,8 +417,7 @@ class _RepoFilesState extends State<_RepoFiles> {
         ],
         if (models.isEmpty)
           AppNotice(
-            'No GGUF model the app can download here.'
-                .tr,
+            'No GGUF model the app can download here.'.tr,
           )
         else ...[
           // The file to take, so nobody has to know what "Q4_K_M" means.
@@ -637,12 +637,11 @@ Future<bool> showHfTokenSheet(
   final saved = await showAppSheet<bool>(
     context,
     title: 'Hugging Face token'.tr,
-    subtitle:
-        AppPlatform.isDesktop
-            ? "Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the system's keychain, sent only to Hugging Face."
-                .tr
-            : 'Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone\'s keystore, sent only to Hugging Face.'
-                .tr,
+    subtitle: AppPlatform.isDesktop
+        ? "Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the system's keychain, sent only to Hugging Face."
+            .tr
+        : 'Opens the models whose publisher asks to accept a licence (Gemma, Llama…). Stored in the phone\'s keystore, sent only to Hugging Face.'
+            .tr,
     builder: (_) => HfTokenSheet(
       service: service,
       current: savedHfToken() ?? '',
@@ -702,15 +701,16 @@ class _HfTokenSheetState extends State<HfTokenSheet> {
       if (account == null) {
         setState(() {
           _busy = false;
-          _error = 'Hugging Face refuses this token. Copy it again from huggingface.co/settings/tokens.'
-              .tr;
+          _error =
+              'Hugging Face refuses this token. Copy it again from huggingface.co/settings/tokens.'
+                  .tr;
         });
         return;
       }
       await widget.save(token);
       if (!mounted) return;
-      showToast('Token saved'.tr,
-          'Connected as @name.'.trParams({'name': account}),
+      showToast(
+          'Token saved'.tr, 'Connected as @name.'.trParams({'name': account}),
           tone: ToastTone.success);
       Navigator.pop(context, true);
     } catch (_) {

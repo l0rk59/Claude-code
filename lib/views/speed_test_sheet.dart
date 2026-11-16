@@ -48,7 +48,8 @@ class SpeedTestSheet extends StatefulWidget {
       ? 'Graphics card'.tr
       : choice.threads == null
           ? 'Processor'.tr
-          : 'Processor, @count threads'.trParams({'count': '${choice.threads}'});
+          : 'Processor, @count threads'
+              .trParams({'count': '${choice.threads}'});
 
   @override
   State<SpeedTestSheet> createState() => _SpeedTestSheetState();
@@ -112,8 +113,8 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
           if (bestTrial != null && outcome.speedup >= 1.1) ...[
             const SizedBox(height: 4),
             Text(
-                '@times× faster than the slowest setting.'.trParams(
-                    {'times': outcome.speedup.toStringAsFixed(1)}),
+                '@times× faster than the slowest setting.'
+                    .trParams({'times': outcome.speedup.toStringAsFixed(1)}),
                 style: t.caption),
           ],
           const SizedBox(height: 10),
@@ -173,8 +174,8 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
     } catch (e) {
       if (!mounted) return;
       final text = e is StateError ? e.message : '$e';
-      setState(() => _error = "The measurement didn't finish: @error"
-          .trParams({'error': text}));
+      setState(() => _error =
+          "The measurement didn't finish: @error".trParams({'error': text}));
     } finally {
       if (mounted) setState(() => _running = false);
     }
@@ -231,8 +232,7 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
                   Text(_speed(latest.tokensPerSecond),
                       style: t.title.copyWith(color: t.accent)),
                   const SizedBox(height: 4),
-                  Text(
-                      '${_wait(latest.firstTokenSeconds)} · ${latest.setup}',
+                  Text('${_wait(latest.firstTokenSeconds)} · ${latest.setup}',
                       style: t.caption),
                 ],
               ),
@@ -251,8 +251,7 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
             const SizedBox(height: 14),
           ],
           if (_error != null) ...[
-            AppNotice(_error!,
-                icon: Icons.error_outline_rounded, color: t.red),
+            AppNotice(_error!, icon: Icons.error_outline_rounded, color: t.red),
             const SizedBox(height: 14),
           ],
           PrimaryButton(

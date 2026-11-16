@@ -27,6 +27,22 @@ void main() {
     expect(problems, isEmpty, reason: problems.join('\n'));
   });
 
+  test('.tr follows the text itself, not an expression around it', () {
+    // (a ? 'x' : 'y').tr translates fine at run time but hides 'x' and 'y'
+    // from the checks below: write a ? 'x'.tr : 'y'.tr.
+    final problems = [
+      for (final file in Directory('lib').listSync(recursive: true))
+        if (file is File &&
+            file.path.endsWith('.dart') &&
+            !file.path.contains(
+                '${Platform.pathSeparator}l10n${Platform.pathSeparator}'))
+          for (final m in RegExp(r'''['"]\)\s*\.tr(Params)?\b''')
+              .allMatches(file.readAsStringSync()))
+            '${file.path}: ${m[0]}',
+    ];
+    expect(problems, isEmpty, reason: problems.join('\n'));
+  });
+
   test('every translated text has a French translation', () {
     final missing = <String>{
       for (final l in translated)

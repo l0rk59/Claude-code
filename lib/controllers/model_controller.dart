@@ -468,7 +468,7 @@ class ModelController extends GetxController {
   String modelSizeLabel(AiModel model) {
     final bytes = fileSizes[model.filename] ?? 0;
     if (bytes > 0) return DownloadService.formatBytes(bytes);
-    return model.size;
+    return DownloadService.localizeSize(model.size);
   }
 
   /// The name to show for the model file [filename]: its catalogue name
@@ -1142,9 +1142,13 @@ class ModelController extends GetxController {
               'context': '$contextTokens',
               'fitting': '$fittingContext'
             })
-          : 'This model is probably too large for the free memory on this '
-                  'phone, even with a small context. Try a smaller model.'
-              .tr;
+          : AppPlatform.isDesktop
+              ? 'This model is probably too large for the free memory of this '
+                      'computer, even with a small context. Try a smaller model.'
+                  .tr
+              : 'This model is probably too large for the free memory on this '
+                      'phone, even with a small context. Try a smaller model.'
+                  .tr;
     } else if (isCriticallyLow) {
       warning =
           'Available RAM is lower than recommended. This can crash the app if Android cannot reserve enough memory.'
