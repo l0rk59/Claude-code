@@ -1851,6 +1851,10 @@ const Map<String, String> fr = {
       "Se charge sur cet ordinateur avec peu de mémoire en réserve : il peut être lent, ou échouer quand d'autres programmes sont ouverts.",
   'Needs more memory than this computer has. Phones in Worker mode can lend theirs (Settings > Computer engine).':
       "Demande plus de mémoire que cet ordinateur n'en a. Des téléphones en mode Auxiliaire peuvent prêter la leur (Paramètres > Moteur de l'ordinateur).",
+  'ERROR: Claude declined to answer this request.':
+      'ERREUR : Claude a refusé de répondre à cette demande.',
+  'Claude models, native API': 'Modèles Claude, API native',
+  'OpenAI compatible Kimi models': 'Modèles Kimi compatibles OpenAI',
 };
 
 /// Download statuses the Android code reports in English (shown through

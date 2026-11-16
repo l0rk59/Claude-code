@@ -8,6 +8,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import '../services/app_log_service.dart';
 import '../services/hive_service.dart';
+import '../services/cloud_service.dart';
 import 'settings_controller.dart';
 
 class CloudProviderInfo {
@@ -57,6 +58,15 @@ class CloudModelController extends GetxController {
       'deepseek-chat',
       'deepseek-reasoner',
     ],
+    'anthropic': [
+      'claude-opus-5-5',
+      'claude-sonnet-5-5',
+      'claude-haiku-5-5',
+      'claude-fable-5-2',
+    ],
+    'kimi': [
+      'kimi-k2.6',
+    ],
     'google': [
       'gemini-2.5-flash',
       'gemini-2.5-pro',
@@ -91,6 +101,18 @@ class CloudModelController extends GetxController {
       name: 'DeepSeek',
       description: 'OpenAI compatible V4 models',
       icon: Icons.psychology_alt_outlined,
+    ),
+    CloudProviderInfo(
+      id: 'anthropic',
+      name: 'Anthropic (Claude)',
+      description: 'Claude models, native API',
+      icon: Icons.blur_on_rounded,
+    ),
+    CloudProviderInfo(
+      id: 'kimi',
+      name: 'Kimi (Moonshot AI)',
+      description: 'OpenAI compatible Kimi models',
+      icon: Icons.nightlight_round,
     ),
     CloudProviderInfo(
       id: 'google',
@@ -178,6 +200,10 @@ class CloudModelController extends GetxController {
         return _settings.googleKey.value;
       case 'nvidia':
         return _settings.nvidiaKey.value;
+      case 'anthropic':
+        return _settings.anthropicKey.value;
+      case 'kimi':
+        return _settings.kimiKey.value;
       case 'custom':
         return _settings.customCloudKey.value;
       default:
@@ -459,6 +485,19 @@ class CloudModelController extends GetxController {
       case 'nvidia':
         return http.get(
           Uri.parse('${AppConstants.nvidiaEndpoint}/models'),
+          headers: {'Authorization': 'Bearer ${apiKeyFor(provider)}'},
+        );
+      case 'anthropic':
+        return http.get(
+          Uri.parse('https://api.anthropic.com/v1/models?limit=100'),
+          headers: {
+            'x-api-key': apiKeyFor(provider),
+            'anthropic-version': CloudService.anthropicVersion,
+          },
+        );
+      case 'kimi':
+        return http.get(
+          Uri.parse('https://api.moonshot.ai/v1/models'),
           headers: {'Authorization': 'Bearer ${apiKeyFor(provider)}'},
         );
       default:

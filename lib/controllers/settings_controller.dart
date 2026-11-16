@@ -180,8 +180,8 @@ class SettingsController extends GetxController {
             defaultValue: 'gpt-5.2') ??
         'gpt-5.2';
     anthropicModel.value = _hive.getSetting(AppConstants.keyAnthropicModel,
-            defaultValue: 'claude-sonnet-4-6') ??
-        'claude-sonnet-4-6';
+            defaultValue: 'claude-opus-5-5') ??
+        'claude-opus-5-5';
     googleModel.value = _hive.getSetting(AppConstants.keyGoogleModel,
             defaultValue: 'gemini-2.5-flash') ??
         'gemini-2.5-flash';

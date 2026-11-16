@@ -42,7 +42,7 @@ class CloudService extends GetxService {
     switch (_provider) {
       case 'anthropic':
         return _hive.getSetting(AppConstants.keyAnthropicModel) ??
-            'claude-sonnet-4-6';
+            'claude-opus-5-5';
       case 'google':
         return _hive.getSetting(AppConstants.keyGoogleModel) ??
             'gemini-2.5-flash';
@@ -114,6 +114,9 @@ class CloudService extends GetxService {
     }
 
     try {
+      if (onToken != null && _provider == 'anthropic') {
+        return await _streamAnthropic(messages, imageBase64, maxTokens, onToken);
+      }
       if (onToken != null && _supportsStreaming) {
         return await _streamOpenAICompatible(
           endpoint: _openAICompatibleEndpoint,
@@ -296,25 +299,37 @@ class CloudService extends GetxService {
 
   // ─── Anthropic ──────────────────────────────────
 
-  Future<String> _sendAnthropic(
-    List<Map<String, String>> messages,
+  /// The Claude API version this app speaks.
+  static const anthropicVersion = '2026-10-21';
+
+  /// Claude models that hand a request they decline to another model
+  /// instead of stopping (Anthropic's server-side fallbacks).
+  static bool claudeHasFallbacks(String model) => RegExp(
+          r'^claude-(opus-5-5|opus-5|sonnet-5-5|fable-5-[12]|mythos-5-[12])$')
+      .hasMatch(model);
+
+  /// The Messages API request for [messages] (system first, if any).
+  /// No temperature: current Claude models refuse sampling settings.
+  static Map<String, dynamic> anthropicBody({
+    required String model,
+    required List<Map<String, String>> messages,
     String? imageBase64,
-    double? temperature,
     int? maxTokens,
-  ) async {
-    // Extract system message
+    bool stream = false,
+  }) {
     String? systemMsg;
     final apiMessages = <Map<String, dynamic>>[];
-
     for (final msg in messages) {
+      final content = msg['content'] ?? '';
       if (msg['role'] == 'system') {
-        systemMsg = msg['content'];
+        systemMsg = systemMsg == null ? content : '$systemMsg\n\n$content';
         continue;
       }
-
-      if (msg['role'] == 'user' &&
-          imageBase64 != null &&
-          msg == messages.last) {
+      // Claude refuses empty turns (an earlier error, an empty answer).
+      if (content.trim().isEmpty && !(imageBase64 != null && msg == messages.last)) {
+        continue;
+      }
+      if (msg['role'] == 'user' && imageBase64 != null && msg == messages.last) {
         apiMessages.add({
           'role': 'user',
           'content': [
@@ -326,33 +341,59 @@ class CloudService extends GetxService {
                 'data': imageBase64,
               }
             },
-            {'type': 'text', 'text': msg['content']},
+            {'type': 'text', 'text': content.isEmpty ? '?' : content},
           ],
         });
       } else {
-        apiMessages.add({
-          'role': msg['role'],
-          'content': msg['content'],
-        });
+        apiMessages.add({'role': msg['role'], 'content': content});
       }
     }
-
-    final body = <String, dynamic>{
-      'model': _model,
+    return {
+      'model': model,
       'messages': apiMessages,
-      'max_tokens': maxTokens ?? AppConstants.defaultMaxTokens,
-      'temperature': temperature ?? AppConstants.defaultTemperature,
+      'max_tokens': maxTokens ?? 16000,
+      if (systemMsg != null && systemMsg.isNotEmpty) 'system': systemMsg,
+      if (claudeHasFallbacks(model)) 'fallbacks': 'default',
+      if (stream) 'stream': true,
     };
-    if (systemMsg != null) body['system'] = systemMsg;
+  }
 
+  /// The answer of a Messages API response: its text blocks (thinking and
+  /// fallback notices left out); a declined request says so.
+  static String anthropicText(Map<String, dynamic> data) {
+    final blocks = data['content'] as List? ?? const [];
+    final text = [
+      for (final b in blocks)
+        if (b is Map && b['type'] == 'text') '${b['text'] ?? ''}',
+    ].join();
+    if (data['stop_reason'] == 'refusal' && text.trim().isEmpty) {
+      return 'ERROR: Claude declined to answer this request.'.tr;
+    }
+    return text;
+  }
+
+  Map<String, String> get _anthropicHeaders => {
+        'x-api-key': _apiKey,
+        'anthropic-version': anthropicVersion,
+        if (claudeHasFallbacks(_model))
+          'anthropic-beta': 'server-side-fallback-2026-07-01',
+        'Content-Type': 'application/json',
+      };
+
+  Future<String> _sendAnthropic(
+    List<Map<String, String>> messages,
+    String? imageBase64,
+    double? temperature,
+    int? maxTokens,
+  ) async {
     final response = await _post(
       Uri.parse(AppConstants.anthropicEndpoint),
-      headers: {
-        'x-api-key': _apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(body),
+      headers: _anthropicHeaders,
+      body: jsonEncode(anthropicBody(
+          model: _model,
+          messages: messages,
+          imageBase64: imageBase64,
+          maxTokens: maxTokens)),
     );
 
     if (response.statusCode != 200) {
@@ -362,10 +403,96 @@ class CloudService extends GetxService {
         'body': response.body
       });
     }
+    return anthropicText(jsonDecode(utf8.decode(response.bodyBytes))
+        as Map<String, dynamic>);
+  }
 
-    final data = jsonDecode(response.body);
-    final content = data['content'] as List;
-    return content.isNotEmpty ? content[0]['text'] ?? '' : '';
+  /// Streams a Claude answer: text_delta events go to [onToken].
+  Future<String> _streamAnthropic(
+    List<Map<String, String>> messages,
+    String? imageBase64,
+    int? maxTokens,
+    void Function(String token) onToken,
+  ) async {
+    final request = http.Request('POST', Uri.parse(AppConstants.anthropicEndpoint));
+    request.headers.addAll({..._anthropicHeaders, 'Accept': 'text/event-stream'});
+    request.body = jsonEncode(anthropicBody(
+        model: _model,
+        messages: messages,
+        imageBase64: imageBase64,
+        maxTokens: maxTokens,
+        stream: true));
+    final client = http.Client();
+    _activeStreamClient = client;
+    try {
+      final response = await client.send(request).timeout(_connectTimeout);
+      if (response.statusCode != 200) {
+        final body = await response.stream.bytesToString();
+        return 'ERROR: @provider returned @code — @body'.trParams(
+            {'provider': 'Anthropic', 'code': '${response.statusCode}', 'body': body});
+      }
+      final buffer = StringBuffer();
+      var stop = '';
+      var finished = false;
+      String? error;
+      await for (final line in response.stream
+          .timeout(streamIdleTimeout)
+          .transform(const Utf8Decoder(allowMalformed: true))
+          .transform(const LineSplitter())) {
+        if (!line.startsWith('data:')) continue;
+        Map? data;
+        try {
+          final decoded = jsonDecode(line.substring(5).trim());
+          if (decoded is Map) data = decoded;
+        } catch (_) {
+          continue;
+        }
+        if (data == null) continue;
+        switch (data['type']) {
+          case 'content_block_delta':
+            final delta = data['delta'];
+            if (delta is Map && delta['type'] == 'text_delta') {
+              final t = '${delta['text'] ?? ''}';
+              if (t.isNotEmpty) {
+                buffer.write(t);
+                onToken(t);
+              }
+            }
+          case 'message_delta':
+            final delta = data['delta'];
+            if (delta is Map && delta['stop_reason'] is String) {
+              stop = delta['stop_reason'] as String;
+            }
+          case 'message_stop':
+            finished = true;
+          case 'error':
+            final e = data['error'];
+            error = e is Map ? '${e['message'] ?? e['type']}' : '$e';
+        }
+        if (finished || error != null) break;
+      }
+      final text = buffer.toString();
+      if (error != null) {
+        final params = {'provider': 'Anthropic', 'error': error};
+        return text.isEmpty
+            ? 'ERROR: @provider returned an error — @error'.trParams(params)
+            : '$text\n\n⚠️ ${'@provider stopped with an error: @error'.trParams(params)}';
+      }
+      if (stop == 'refusal' && text.trim().isEmpty) {
+        return 'ERROR: Claude declined to answer this request.'.tr;
+      }
+      if (text.isEmpty) {
+        return 'ERROR: @provider returned an empty response.'
+            .trParams({'provider': 'Anthropic'});
+      }
+      if (!finished) {
+        return '$text\n\n⚠️ ${'The response was cut off before it finished.'.tr}';
+      }
+      return text;
+    } finally {
+      if (identical(_activeStreamClient, client)) _activeStreamClient = null;
+      client.close();
+    }
   }
 
   // ─── Google Gemini ──────────────────────────────
