@@ -5,6 +5,7 @@ import '../core/ui.dart';
 import '../core/app_platform.dart';
 import '../services/auto_tune.dart';
 import '../services/speed_test.dart';
+import '../core/format.dart';
 
 /// Measures how fast the loaded model answers, and keeps the last results
 /// side by side so two settings can be compared.
@@ -114,7 +115,7 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
             const SizedBox(height: 4),
             Text(
                 '@times× faster than the slowest setting.'
-                    .trParams({'times': outcome.speedup.toStringAsFixed(1)}),
+                    .trParams({'times': decimal(outcome.speedup, 1)}),
                 style: t.caption),
           ],
           const SizedBox(height: 10),
@@ -182,10 +183,10 @@ class _SpeedTestSheetState extends State<SpeedTestSheet> {
   }
 
   static String _speed(double tokensPerSecond) =>
-      '@speed tokens/s'.trParams({'speed': tokensPerSecond.toStringAsFixed(1)});
+      '@speed tokens/s'.trParams({'speed': decimal(tokensPerSecond, 1)});
 
-  static String _wait(double seconds) => 'first word after @seconds s'
-      .trParams({'seconds': seconds.toStringAsFixed(1)});
+  static String _wait(double seconds) =>
+      'first word after @seconds s'.trParams({'seconds': decimal(seconds, 1)});
 
   @override
   Widget build(BuildContext context) {

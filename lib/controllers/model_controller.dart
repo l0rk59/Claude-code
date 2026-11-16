@@ -153,7 +153,8 @@ class ModelController extends GetxController {
         // Core ML (Apple NPU) models only run on iOS/macOS.
         .where((m) => supportsAppleNpu || !isNpuModel(m))
         // The computer app runs GGUF models only (llama.cpp).
-        .where((m) => !AppPlatform.isDesktop || m.runtime == AiModel.runtimeLlama)
+        .where(
+            (m) => !AppPlatform.isDesktop || m.runtime == AiModel.runtimeLlama)
         .toList()
       ..addAll(customModels);
     refreshDownloaded();
@@ -191,8 +192,8 @@ class ModelController extends GetxController {
     for (final file in files) {
       final split = GgufSplit.parse(file);
       if (split == null || split.index != 1) continue;
-      fileSizes[file] = split.names
-          .fold<int>(0, (sum, part) => sum + (fileSizes[part] ?? 0));
+      fileSizes[file] =
+          split.names.fold<int>(0, (sum, part) => sum + (fileSizes[part] ?? 0));
     }
 
     // Add any downloaded files that are not in availableModels
@@ -261,9 +262,9 @@ class ModelController extends GetxController {
 
   /// The model to suggest on this phone when none is installed: the
   /// smartest starter that still runs comfortably.
-  AiModel? get starterModel => pickStarter(
-      availableModels, Get.find<DeviceInfoService>().modelMemoryGB,
-      computer: AppPlatform.isDesktop);
+  AiModel? get starterModel =>
+      pickStarter(availableModels, Get.find<DeviceInfoService>().modelMemoryGB,
+          computer: AppPlatform.isDesktop);
 
   /// On a computer: the strongest that runs comfortably.
   static const _computerStarters = [
@@ -406,8 +407,8 @@ class ModelController extends GetxController {
   DownloadProgress? getDownloadProgress(String filename) =>
       _download.activeDownloads[filename];
 
-  bool isDownloadingModel(String filename) => GgufSplit.filesOf(filename)
-      .any(_download.activeDownloads.containsKey);
+  bool isDownloadingModel(String filename) =>
+      GgufSplit.filesOf(filename).any(_download.activeDownloads.containsKey);
 
   void setLocalFilter(String filter) {
     if (filter == 'npu' && !supportsAppleNpu) return;
@@ -475,13 +476,16 @@ class ModelController extends GetxController {
   /// without the quantisation ("Qwen 3.5 9B"), or the file name without
   /// its extension.
   String displayName(String filename) {
-    final model = availableModels.firstWhereOrNull((m) => m.filename == filename) ??
-        customModels.firstWhereOrNull((m) => m.filename == filename);
+    final model =
+        availableModels.firstWhereOrNull((m) => m.filename == filename) ??
+            customModels.firstWhereOrNull((m) => m.filename == filename);
     if (model != null && model.name.trim().isNotEmpty) {
       return model.name.replaceAll(RegExp(r'\s*\([^)]*\)\s*$'), '');
     }
     return filename.replaceAll(
-        RegExp(r'\.(gguf|litertlm|task|bin|safetensors)$', caseSensitive: false), '');
+        RegExp(r'\.(gguf|litertlm|task|bin|safetensors)$',
+            caseSensitive: false),
+        '');
   }
 
   /// Whether [model] suits this phone's memory.
@@ -520,7 +524,8 @@ class ModelController extends GetxController {
     for (final match in RegExp(r'([\d.]+)\s*(GB|MB)', caseSensitive: false)
         .allMatches(model.size)) {
       final value = double.tryParse(match.group(1) ?? '') ?? 0;
-      total += match.group(2)!.toUpperCase() == 'GB' ? value * 1e9 : value * 1e6;
+      total +=
+          match.group(2)!.toUpperCase() == 'GB' ? value * 1e9 : value * 1e6;
     }
     return total.round();
   }
@@ -635,8 +640,7 @@ class ModelController extends GetxController {
 
   Future<void> downloadModelToDownloads(AiModel model) async {
     if (model.url.trim().isEmpty) {
-      showToast(
-          'Download Unavailable'.tr, 'This model has no download URL.'.tr,
+      showToast('Download Unavailable'.tr, 'This model has no download URL.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -940,7 +944,7 @@ class ModelController extends GetxController {
           mmprojPath = await _download.modelPath(model.mmprojFilename);
         } else {
           visionNote = ' ${'Vision file is still downloading, so images will '
-                  'work after you reload the model.'.tr}';
+              'work after you reload the model.'.tr}';
           if (model.mmprojUrl.isNotEmpty &&
               !_download.activeDownloads.containsKey(model.mmprojFilename)) {
             unawaited(_downloadVisionFile(model));
@@ -1091,11 +1095,11 @@ class ModelController extends GetxController {
     final availableBytes =
         measuredBytes > 0 ? measuredBytes + loadedBytes : measuredBytes;
     final modelLabel = fileBytes > 0
-        ? DownloadService.formatWholeMb(fileBytes)
+        ? DownloadService.formatMemory(fileBytes)
         : 'Unknown size'.tr;
     final ramLabel = availableBytes > 0
         ? '${hasLoadedModel && loadedBytes > 0 ? '~' : ''}'
-            '${DownloadService.formatWholeMb(availableBytes)}'
+            '${DownloadService.formatMemory(availableBytes)}'
         : 'Unknown'.tr;
     final lower = filename.toLowerCase();
 
@@ -1138,10 +1142,8 @@ class ModelController extends GetxController {
           ? "This probably won't fit in free memory at a context of "
                   '@context tokens. A context of @fitting tokens '
                   'should fit.'
-              .trParams({
-              'context': '$contextTokens',
-              'fitting': '$fittingContext'
-            })
+              .trParams(
+                  {'context': '$contextTokens', 'fitting': '$fittingContext'})
           : AppPlatform.isDesktop
               ? 'This model is probably too large for the free memory of this '
                       'computer, even with a small context. Try a smaller model.'
@@ -1150,12 +1152,18 @@ class ModelController extends GetxController {
                       'phone, even with a small context. Try a smaller model.'
                   .tr;
     } else if (isCriticallyLow) {
-      warning =
-          'Available RAM is lower than recommended. This can crash the app if Android cannot reserve enough memory.'
+      warning = AppPlatform.isDesktop
+          ? 'Free memory is lower than recommended. Close other programs or '
+                  'choose a smaller model.'
+              .tr
+          : 'Available RAM is lower than recommended. This can crash the app if Android cannot reserve enough memory.'
               .tr;
     } else if (isLargeForRam || isLowRam || isLiteRt) {
-      warning =
-          'This can crash the app if Android cannot reserve enough memory for the model.'
+      warning = AppPlatform.isDesktop
+          ? 'The model takes most of the free memory: the computer may slow '
+                  'down while it runs.'
+              .tr
+          : 'This can crash the app if Android cannot reserve enough memory for the model.'
               .tr;
     } else {
       warning =
@@ -1185,7 +1193,7 @@ class ModelController extends GetxController {
           ? 'Reload model?'.tr
           : hasLoadedModel
               ? 'Switch model?'.tr
-              : isCriticallyLow
+              : isCriticallyLow && !AppPlatform.isDesktop
                   ? 'Restart recommended'.tr
                   : 'Load model?'.tr,
       subtitle: filename,
@@ -1211,16 +1219,16 @@ class ModelController extends GetxController {
                 _detailRow(
                   ctx,
                   'Estimated memory'.tr,
-                  DownloadService.formatWholeMb(estimatedBytes),
+                  DownloadService.formatMemory(estimatedBytes),
                   note: 'Context @size for @count tokens'.trParams({
-                    'size': DownloadService.formatWholeMb(
+                    'size': DownloadService.formatMemory(
                         gguf.kvCacheBytes(contextTokens)),
                     'count': '$contextTokens'
                   }),
                 ),
               if (draftBytes > 0)
                 _detailRow(ctx, 'Draft model'.tr,
-                    DownloadService.formatWholeMb(draftBytes),
+                    DownloadService.formatMemory(draftBytes),
                     note: draftName),
             ]),
             if (hasLoadedModel) ...[
@@ -1282,7 +1290,7 @@ class ModelController extends GetxController {
                   },
                 ),
               ],
-              if (isCriticallyLow) ...[
+              if (isCriticallyLow && AppPlatform.isAndroid) ...[
                 const SizedBox(height: 10),
                 TonalButton.neutral(
                   ctx,
@@ -1329,11 +1337,10 @@ class ModelController extends GetxController {
         : await confirmSheet(
             context,
             title: '@mode LiteRT speed'.trParams({'mode': modeLabel}),
-            message:
-                'GPU can make LiteRT models much faster, closer to Edge Gallery speed. '
-                        'On some phones GPU/OpenCL can crash the app while loading. '
-                        'If that happens, Auto Fast will use CPU on the next load.'
-                    .tr,
+            message: 'GPU can make LiteRT models much faster, closer to Edge Gallery speed. '
+                    'On some phones GPU/OpenCL can crash the app while loading. '
+                    'If that happens, Auto Fast will use CPU on the next load.'
+                .tr,
             confirmLabel: 'Continue'.tr,
           );
 
@@ -1363,7 +1370,8 @@ class ModelController extends GetxController {
 
   Future<void> importModelFromStorage() async {
     if (isImporting.value) {
-      showToast('Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
+      showToast(
+          'Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -1389,8 +1397,10 @@ class ModelController extends GetxController {
         if (!lower.endsWith('.gguf') &&
             !lower.endsWith('.litertlm') &&
             !lower.endsWith('.safetensors')) {
-          showToast('Unsupported Model'.tr,
-              'Only .gguf, .litertlm, and .safetensors files can be imported.'.tr,
+          showToast(
+              'Unsupported Model'.tr,
+              'Only .gguf, .litertlm, and .safetensors files can be imported.'
+                  .tr,
               tone: ToastTone.warning);
           return;
         }
@@ -1411,7 +1421,8 @@ class ModelController extends GetxController {
         if (sourceStream == null) {
           showToast(
             'Import Failed'.tr,
-            'Unable to read the selected file. Try selecting it from local storage.'.tr,
+            'Unable to read the selected file. Try selecting it from local storage.'
+                .tr,
             tone: ToastTone.error,
           );
           return;
@@ -1554,7 +1565,8 @@ class ModelController extends GetxController {
   Future<void> importFolderFiles(List<FolderModelFile> files) async {
     if (files.isEmpty) return;
     if (isImporting.value) {
-      showToast('Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
+      showToast(
+          'Import in Progress'.tr, 'Wait for the current import to finish.'.tr,
           tone: ToastTone.warning);
       return;
     }
@@ -1587,13 +1599,15 @@ class ModelController extends GetxController {
       await refreshDownloaded();
       modelScope.value = 'local';
       if (failed.isEmpty) {
-        showToast('Import Successful'.tr,
+        showToast(
+            'Import Successful'.tr,
             imported == 1
                 ? '1 model imported.'.tr
                 : '@count models imported.'.trParams({'count': '$imported'}),
             tone: ToastTone.success);
       } else {
-        showToast('Some imports failed'.tr,
+        showToast(
+            'Some imports failed'.tr,
             "@count imported · couldn't import @names"
                 .trParams({'count': '$imported', 'names': failed.join(', ')}),
             tone: ToastTone.warning);
@@ -1759,9 +1773,8 @@ class ModelController extends GetxController {
     bool showDetails = false;
     showAppSheet<void>(
       context,
-      title: isCluster
-          ? "Phone cluster couldn't load".tr
-          : 'Model load failed'.tr,
+      title:
+          isCluster ? "Phone cluster couldn't load".tr : 'Model load failed'.tr,
       subtitle: friendlyMsg,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {

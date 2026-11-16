@@ -60,8 +60,8 @@ class _ImageViewerState extends State<ImageViewer> {
       }
     } catch (e) {
       if (mounted) {
-        showToast(
-            'Not saved'.tr, 'Error saving image: @error'.trParams({'error': '$e'}),
+        showToast('Not saved'.tr,
+            'Error saving image: @error'.trParams({'error': '$e'}),
             tone: ToastTone.error);
       }
     } finally {

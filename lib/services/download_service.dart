@@ -452,6 +452,11 @@ class DownloadService extends GetxService with WidgetsBindingObserver {
         .trParams({'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)});
   }
 
+  /// Memory amounts: from 1 GB like file sizes (so a model reads the same
+  /// on its card and in the load sheet), whole MB below.
+  static String formatMemory(int bytes) =>
+      bytes >= 1024 * 1024 * 1024 ? formatBytes(bytes) : formatWholeMb(bytes);
+
   static String formatWholeMb(int bytes) {
     if (bytes <= 0) return '@size MB'.trParams({'size': '0'});
     final mb = (bytes / (1024 * 1024)).round().clamp(1, 1 << 31);

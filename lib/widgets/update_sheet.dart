@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/ui.dart';
 import '../services/update_service.dart';
 import 'chat_bubble.dart';
+import '../core/format.dart';
 
 /// "Update available" sheet: release notes, then download progress and the
 /// hand-off to the system installer.
@@ -13,7 +14,7 @@ class UpdateSheet extends StatelessWidget {
   const UpdateSheet({super.key});
 
   static String _mb(int bytes) =>
-      '@size MB'.trParams({'size': (bytes / (1024 * 1024)).toStringAsFixed(1)});
+      '@size MB'.trParams({'size': decimal(bytes / (1024 * 1024), 1)});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,9 @@ class UpdateSheet extends StatelessWidget {
               Text(
                   'PrivateLM ${release.version}'
                   '${release.apkSize > 0 ? ' · ${_mb(release.apkSize)}' : ''}'
-                  '${updates.currentVersion.value.isNotEmpty ? ' · ${'you have @version'.trParams({'version': updates.currentVersion.value})}' : ''}',
+                  '${updates.currentVersion.value.isNotEmpty ? ' · ${'you have @version'.trParams({
+                          'version': updates.currentVersion.value
+                        })}' : ''}',
                   style: t.caption),
             ]),
           ),
@@ -119,9 +122,8 @@ class UpdateSheet extends StatelessWidget {
           ]),
         ] else ...[
           PrimaryButton(
-            label: installing
-                ? 'Opening installer…'.tr
-                : 'Download & install'.tr,
+            label:
+                installing ? 'Opening installer…'.tr : 'Download & install'.tr,
             icon: Icons.download_rounded,
             busy: installing,
             onPressed: updates.downloadAndInstall,

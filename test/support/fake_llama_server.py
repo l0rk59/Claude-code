@@ -152,6 +152,10 @@ class Handler(BaseHTTPRequestHandler):
             if tool_result_in(messages):
                 tool_text = [m['content'] for m in messages if m.get('role') == 'tool'][-1]
                 answer = f'Using the tool result ({tool_text[:40]}), the answer is ready.'
+            elif 'markdown' in (text or '').lower():
+                answer = ('## Budget mensuel\n\n| Poste | Montant |\n|---|---:|\n| Loyer | 850 € |\n'
+                          '| Courses | 400 € |\n| Épargne | 300 € |\n\n- **Total** : 1 550 €\n- Reste : 850 €\n\n'
+                          '```python\nprint(2400 - 1550)\n```\n\n> Pensez à garder une marge.')
             else:
                 answer = f'Echo from {alias}: {text}'
             self._chunk({'reasoning_content': 'Thinking briefly.'})

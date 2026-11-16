@@ -14,6 +14,7 @@ import '../services/desktop/llama_engine.dart';
 import '../services/hive_service.dart';
 import '../services/inference_service.dart';
 import '../services/rpc_probe.dart';
+import '../core/format.dart';
 
 /// The computer app's engine: which build runs the models, where the
 /// models are kept, sharing with the phones, phones lending their memory.
@@ -275,8 +276,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
                         ? 'Known once the engine is installed.'.tr
                         : 'The models run on the processor.'.tr)
                     : '@total GB of graphics memory, @free GB free'.trParams({
-                        'total': (gpu.totalMb / 1024).toStringAsFixed(1),
-                        'free': (gpu.freeMb / 1024).toStringAsFixed(1),
+                        'total': decimal(gpu.totalMb / 1024, 1),
+                        'free': decimal(gpu.freeMb / 1024, 1),
                       }),
               ),
               if (installed.isEmpty && !installing)
@@ -393,8 +394,8 @@ class _DesktopEngineViewState extends State<DesktopEngineView> {
                             ? 'Engine version @version: update the app on this phone'
                                 .trParams({'version': _workerInfo[w]!.version})
                             : 'Lends about @gb GB'.trParams({
-                                'gb': (_workerInfo[w]!.suggestedMb / 1024)
-                                    .toStringAsFixed(1)
+                                'gb': decimal(
+                                    _workerInfo[w]!.suggestedMb / 1024, 1)
                               }),
                 trailing: IconButton(
                   tooltip: 'Remove'.tr,

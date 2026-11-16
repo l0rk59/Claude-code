@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../core/colors.dart';
 import '../core/ui.dart';
 import '../services/cluster_service.dart';
+import '../core/format.dart';
 
 /// Phone cluster: pick Master (runs the model) or Worker (lends this phone),
 /// and pair them by scanning the worker's QR code.
@@ -373,12 +374,11 @@ class _ClusterViewState extends State<ClusterView> {
   }
 }
 
-String _gb(num mb) =>
-    '@size GB'.trParams({'size': (mb / 1024).toStringAsFixed(1)});
+String _gb(num mb) => '@size GB'.trParams({'size': decimal(mb / 1024, 1)});
 
 /// Memory speed, e.g. "4.2 GB/s".
 String _gbs(double bandwidth) =>
-    '@size GB/s'.trParams({'size': bandwidth.toStringAsFixed(1)});
+    '@size GB/s'.trParams({'size': decimal(bandwidth, 1)});
 
 /// Adds a computer to the cluster: says what to run on it, checks that it
 /// answers, then asks how much of its memory to use. Pops with true once

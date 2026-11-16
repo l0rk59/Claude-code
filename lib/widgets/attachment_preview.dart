@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/colors.dart';
+import '../core/format.dart';
 
 class AttachmentPreview extends StatelessWidget {
   final String fileName;
@@ -155,11 +156,12 @@ class AttachmentPreview extends StatelessWidget {
 
   static String formatFileSize(int bytes) {
     if (bytes >= 1024 * 1024 * 1024) {
-      return '@size GB'.trParams(
-          {'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)});
+      return '@size GB'
+          .trParams({'size': decimal(bytes / (1024 * 1024 * 1024), 1)});
     }
     if (bytes >= 1024 * 1024) {
-      return '@size MB'.trParams({'size': '${(bytes / (1024 * 1024)).round()}'});
+      return '@size MB'
+          .trParams({'size': '${(bytes / (1024 * 1024)).round()}'});
     }
     if (bytes >= 1024) {
       return '@size KB'.trParams({'size': '${(bytes / 1024).round()}'});

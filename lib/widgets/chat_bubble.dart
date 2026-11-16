@@ -11,6 +11,7 @@ import 'image_viewer.dart';
 import 'thought_disclosure.dart';
 import '../core/haptics.dart';
 import '../core/colors.dart';
+import '../core/format.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -120,7 +121,7 @@ class ChatBubble extends StatelessWidget {
     final muted = Theme.of(context).hintColor;
     final meta = <String>[
       if (message.tokensPerSec != null && message.tokensPerSec! > 0)
-        '${message.tokensPerSec!.toStringAsFixed(1)} tok/s',
+        '${decimal(message.tokensPerSec!, 1)} tok/s',
       if (message.imageGenDurationMs != null && message.imageGenDurationMs! > 0)
         _formatGenTime(message.imageGenDurationMs!),
     ];
@@ -157,8 +158,7 @@ class ChatBubble extends StatelessWidget {
             child: Row(children: [
               if (answerContent.isNotEmpty)
                 _CopyButton(text: answerContent, color: muted),
-                _SpeakButton(
-                    id: message.id, text: answerContent, color: muted),
+              _SpeakButton(id: message.id, text: answerContent, color: muted),
               if (meta.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 Text(meta.join(' · '),
@@ -222,6 +222,20 @@ class ChatBubble extends StatelessWidget {
         ),
       ),
       blockquotePadding: const EdgeInsets.only(left: 14, top: 2, bottom: 2),
+      // Tables in the answer's font (the theme default reads as another
+      // typeface), a touch smaller so a few columns fit on a phone.
+      tableHead:
+          base.copyWith(fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
+      tableBody: base.copyWith(fontSize: 14, height: 1.4),
+      tableBorder: TableBorder.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.black.withValues(alpha: 0.1),
+          width: 0.5,
+          borderRadius: BorderRadius.circular(8)),
+      tableCellsPadding:
+          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      tableHeadAlign: TextAlign.start,
     );
   }
 
@@ -250,7 +264,7 @@ class ChatBubble extends StatelessWidget {
 
   String _formatGenTime(int ms) {
     if (ms < 1000) return '${ms}ms';
-    if (ms < 60000) return '${(ms / 1000).toStringAsFixed(1)}s';
+    if (ms < 60000) return '${decimal(ms / 1000, 1)}s';
     final m = ms ~/ 60000;
     final s = (ms % 60000) ~/ 1000;
     return s > 0 ? '${m}m ${s}s' : '${m}m';

@@ -18,6 +18,7 @@ import '../controllers/home_controller.dart';
 import '../services/lan_server_finder.dart';
 import 'computer_finder_sheet.dart';
 import 'hf_search_view.dart';
+import '../core/format.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -1704,8 +1705,7 @@ class ModelView extends GetView<ModelController> {
           primaryAction = Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.check_rounded, size: 15, color: t.muted),
             const SizedBox(width: 4),
-            Text(
-                AppPlatform.isDesktop ? 'On this computer'.tr : 'On phone'.tr,
+            Text(AppPlatform.isDesktop ? 'On this computer'.tr : 'On phone'.tr,
                 style: t.small),
           ]);
         }
@@ -2603,10 +2603,8 @@ class _FolderImportListState extends State<_FolderImportList> {
   bool _imported(FolderModelFile f) => widget.controller.isDownloaded(f.name);
 
   static String _size(int bytes) => bytes >= 1024 * 1024 * 1024
-      ? '@size GB'
-          .trParams({'size': (bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)})
-      : '@size MB'
-          .trParams({'size': (bytes / (1024 * 1024)).toStringAsFixed(1)});
+      ? '@size GB'.trParams({'size': decimal(bytes / (1024 * 1024 * 1024), 2)})
+      : '@size MB'.trParams({'size': decimal(bytes / (1024 * 1024), 1)});
 
   @override
   Widget build(BuildContext context) {

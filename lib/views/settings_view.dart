@@ -28,6 +28,7 @@ import 'tools_settings_view.dart';
 import 'speed_test_sheet.dart';
 import 'log_view.dart';
 import '../core/haptics.dart';
+import '../core/format.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -156,7 +157,8 @@ class SettingsView extends GetView<SettingsController> {
                 icon: Icons.speed_rounded,
                 // On a computer it only says whether the graphics card is
                 // used (LiteRT is phones only).
-                title: AppPlatform.isDesktop ? 'Graphics card' : 'GGUF & LiteRT',
+                title:
+                    AppPlatform.isDesktop ? 'Graphics card' : 'GGUF & LiteRT',
                 value: switch (controller.liteRtPerformanceMode.value) {
                   'gpu_fast' => 'GPU fast'.tr,
                   'cpu_safe' => 'CPU safe'.tr,
@@ -209,8 +211,8 @@ class SettingsView extends GetView<SettingsController> {
                     ? Icons.computer_rounded
                     : Icons.smartphone_rounded,
                 title: AppPlatform.isDesktop ? 'Computer' : 'Device',
-                value: DownloadService.localizeSize('@ram GB RAM'.trParams(
-                    {'ram': device.totalRamGB.value.toStringAsFixed(1)})),
+                value: DownloadService.localizeSize('@ram GB RAM'
+                    .trParams({'ram': decimal(device.totalRamGB.value, 1)})),
                 builder: (ctx) => AppGroup(children: [_buildDeviceCard(ctx)]),
                 reactive: false,
               ),
@@ -759,7 +761,7 @@ class SettingsView extends GetView<SettingsController> {
     return Obx(() {
       final t = AppTokens.of(context);
       final device = Get.find<DeviceInfoService>();
-      final ram = device.totalRamGB.value.toStringAsFixed(1);
+      final ram = decimal(device.totalRamGB.value, 1);
       final (String tierName, String tierHint) =
           switch (device.deviceTier.value) {
         'low' => ('Low RAM'.tr, 'Use small models only'.tr),
@@ -823,8 +825,8 @@ class SettingsView extends GetView<SettingsController> {
           ),
           kv(
               'Available memory'.tr,
-              '@size GB'.trParams(
-                  {'size': device.availableRamGB.value.toStringAsFixed(1)})),
+              '@size GB'
+                  .trParams({'size': decimal(device.availableRamGB.value, 1)})),
           kv('Recommended context'.tr, '${device.recommendedContextSize}'),
           kv('Recommended max tokens'.tr, '${device.recommendedMaxTokens}'),
           if (soc != platform_info.SocFamily.unknown) ...[
@@ -1084,7 +1086,7 @@ class SettingsView extends GetView<SettingsController> {
     return _sliderRow(
       context,
       label: label,
-      valueLabel: displayValue ?? value.toStringAsFixed(2),
+      valueLabel: displayValue ?? decimal(value, 2),
       value: value,
       min: min,
       max: max,
@@ -1094,7 +1096,7 @@ class SettingsView extends GetView<SettingsController> {
           ? 'Recommended max: @value'.trParams({
               'value': safeMax.toInt() > 0
                   ? safeMax.toInt().toString()
-                  : safeMax.toStringAsFixed(1)
+                  : decimal(safeMax, 1)
             })
           : null,
       onChanged: (v) {

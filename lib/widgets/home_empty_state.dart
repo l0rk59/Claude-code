@@ -103,10 +103,12 @@ class _Greeting extends StatelessWidget {
   /// late?") the second line starts with a capital.
   String _greeting() {
     final salutation = _salutation;
-    final text =
-        "@salutation\nwhat's on your mind?".trParams({'salutation': salutation});
+    final text = "@salutation\nwhat's on your mind?"
+        .trParams({'salutation': salutation});
     final i = text.indexOf('\n');
-    if (!salutation.trimRight().endsWith('?') || i < 0 || i + 1 >= text.length) {
+    if (!salutation.trimRight().endsWith('?') ||
+        i < 0 ||
+        i + 1 >= text.length) {
       return text;
     }
     return text.substring(0, i + 1) +
@@ -220,7 +222,8 @@ class _FirstRun extends StatelessWidget {
                           'ram': ram.toStringAsFixed(0),
                           'vram': vram.toStringAsFixed(0),
                         })
-                      : '@ram GB RAM'.trParams({'ram': ram.toStringAsFixed(0)})),
+                      : '@ram GB RAM'
+                          .trParams({'ram': ram.toStringAsFixed(0)})),
                   style: t.small),
             ]),
             const SizedBox(height: 10),
@@ -356,8 +359,8 @@ class _Resume extends StatelessWidget {
       if (name.isEmpty) return const _PickLocalModel();
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PrimaryButton(
-          label: 'Load @name'
-              .trParams({'name': Get.find<ModelController>().displayName(name)}),
+          label: 'Load @name'.trParams(
+              {'name': Get.find<ModelController>().displayName(name)}),
           icon: Icons.play_arrow_rounded,
           onPressed: () {
             Haptics.lightImpact();

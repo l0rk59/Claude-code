@@ -28,6 +28,7 @@ import '../widgets/thought_disclosure.dart';
 import '../core/haptics.dart';
 import '../core/app_platform.dart';
 import '../core/colors.dart';
+import '../core/format.dart';
 
 // ── Apple-style color helpers ──
 Color _accent(BuildContext c) => Theme.of(c).brightness == Brightness.dark
@@ -556,8 +557,7 @@ class ChatView extends GetView<ChatController> {
               height: 28,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                    '${inf.tokensPerSecond.value.toStringAsFixed(1)} tok/s',
+                child: Text('${decimal(inf.tokensPerSecond.value, 1)} tok/s',
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         color:
@@ -1159,9 +1159,13 @@ class ChatView extends GetView<ChatController> {
                       iconData = Icons.stop_rounded;
                       onTap = controller.toggleListening;
                     } else if (noModel) {
-                      // Nothing to talk to: inert, faded mic
+                      // Nothing to talk to: inert, faded mic (or arrow on a
+                      // computer without dictation)
                       bgColor = Colors.transparent;
-                      iconData = Icons.mic_none_rounded;
+                      iconData = AppPlatform.isDesktop &&
+                              !controller.sttAvailable.value
+                          ? Icons.arrow_upward_rounded
+                          : Icons.mic_none_rounded;
                       onTap = null;
                     } else if (hasContent) {
                       // Has text or attachment → send, in the brand gradient
@@ -1277,9 +1281,9 @@ class ChatView extends GetView<ChatController> {
   }
 
   String _fmtK(int v) => v >= 1000000
-      ? '${(v / 1000000).toStringAsFixed(1)}M'
+      ? '${decimal(v / 1000000, 1)}M'
       : v >= 1000
-          ? '${(v / 1000).toStringAsFixed(1)}K'
+          ? '${decimal(v / 1000, 1)}K'
           : v.toString();
 }
 

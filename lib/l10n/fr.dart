@@ -1855,6 +1855,10 @@ const Map<String, String> fr = {
       'ERREUR : Claude a refusé de répondre à cette demande.',
   'Claude models, native API': 'Modèles Claude, API native',
   'OpenAI compatible Kimi models': 'Modèles Kimi compatibles OpenAI',
+  'Free memory is lower than recommended. Close other programs or choose a smaller model.':
+      'La mémoire libre est plus faible que recommandé. Fermez d\'autres programmes ou choisissez un modèle plus petit.',
+  'The model takes most of the free memory: the computer may slow down while it runs.':
+      'Le modèle occupe l\'essentiel de la mémoire libre : l\'ordinateur peut ralentir pendant qu\'il tourne.',
 };
 
 /// Download statuses the Android code reports in English (shown through

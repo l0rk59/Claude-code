@@ -102,8 +102,7 @@ class _ThoughtDisclosureState extends State<ThoughtDisclosure>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = Theme.of(context).hintColor;
-    final accentColor =
-        isDark ? AppColors.accentDark : AppColors.accent;
+    final accentColor = isDark ? AppColors.accentDark : AppColors.accent;
 
     // Inline disclosure: a quiet "Thought for 6s ›" line; expanded reasoning
     // sits behind a thin left rule, like a quote.

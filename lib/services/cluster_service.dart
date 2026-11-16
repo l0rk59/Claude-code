@@ -16,6 +16,7 @@ import 'hive_service.dart';
 import 'rpc_probe.dart';
 import '../core/app_platform.dart';
 import '../core/app_dirs.dart';
+import '../core/format.dart';
 
 /// What this phone does in a phone cluster.
 enum ClusterRole {
@@ -139,14 +140,18 @@ class ClusterService extends GetxService {
   String? get splitSummary {
     final total = split.fold<double>(0, (a, s) => a + s.mb);
     if (split.length < 2 || total <= 0) return null;
-    return split.map((s) => '${s.name} ${(s.mb / total * 100).round()}%').join(' · ');
+    return split
+        .map((s) => '${s.name} ${(s.mb / total * 100).round()}%')
+        .join(' · ');
   }
 
   @override
   void onInit() {
     super.onInit();
-    enabled.value = _hive.getSetting<bool>(AppConstants.keyClusterEnabled) ?? false;
-    final saved = _hive.getSetting<List>(AppConstants.keyClusterWorkers) ?? const [];
+    enabled.value =
+        _hive.getSetting<bool>(AppConstants.keyClusterEnabled) ?? false;
+    final saved =
+        _hive.getSetting<List>(AppConstants.keyClusterWorkers) ?? const [];
     workers.assignAll(saved.whereType<Map>().map(ClusterWorker.fromMap));
     if (isSupported) {
       if (AppPlatform.isIOS) {
@@ -220,7 +225,9 @@ class ClusterService extends GetxService {
       // Unrestricted battery keeps Android (Samsung especially) from moving
       // the worker to slow cores once it gets busy.
       final status = await LlamaCluster.workerStatus();
-      if (!status.batteryUnrestricted) await LlamaCluster.requestBatteryUnrestricted();
+      if (!status.batteryUnrestricted) {
+        await LlamaCluster.requestBatteryUnrestricted();
+      }
     }
     _workerRequested.value = true;
     worker.value = const ClusterWorkerStatus(state: 'starting');
@@ -256,7 +263,8 @@ class ClusterService extends GetxService {
     try {
       worker.value = await LlamaCluster.workerStatus();
     } catch (e) {
-      Get.find<AppLogService>().error('Cluster worker status failed', details: e);
+      Get.find<AppLogService>()
+          .error('Cluster worker status failed', details: e);
     }
   }
 
@@ -264,8 +272,10 @@ class ClusterService extends GetxService {
   /// iOS), if any.
   Future<void> refreshWifiAddress() async {
     try {
-      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
-      final wifi = interfaces.where((i) => i.name.startsWith('wlan') || i.name == 'en0');
+      final interfaces =
+          await NetworkInterface.list(type: InternetAddressType.IPv4);
+      final wifi =
+          interfaces.where((i) => i.name.startsWith('wlan') || i.name == 'en0');
       wifiAddress.value = wifi.isEmpty || wifi.first.addresses.isEmpty
           ? null
           : wifi.first.addresses.first.address;
@@ -283,7 +293,10 @@ class ClusterService extends GetxService {
     final params = uri?.queryParameters ?? const {};
     final host = params['host'];
     final port = int.tryParse(params['port'] ?? '');
-    if (uri == null || uri.scheme != _qrScheme || host == null || port == null) {
+    if (uri == null ||
+        uri.scheme != _qrScheme ||
+        host == null ||
+        port == null) {
       return "That isn't a PrivateLM worker code".tr;
     }
     return _add(ClusterWorker(
@@ -346,8 +359,9 @@ class ClusterService extends GetxService {
     } on FormatException {
       return (
         info: null,
-        error: "Something answers at @endpoint, but it isn't llama.cpp's ggml-rpc-server."
-            .trParams({'endpoint': address}),
+        error:
+            "Something answers at @endpoint, but it isn't llama.cpp's ggml-rpc-server."
+                .trParams({'endpoint': address}),
       );
     } catch (_) {
       return (
@@ -400,7 +414,8 @@ class ClusterService extends GetxService {
     }
     if (moved > 0) {
       await _save();
-      Get.find<AppLogService>().info('Phone cluster: found $moved worker(s) at a new address');
+      Get.find<AppLogService>()
+          .info('Phone cluster: found $moved worker(s) at a new address');
     }
     return unreachable;
   }
@@ -468,7 +483,9 @@ class ClusterService extends GetxService {
     // Workers that are off or away are left out, not fatal: the model may
     // fit without them.
     final offline = await relocateWorkers();
-    final available = workers.where((w) => !offline.any((o) => o.endpoint == w.endpoint)).toList();
+    final available = workers
+        .where((w) => !offline.any((o) => o.endpoint == w.endpoint))
+        .toList();
     if (offline.isNotEmpty) {
       final names = offline.map((w) => w.model ?? w.name).join(', ');
       showToast('Phone cluster'.tr,
@@ -480,7 +497,8 @@ class ClusterService extends GetxService {
     _localSpeed ??= await LlamaCluster.benchmark();
     // Free RAM: workers report theirs when they start. The master also runs
     // the app and the KV cache, so it offers less of its own.
-    final master = _Phone(null, await LlamaCluster.localFreeRamMb() * 0.7, _localSpeed!);
+    final master =
+        _Phone(null, await LlamaCluster.localFreeRamMb() * 0.7, _localSpeed!);
     final phones = [
       master,
       for (final w in available)
@@ -522,7 +540,8 @@ class ClusterService extends GetxService {
       _fillFastestFirst(phones, needMb);
     }
 
-    final used = phones.where((p) => p.worker != null && p.assignedMb > 0).toList();
+    final used =
+        phones.where((p) => p.worker != null && p.assignedMb > 0).toList();
     if (used.isEmpty) {
       await LlamaCluster.clear();
       return 0;
@@ -583,7 +602,9 @@ class ClusterService extends GetxService {
   /// alone. True to go ahead.
   Future<bool> confirmLiteRtRunsHere(String model) async {
     final context = Get.context;
-    if (role != ClusterRole.master || workers.isEmpty || context == null) return true;
+    if (role != ClusterRole.master || workers.isEmpty || context == null) {
+      return true;
+    }
     final go = await showAppSheet<bool>(
       context,
       title: "This model can't use your workers".tr,
@@ -610,7 +631,8 @@ class ClusterService extends GetxService {
   }
 
   /// "Fits on this phone" sheet. True to share with workers anyway.
-  Future<bool> _askFitsHere(String model, double modelMb, int workerCount) async {
+  Future<bool> _askFitsHere(
+      String model, double modelMb, int workerCount) async {
     final context = Get.context;
     if (context == null) return false;
     final share = await showAppSheet<bool>(
@@ -669,7 +691,8 @@ class ClusterService extends GetxService {
     final remoteMb = remote.values.fold<double>(0, (a, b) => a + b);
     split.assignAll([
       ClusterShare(deviceName.isEmpty ? 'This phone'.tr : deviceName,
-          math.max(0, fileMb - remoteMb), isThisPhone: true),
+          math.max(0, fileMb - remoteMb),
+          isThisPhone: true),
       for (final e in remote.entries) ClusterShare(e.key, e.value),
     ]);
   }
@@ -677,5 +700,5 @@ class ClusterService extends GetxService {
   void clearSplit() => split.clear();
 
   static String _gb(double mb) =>
-      '@size GB'.trParams({'size': (mb / 1024).toStringAsFixed(1)});
+      '@size GB'.trParams({'size': decimal(mb / 1024, 1)});
 }

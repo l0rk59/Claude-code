@@ -59,8 +59,10 @@ class _TypingIndicatorState extends State<TypingIndicator>
                   mainAxisSize: MainAxisSize.min,
                   children: List.generate(3, (index) {
                     final delay = index * 0.2;
-                    final t = ((_controller.value - delay) % 1.0).clamp(0.0, 1.0);
-                    final pulse = (math.sin(t * math.pi) * 0.75).clamp(0.0, 1.0);
+                    final t =
+                        ((_controller.value - delay) % 1.0).clamp(0.0, 1.0);
+                    final pulse =
+                        (math.sin(t * math.pi) * 0.75).clamp(0.0, 1.0);
 
                     return Container(
                       margin: EdgeInsets.only(right: index < 2 ? 5 : 0),
