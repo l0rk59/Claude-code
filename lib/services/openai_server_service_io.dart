@@ -178,7 +178,7 @@ class OpenAiServerService {
     final hasModel = inference.isModelLoaded.value;
     final isLiteRt = hasModel && inference.loadedModelRuntime.value == 'litert';
     await _json(request, {
-      'server': 'AI Chat Local OpenAI API',
+      'server': 'PrivateLM local OpenAI API',
       'running': true,
       'model': hasModel ? inference.loadedModelName.value : null,
       'runtime': inference.loadedModelRuntime.value,

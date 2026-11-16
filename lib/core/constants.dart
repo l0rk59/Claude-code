@@ -142,11 +142,23 @@ class AppConstants {
 
   // System Prompt (compact for small context models)
   static const String systemPrompt =
-      '''You are AI Chat, a helpful and friendly assistant. Be concise, accurate, and conversational. Answer questions directly without unnecessary preamble.''';
+      '''You are PrivateLM, a helpful and friendly assistant that runs privately for the user. Be concise, accurate, and conversational. Answer questions directly without unnecessary preamble, in the language of the user's message.''';
 
   // System Prompt for Uncensored Models
   static const String uncensoredSystemPrompt =
-      '''You are AI Chat running with an uncensored local model. Be direct, mature, and conversational. Avoid moralizing or unnecessary disclaimers, but keep answers accurate and do not help with real-world harm, abuse, or illegal activity.''';
+      '''You are PrivateLM running with an uncensored local model. Be direct, mature, and conversational, and answer in the language of the user's message. Avoid moralizing or unnecessary disclaimers, but keep answers accurate and do not help with real-world harm, abuse, or illegal activity.''';
+
+  /// Default prompts of earlier versions, saved as they were: still the
+  /// default, not a prompt of the user's.
+  static const legacySystemPrompts = {
+    'You are AI Chat, a helpful and friendly assistant. Be concise, accurate, and conversational. Answer questions directly without unnecessary preamble.',
+  };
+
+  /// Whether [prompt] is the app's own (no prompt of the user's).
+  static bool isDefaultSystemPrompt(String prompt) {
+    final p = prompt.trim();
+    return p.isEmpty || p == systemPrompt || legacySystemPrompts.contains(p);
+  }
 
   static bool isUncensoredModelName(String value) {
     final lower = value.toLowerCase();

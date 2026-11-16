@@ -91,7 +91,8 @@ class SettingsView extends GetView<SettingsController> {
                 context,
                 icon: Icons.chat_bubble_outline_rounded,
                 title: 'System prompt',
-                value: controller.globalSystemPrompt.value.trim().isEmpty
+                value: AppConstants.isDefaultSystemPrompt(
+                        controller.globalSystemPrompt.value)
                     ? 'Default'.tr
                     : 'Custom'.tr,
                 builder: (ctx) => _buildSystemPromptGroup(ctx),

@@ -203,10 +203,14 @@ class SettingsController extends GetxController {
     customCloudModel.value =
         _hive.getSetting(AppConstants.keyCustomCloudModel) ?? '';
     _loadCustomCloudProfiles();
-    globalSystemPrompt.value = _hive.getSetting(
+    final savedPrompt = _hive.getSetting<String>(
             AppConstants.keyGlobalSystemPrompt,
             defaultValue: AppConstants.systemPrompt) ??
         AppConstants.systemPrompt;
+    // An earlier version's default becomes this version's.
+    globalSystemPrompt.value = AppConstants.isDefaultSystemPrompt(savedPrompt)
+        ? AppConstants.systemPrompt
+        : savedPrompt;
     temperature.value = _hive.getSetting(AppConstants.keyTemperature,
             defaultValue: AppConstants.defaultTemperature) ??
         AppConstants.defaultTemperature;
@@ -660,9 +664,7 @@ class SettingsController extends GetxController {
 
   String effectiveSystemPromptForModel(String modelName) {
     final prompt = globalSystemPrompt.value.trim();
-    final hasCustomPrompt =
-        prompt.isNotEmpty && prompt != AppConstants.systemPrompt;
-    if (hasCustomPrompt) return prompt;
+    if (!AppConstants.isDefaultSystemPrompt(prompt)) return prompt;
     if (AppConstants.isUncensoredModelName(modelName)) {
       return AppConstants.uncensoredSystemPrompt;
     }
