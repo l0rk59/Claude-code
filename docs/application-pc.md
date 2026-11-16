@@ -1,23 +1,31 @@
-# PrivateLM sur ordinateur (Windows et Linux)
+# PrivateLM sur ordinateur (Windows, Linux et macOS)
 
 La même application que sur le téléphone, avec la même interface et les
 mêmes réglages, mais qui profite de la mémoire et de la carte graphique de
 l'ordinateur. Elle remplace les scripts `start-serveur` et `start-worker` :
 tout se règle depuis l'application.
 
-> **Testé ici** : la version Linux compilée et utilisée de bout en bout sur un
-> écran virtuel, avec un faux `llama-server` (mêmes commandes et mêmes
-> réponses que le vrai) ; la page « Moteur de l'ordinateur » ; l'ajout d'un
-> téléphone auxiliaire contre le vrai `ggml-rpc-server` de llama.cpp.
-> La version Windows se compile sur GitHub. **Pas encore testé** : la lancer
-> sur un vrai PC, et un vrai modèle avec le vrai moteur. Voir la partie 7 du [plan de test](plan-de-test.md).
+> **Testé** :
+> - le **vrai moteur** (llama.cpp b11157, téléchargé comme le fait
+>   l'application) avec un **vrai modèle** (Qwen 3.5 0.8B), sur Windows et sur
+>   Linux, à chaque modification, par GitHub : installation (1 s), chargement
+>   (1,6 s), discussion avec réflexion, appel d'outil, agent, mode approfondi,
+>   arrêt d'une réponse et du moteur — tout passe ;
+> - l'application Linux utilisée de bout en bout sur un écran virtuel, en
+>   français, en largeur ordinateur et téléphone ;
+> - l'ajout d'un téléphone auxiliaire contre le vrai `ggml-rpc-server` ;
+> - les versions Windows, Linux et macOS se compilent sur GitHub.
+>
+> **Pas encore testé** : l'application lancée sur un vrai PC avec sa carte
+> graphique, et un gros modèle. Voir la partie 7 du [plan de test](plan-de-test.md).
 
 ## 1. Installer
 
 1. Dans le dépôt GitHub : **Actions > Computer app**, ouvrir la dernière
    exécution réussie, télécharger :
    - `PrivateLM-…-windows-x64.zip` pour Windows ;
-   - `PrivateLM-…-linux-x64.tar.gz` pour Linux.
+   - `PrivateLM-…-linux-x64.tar.gz` pour Linux ;
+   - `PrivateLM-…-macos.zip` pour macOS.
 
    Pour une version publiée (étiquette `v…`), les mêmes fichiers sont dans
    **Releases**, à côté de l'APK.
@@ -28,6 +36,11 @@ tout se règle depuis l'application.
      quand même**.
    - Linux : les bibliothèques GTK 3 sont nécessaires (présentes sur Ubuntu,
      Fedora, Mint… de bureau).
+   - macOS : décompresser donne `PrivateLM.app`. L'application n'est pas
+     signée par Apple : la première fois, **clic droit > Ouvrir**, puis
+     **Ouvrir** (ou Réglages > Confidentialité et sécurité > **Ouvrir
+     quand même**). Sur une puce Apple, le moteur utilise sa partie
+     graphique (Metal).
 
 ## 2. Premier lancement
 
@@ -117,7 +130,12 @@ Les agents y sont les plus forts (voir [agents.md](agents.md)) :
   Windows, déjà présent sous Linux).
 - le **dossier de travail** se choisit dans **Paramètres > Outils > Agents**.
 
-## 7. Raccourcis
+## 7. Mises à jour et raccourcis
+
+Les mises à jour : **Paramètres > À propos > Mises à jour** dit quand une
+nouvelle version est publiée et ouvre le bon fichier à télécharger ;
+remplacer l'ancien dossier par le nouveau, les modèles et les discussions
+restent.
 
 | Touche | Effet |
 | --- | --- |
@@ -142,5 +160,6 @@ Le moteur s'arrête avec la fenêtre. Si l'application a planté, le moteur
 resté ouvert est arrêté au lancement suivant.
 
 Où sont les fichiers : `%APPDATA%\l0rk59\PrivateLM` (Windows),
-`~/.local/share/com.l0rk59.privatelm` (Linux) : réglages, discussions,
+`~/.local/share/com.l0rk59.privatelm` (Linux),
+`~/Library/Application Support/com.l0rk59.privatelm` (macOS) : réglages, discussions,
 modèles (sauf dossier choisi), moteur, dossier de travail des agents.

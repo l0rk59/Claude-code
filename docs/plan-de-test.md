@@ -84,6 +84,13 @@ l'ordinateur (partie 7) avec gpt-oss 20B.
 | 3d.5 | N'importe quel agent avec l'outil Mémoire : « Retiens que je suis allergique aux noix » | Une demande d'accord ; ensuite le fait apparaît dans **Paramètres > Outils > Mémoire** |
 | 3d.6 | Arrêter le Chef de projet pendant qu'un assistant travaille pour lui | Tout s'arrête ; aucune réponse n'arrive ensuite |
 
+## 3e. Modèles en ligne
+
+| # | À faire | Attendu |
+| --- | --- | --- |
+| 3e.1 | **Modèles > Cloud > Anthropic (Claude)**, saisir une clé, choisir Claude Opus 5.5, poser une question | La réponse s'affiche au fil de l'eau, en français |
+| 3e.2 | Même chose avec **Kimi** | Liste des modèles Kimi, réponse |
+
 ## 4. Un ordinateur fait tourner le modèle
 
 Voir [ordinateur.md](ordinateur.md).
@@ -136,6 +143,8 @@ la carte graphique.
 | 7.8 | **Programmeur** : mettre un fichier CSV dans le dossier de travail, demander « Quelle est la moyenne de la colonne prix de ventes.csv ? » | Il lit le fichier, demande l'accord pour exécuter du Python (le code est montré), puis répond avec le résultat |
 | 7.9 | Fermer la fenêtre pendant qu'un modèle est chargé | Le programme `llama-server` s'arrête aussi (Gestionnaire des tâches / `ps`) |
 | 7.10 | Entrée envoie, Maj+Entrée va à la ligne, clic droit sur une discussion la supprime | Comme décrit |
+| 7.11 | Sur un Mac : ouvrir `PrivateLM.app` (clic droit > Ouvrir la première fois), charger un modèle | Le moteur Metal s'installe ; le message dit GPU |
+| 7.12 | **Paramètres > À propos > Mises à jour** | « Version 1.1.0 » ; toucher vérifie s'il y a plus récent |
 
 ## Ce qu'il est le plus utile de me renvoyer
 

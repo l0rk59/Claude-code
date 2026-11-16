@@ -16,33 +16,50 @@ l'application pour ordinateur et les agents avancés.
 | Recherche Web, Mes documents, Mémoire, Tâches, lecture à voix haute | nouveau | tests ; DuckDuckGo et Wikipédia refusent ce serveur de développement, donc pas d'essai réel d'ici |
 | Agents : assistants spécialisés et équipes | en place | tests du moteur ; parcours complet vérifié avec un modèle simulé dans la version web |
 | **Agents avancés** : outils appelés par le modèle, mode approfondi (plan, vérification), délégation, fichiers, Python, mémoire | nouveau | tests ; parcours vérifié dans l'application Linux avec un faux `llama-server` (plan → délégation → vérification, Python après accord) |
-| **Application pour ordinateur** (Windows, Linux) | nouveau | compilée pour Windows et Linux sur GitHub ; version Linux utilisée de bout en bout sur un écran virtuel avec un faux `llama-server` ; pas encore lancée sur un vrai PC ni avec un vrai modèle |
-| Moteur de l'ordinateur (llama.cpp b11157 `llama-server`) | nouveau | noms des fichiers vérifiés sur GitHub ; installation, démarrage, discussion et arrêt testés contre un faux serveur ; options vérifiées dans la documentation de b11157 |
+| **Application pour ordinateur** (Windows, Linux, macOS) | nouveau | compilée pour les trois sur GitHub ; version Linux utilisée de bout en bout sur un écran virtuel, en français, en largeur ordinateur et téléphone ; pas encore lancée sur un vrai PC |
+| Moteur de l'ordinateur (llama.cpp b11157 `llama-server`) | **testé pour de vrai** | à chaque modification, GitHub télécharge le vrai moteur et le fait tourner avec Qwen 3.5 0.8B, sur Windows et Linux : installation, chargement, discussion, appel d'outil, agent, mode approfondi, arrêt — tout passe |
 | L'ordinateur chef du cluster (téléphones en Auxiliaire) | nouveau | dialogue avec le vrai `ggml-rpc-server` b11157 vérifié ; aucun chargement réel réparti |
 | Clés et jetons | dans le coffre du téléphone (Keystore) | tests |
 | Identité de l'application | `com.l0rk59.privatelm`, version 1.1.0 | — |
 | Fabrication de l'APK sur GitHub | en place | construit avec succès sur GitHub (environ 18 minutes) |
-| Fabrication de l'application pour ordinateur sur GitHub | en place | construite avec succès : Windows (zip, 16 Mo, 9 minutes) et Linux (tar.gz, 19 Mo, 3 minutes) ; ajoutées à la version publiée |
+| Fabrication de l'application pour ordinateur sur GitHub | en place | construite avec succès : Windows (zip, 16 Mo), Linux (tar.gz, 19 Mo), macOS (zip, 26 Mo) ; ajoutées à la version publiée |
+| Modèles en ligne : Claude et Kimi | en place | Anthropic (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2) et Kimi apparaissent dans Modèles > Cloud ; requêtes Claude mises à jour (version 2026-10-21, réponses au fil de l'eau, modèle de secours si Claude refuse) ; tests du format, pas d'essai avec une vraie clé |
 | Mises à jour de l'application | pointent sur ce dépôt | aucune version publiée pour l'instant |
 | Télémétrie | retirée | Firebase, inactif, a été enlevé : il bloquait la version Windows ; les erreurs restent dans Paramètres > Journaux |
 
 ## 2. Ce qui a été fait dans ce tour
 
-- **Application pour ordinateur** (Windows et Linux), la même que sur le
-  téléphone : voir [application-pc.md](application-pc.md). Elle installe
-  seule le moteur llama.cpp (carte graphique Vulkan, NVIDIA CUDA ou
-  processeur), recommande un modèle selon la mémoire et la carte graphique,
-  partage le modèle avec les téléphones (clé), et peut emprunter la mémoire
-  des téléphones en Auxiliaire. Raccourcis clavier, fenêtre large.
-- **Modèles « ordinateur »** au catalogue : gpt-oss 20B, Qwen 3.5 27B et
-  35B-A3B, Gemma 4 26B-A4B.
-- **Agents avancés** : voir [agents.md](agents.md). Outils appelés par le
-  modèle lui-même (plusieurs à la fois) sur ordinateur et en ligne ; **mode
-  approfondi** (plan, puis vérification qui valide, corrige ou relance la
-  recherche) ; **Chef de projet** qui délègue aux autres assistants ;
-  **Programmeur** (Python sur ordinateur) ; **Assistant fichiers** ; outil
-  **Mémoire** ; tout ce qui écrit ou exécute demande votre accord.
-- **Fabrication sur GitHub** des versions Windows et Linux.
+**Le moteur de l'ordinateur testé pour de vrai.** GitHub télécharge à chaque
+modification le vrai llama.cpp et le fait tourner avec un petit modèle, sur
+Windows et Linux. Ce test a trouvé un vrai défaut, corrigé : en mode
+approfondi, la réflexion de Qwen 3.5 épuisait la place du plan.
+
+**Version macOS**, construite par GitHub, et **mise à jour sur ordinateur**
+(Paramètres > À propos).
+
+**Perfectionnement de l'ensemble** (revue du code et de chaque écran, en
+français, en largeur ordinateur et téléphone) :
+
+- l'ordinateur parle d'« ordinateur » partout (adéquation des modèles,
+  documents, espace disque, langue…), vérifie l'espace disque avant un
+  téléchargement, recommande d'abord les modèles faits pour lui, centre les
+  pages sur grand écran ;
+- nombres et tailles à la française (« 5,49 Go ») ; noms de modèles au lieu
+  des noms de fichiers ; majuscule après « Encore debout ? » ;
+- une longue discussion qui dépasse la mémoire du modèle repart sans ses plus
+  anciens messages au lieu d'échouer ; un téléphone auxiliaire éteint est
+  écarté au lieu de bloquer le chargement ; messages clairs si le moteur
+  manque ;
+- les agents reconnaissent un assistant même mal orthographié (« Analyst »
+  pour « Analyste ») ; noms d'outils courts dans la liste ;
+- **Claude et Kimi** ajoutés aux modèles en ligne ; requêtes Claude corrigées
+  (elles envoyaient un réglage que les modèles actuels refusent, et ne
+  lisaient pas la réponse des modèles qui réfléchissent) ;
+- le **prompt système par défaut** demande de répondre dans la langue de la
+  question (les petits modèles répondaient parfois en anglais) et s'appelle
+  PrivateLM ; l'écran ne l'affiche plus « Personnalisé » à tort ;
+- le test des traductions refuse désormais une forme d'écriture qui lui avait
+  caché un texte resté en anglais.
 
 ## 3. Ce qui reste
 
@@ -71,7 +88,7 @@ l'application pour ordinateur et les agents avancés.
 | Piste | Effort | Ce que ça apporte |
 | --- | --- | --- |
 | Recherche par le sens dans les documents | moyen | Trouver un passage qui répond sans reprendre les mêmes mots (aujourd'hui : recherche par mots). Demande un petit modèle d'« embeddings ». |
-| Version macOS | moyen | Le moteur Metal existe ; il faut un Mac pour compiler et signer. |
+| Signer l'application macOS | faible | Éviter le clic droit > Ouvrir au premier lancement (compte développeur Apple payant). |
 | Signer l'application Windows | faible | Éviter l'avertissement « Windows a protégé votre ordinateur » (certificat payant). |
 | Agents qui naviguent sur le Web (clics, formulaires) | élevé | Demande un navigateur piloté ; risques à encadrer. |
 

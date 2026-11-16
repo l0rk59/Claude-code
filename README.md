@@ -15,7 +15,7 @@ _Generated on pixel 6 with 20 step_
 ## What It Does
 
 - **Local Inference on Android** — Download and run GGUF models directly on your phone using GPU-accelerated inference (Vulkan). No internet required after download.
-- **Cloud API Fallback** — Seamlessly switch to OpenAI, Anthropic, Google Gemini, or Kimi (Moonshot AI) when you need more power or are on unsupported platforms.
+- **Cloud API Fallback** — Switch to OpenAI, Anthropic (Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2, streamed), Google Gemini, Kimi (Moonshot AI), DeepSeek, OpenRouter, NVIDIA NIM or any OpenAI-compatible server when you need more power.
 - **Multimodal Chat** — Send text and images in conversations. Vision support works with both local models (Qwen2-VL) and cloud providers.
 - **Persistent Sessions** — All chats and settings are stored locally via Hive. Nothing leaves your device unless you explicitly choose cloud mode.
 - **Smart Auto-Configuration** — On first launch, the app detects your device's RAM and recommends optimal context size and token limits automatically.
@@ -23,7 +23,7 @@ _Generated on pixel 6 with 20 step_
 - **Phone Cluster** — Spread one GGUF model across several phones, and a computer running llama.cpp's `ggml-rpc-server`, on the same Wi-Fi, to run models too big for one device. See [docs/cluster-ordinateur.md](docs/cluster-ordinateur.md) (French).
 - **Agents** — Specialised assistants with a role, tools they decide to use on their own over several steps (web search, reading pages, your documents, a calculator, the date) and optionally their own model; teams that pass a request from one assistant to the next (plan → research → review). Built-in ones, and your own. Works with any model, best from 4B up or with a model on a computer.
 - **Advanced Agents** — On a computer and with OpenAI-compatible cloud models the model calls its tools itself, several at once. Deep mode plans first and checks the answer against what was found (approve, correct, or research again). A Project manager hands work to the other assistants in parallel; a Programmer writes and runs Python on a computer; a File assistant works in a work folder it can't leave; agents can remember facts. Writing files, running code and remembering always ask first. See [docs/agents.md](docs/agents.md) (French).
-- **Computer App (Windows, Linux)** — The same app on a PC. It installs llama.cpp's `llama-server` (Vulkan, CUDA or CPU build) with the first model, uses the graphics card, recommends models from the computer's memory and graphics memory (gpt-oss 20B, Qwen 3.5 27B/35B-A3B, Gemma 4 26B-A4B), shares the loaded model with the phones (with a key), and can borrow memory from phones in Worker mode. Built by GitHub Actions. See [docs/application-pc.md](docs/application-pc.md) (French).
+- **Computer App (Windows, Linux, macOS)** — The same app on a PC. It installs llama.cpp's `llama-server` (Vulkan, CUDA or CPU build) with the first model, uses the graphics card, recommends models from the computer's memory and graphics memory (gpt-oss 20B, Qwen 3.5 27B/35B-A3B, Gemma 4 26B-A4B), shares the loaded model with the phones (with a key), and can borrow memory from phones in Worker mode. Built by GitHub Actions, and its engine is tested for real (llama.cpp with a small model, Windows and Linux) on every change. See [docs/application-pc.md](docs/application-pc.md) (French).
 - **Tools in the chat** — From the + menu: web search (DuckDuckGo, Brave Search or your own SearXNG) and questions about your own documents (searched on the phone), with the sources listed under the answer; ready-made and custom tasks to start a message; answers read aloud. The assistant remembers what you ask it to ("Remember that…"), on the phone only.
 
 ---
@@ -112,6 +112,7 @@ The `InferenceService` exposes `supportsLocalInference` so the UI can hide local
 | Web      | ❌ No           | ✅ Yes     | Cloud-only (local coming soon)  |
 | Windows  | ✅ Yes          | ✅ Yes     | llama.cpp `llama-server` (Vulkan, CUDA or CPU), downloaded by the app |
 | Linux    | ✅ Yes          | ✅ Yes     | llama.cpp `llama-server` (Vulkan or CPU); needs GTK 3 |
+| macOS    | ✅ Yes          | ✅ Yes     | llama.cpp `llama-server` (Metal on Apple chips); unsigned: right click > Open the first time |
 
 ### iOS / iPad (Installation via AltServer)
 The iOS/iPad release is distributed as a sideloadable IPA file. Due to the RAM requirements for local models, iPad is the recommended iOS target, but it can be installed on iPhones.
